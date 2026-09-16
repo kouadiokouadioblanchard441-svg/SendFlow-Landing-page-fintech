@@ -1,10 +1,11 @@
 import { Instagram, Linkedin } from 'lucide-react';
-import { SiFacebook, SiWhatsapp } from 'react-icons/si';
 import { Link } from 'wouter';
 import type { ReactNode } from 'react';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import bceaoLogo from '@assets/image_search/bceao-logo-official.png';
+import facebookLogo from '@assets/facebook-logo-clean-icon-png_1789582951886.png';
+import whatsappLogo from '@assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg';
 
 type Copy = { fr: string; en: string };
 
@@ -114,8 +115,8 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
     <footer id="footer" className="sendflow-reference-footer">
       <div className="sendflow-footer-inner">
         <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
-          {socialLink('WhatsApp', settings?.whatsappUrl, <SiWhatsapp size={44} />, 'link-footer-whatsapp')}
-          {socialLink('Facebook', settings?.facebookUrl, <SiFacebook size={44} />, 'link-footer-facebook')}
+          {socialLink('WhatsApp', settings?.whatsappUrl, <img src={whatsappLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-whatsapp')}
+          {socialLink('Facebook', settings?.facebookUrl, <img src={facebookLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-facebook')}
           {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
           {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
         </div>
