@@ -11,11 +11,21 @@ import {
   setAdminSessionCookie,
   verifyAdminPassword,
 } from "../middlewares/adminAuth";
+import { createRateLimiter } from "../middlewares/security";
 
 const router: IRouter = Router();
 const SESSION_DAYS = 7;
+const loginRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: "Trop de tentatives de connexion. Réessaie dans quelques minutes.",
+});
+const panelLookupRateLimit = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+});
 
-router.post("/admin/auth/login", async (req, res): Promise<void> => {
+router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void> => {
   const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
   const password = typeof req.body?.password === "string" ? req.body.password : "";
   const panelToken = typeof req.body?.panelToken === "string" ? req.body.panelToken : "";
@@ -50,7 +60,7 @@ router.post("/admin/auth/login", async (req, res): Promise<void> => {
   res.json({ user: { id: user.id, email: user.email } });
 });
 
-router.get("/admin/auth/panel/:token/:email", async (req, res): Promise<void> => {
+router.get("/admin/auth/panel/:token/:email", panelLookupRateLimit, async (req, res): Promise<void> => {
   const token = typeof req.params.token === "string" ? req.params.token : "";
   const panelEmail = typeof req.params.email === "string" ? decodeURIComponent(req.params.email).trim() : "";
   if (!token || !panelEmail) {

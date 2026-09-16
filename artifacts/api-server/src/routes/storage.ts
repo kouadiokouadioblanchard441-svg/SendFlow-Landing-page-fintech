@@ -5,15 +5,31 @@ import {
   getSignedObjectUrl,
   parseStoragePath,
 } from '../lib/publicObjectStorage';
+import { createRateLimiter } from '../middlewares/security';
 
 const router: IRouter = Router();
+const publicObjectRateLimit = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 120,
+});
 
 router.get(
   '/storage/public-objects/*filePath',
+  publicObjectRateLimit,
   async (req: Request, res: Response) => {
     try {
       const raw = req.params.filePath;
       const filePath = Array.isArray(raw) ? raw.join('/') : raw;
+        if (
+          !filePath ||
+          filePath.startsWith("/") ||
+          filePath.includes("\\") ||
+          /[\u0000-\u001f\u007f]/.test(filePath) ||
+          filePath.split("/").some((segment) => !segment || segment === "." || segment === "..")
+        ) {
+          res.status(400).json({ error: "Invalid file path" });
+          return;
+        }
 
       for (const searchPath of getPublicObjectSearchPaths()) {
         const { bucketName, objectName } = parseStoragePath(
@@ -36,7 +52,10 @@ router.get(
         }
 
         res.status(response.status);
-        response.headers.forEach((value, key) => res.setHeader(key, value));
+        for (const header of ["cache-control", "content-length", "content-type", "etag", "last-modified"]) {
+          const value = response.headers.get(header);
+          if (value) res.setHeader(header, value);
+        }
         Readable.fromWeb(response.body as ReadableStream<Uint8Array>).pipe(res);
         return;
       }

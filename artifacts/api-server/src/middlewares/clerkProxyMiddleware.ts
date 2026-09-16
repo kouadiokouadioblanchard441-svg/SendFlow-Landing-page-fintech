@@ -6,9 +6,18 @@ const CLERK_FAPI = "https://frontend-api.clerk.dev";
 export const CLERK_PROXY_PATH = "/api/__clerk";
 
 export function getClerkProxyHost(req: { headers: IncomingHttpHeaders }): string | undefined {
-  const forwarded = req.headers["x-forwarded-host"];
-  const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  return raw?.split(",")[0]?.trim() || req.headers.host?.trim() || undefined;
+  const configuredSite = process.env.PUBLIC_SITE_URL?.trim();
+  if (configuredSite) {
+    try {
+      const url = new URL(configuredSite);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        return url.host;
+      }
+    } catch {
+      // Fall back to the request host so configuration errors remain visible.
+    }
+  }
+  return req.headers.host?.trim() || undefined;
 }
 
 export function clerkProxyMiddleware(): RequestHandler {
@@ -22,10 +31,18 @@ export function clerkProxyMiddleware(): RequestHandler {
     pathRewrite: (path) => path.replace(new RegExp(`^${CLERK_PROXY_PATH}`), ""),
     on: {
       proxyReq(proxyReq, req) {
-        const protocol = req.headers["x-forwarded-proto"] || "https";
-        const host = getClerkProxyHost(req) || "";
-        proxyReq.setHeader("Clerk-Proxy-Url", `${protocol}://${host}${CLERK_PROXY_PATH}`);
-        proxyReq.setHeader("Clerk-Secret-Key", process.env.CLERK_SECRET_KEY!);
+          let protocol = "https";
+          try {
+            const configuredSite = process.env.PUBLIC_SITE_URL;
+            if (configuredSite) {
+              protocol = new URL(configuredSite).protocol.replace(":", "");
+            }
+          } catch {
+            // Keep the secure default when PUBLIC_SITE_URL is malformed.
+          }
+          const host = getClerkProxyHost(req) || "";
+          proxyReq.setHeader("Clerk-Proxy-Url", `${protocol}://${host}${CLERK_PROXY_PATH}`);
+          proxyReq.setHeader("Clerk-Secret-Key", process.env.CLERK_SECRET_KEY!);
       },
     },
   }) as RequestHandler;

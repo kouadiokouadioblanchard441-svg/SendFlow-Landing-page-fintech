@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import type { NextFunction, Request, Response } from "express";
 import { and, eq, gt } from "drizzle-orm";
 import { adminSessions, adminUsers, db } from "@workspace/db";
+import { isAllowedOrigin } from "./security";
 
 const scryptAsync = promisify(scrypt);
 export const ADMIN_SESSION_COOKIE = "sendflow_admin_session";
@@ -60,6 +61,13 @@ export async function getAdminUser(req: Request) {
 }
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+    const origin = req.get("origin");
+    if (origin && !isAllowedOrigin(origin)) {
+      res.status(403).json({ error: "Origin not allowed" });
+      return;
+    }
+  }
   const user = await getAdminUser(req);
   if (!user) {
     res.status(401).json({ error: "Authentication required" });

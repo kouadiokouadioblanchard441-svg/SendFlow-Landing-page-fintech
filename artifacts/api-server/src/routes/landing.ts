@@ -26,8 +26,14 @@ import {
   getSignedObjectUrl,
   parseStoragePath,
 } from "../lib/publicObjectStorage";
+import { createRateLimiter } from "../middlewares/security";
 
 const router: IRouter = Router();
+const newsletterSubscribeRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Trop de demandes d’inscription. Réessaie plus tard.",
+});
 
 const resources = {
   media: { table: landingMedia, editable: ["slug", "kind", "sourcePath", "storagePath", "publicUrl", "mimeType", "altFr", "altEn", "width", "height", "isVisible"] },
@@ -178,13 +184,21 @@ function escapeHtml(value: string): string {
   })[character] ?? character);
 }
 
-function publicOrigin(req: { protocol: string; headers: Record<string, string | string[] | undefined>; get(name: string): string | undefined }): string {
-  const forwardedProtocol = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0].trim();
-  const forwardedHost = String(req.headers["x-forwarded-host"] ?? "").split(",")[0].trim();
-  const host = forwardedHost || req.get("host") || "";
-  const protocol = forwardedProtocol || req.protocol || "https";
-  if (!host) throw new Error("Impossible de déterminer l’URL publique du site.");
-  return `${protocol}://${host}`;
+function configuredPublicOrigin(): string {
+  const configuredSite = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!configuredSite) {
+    throw new Error("PUBLIC_SITE_URL doit être configurée avant l’envoi d’une campagne.");
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(configuredSite);
+  } catch {
+    throw new Error("PUBLIC_SITE_URL doit être une URL publique valide.");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error("PUBLIC_SITE_URL doit utiliser http:// ou https:// sans identifiants ni paramètres.");
+  }
+  return parsed.origin;
 }
 
 function publicSiteAssetUrl(origin: string, assetName: string): string {
@@ -219,7 +233,7 @@ async function getNewsletterAdminBundle() {
   };
 }
 
-router.post("/newsletter/subscribe", async (req, res): Promise<void> => {
+router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, res): Promise<void> => {
   const email = normalizeNewsletterEmail(req.body?.email);
   if (!email) {
     res.status(400).json({ error: "Saisis une adresse email valide." });
@@ -405,7 +419,7 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
   try {
     const from = process.env.RESEND_FROM_EMAIL?.trim();
     if (!from) throw new Error("RESEND_FROM_EMAIL doit être configurée avec une adresse vérifiée dans Resend.");
-    const origin = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || publicOrigin(req);
+    const origin = configuredPublicOrigin();
     const logoUrl = publicSiteAssetUrl(origin, "sendflow-wordmark.png");
     const batches = [];
     for (let index = 0; index < subscribers.length; index += 100) batches.push(subscribers.slice(index, index + 100));
