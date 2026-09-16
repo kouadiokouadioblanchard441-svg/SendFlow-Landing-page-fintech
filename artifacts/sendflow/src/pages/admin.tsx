@@ -732,6 +732,7 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   linkedinUrl: '',
   instagramUrl: '',
   facebookUrl: '',
+  whatsappUrl: '',
   companyName: 'Flow Digital SARL',
   legalForm: 'Société à responsabilité limitée',
   legalAddress: 'Côte d’Ivoire, Abidjan, Cocody Riviera Palmeraie',
@@ -784,6 +785,7 @@ function SiteSettingsEditor({
         {field('linkedinUrl', 'LinkedIn SendFlow', 'url', 'https://www.linkedin.com/company/...')}
         {field('instagramUrl', 'Instagram SendFlow', 'url', 'https://www.instagram.com/...')}
         {field('facebookUrl', 'Facebook SendFlow', 'url', 'https://www.facebook.com/...')}
+        {field('whatsappUrl', 'WhatsApp SendFlow', 'url', 'https://wa.me/225...')}
         {field('companyName', 'Dénomination légale')}
         {field('legalForm', 'Forme juridique')}
         {field('legalAddress', 'Adresse légale', 'text')}

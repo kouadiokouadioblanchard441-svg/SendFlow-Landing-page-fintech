@@ -592,15 +592,27 @@ footer:not(.sendflow-reference-footer) {
 
 .sendflow-footer-socials {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 22px;
-  margin-top: 23px;
+  margin-top: 24px;
   color: #7a838b;
 }
 
 .sendflow-footer-socials a {
   display: inline-flex;
   color: inherit;
+  transition: color .2s ease, transform .2s ease;
+}
+
+.sendflow-footer-social-disabled {
+  display: inline-flex;
+  color: inherit;
+  opacity: .42;
+}
+
+.sendflow-footer-socials a:hover {
+  color: #6d35d8;
+  transform: translateY(-2px);
 }
 
 .sendflow-footer-divider {

@@ -140,6 +140,7 @@ type PublicLandingBundle = {
     linkedinUrl: string | null;
     instagramUrl: string | null;
     facebookUrl: string | null;
+    whatsappUrl: string | null;
     companyName: string;
     legalForm: string;
     legalAddress: string;

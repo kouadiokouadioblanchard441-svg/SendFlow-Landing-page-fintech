@@ -75,6 +75,7 @@ export const landingSiteSettings = pgTable(
     linkedinUrl: text("linkedin_url"),
     instagramUrl: text("instagram_url"),
     facebookUrl: text("facebook_url"),
+    whatsappUrl: text("whatsapp_url"),
     companyName: text("company_name").notNull().default("Flow Digital SARL"),
     legalForm: text("legal_form").notNull().default("Société à responsabilité limitée"),
     legalAddress: text("legal_address").notNull().default("Côte d’Ivoire, Abidjan, Cocody Riviera Palmeraie"),

@@ -55,14 +55,14 @@ const founderEditableFields = [
 ] as const;
 
 const siteSettingsEditableFields = [
-  "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl",
+  "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl",
   "companyName", "legalForm", "legalAddress", "legalEmail", "footerAddressFlag", "footerAddressCountry", "footerAddress",
   "regulatorNameFr", "regulatorNameEn", "regulatorLogoKey", "googlePlayUrl", "appStoreUrl", "appGalleryUrl", "apkUrl",
 ] as const;
 
 const founderContactFields = ["linkedinUrl", "websiteUrl", "instagramUrl", "xUrl", "email"] as const;
-const siteContactFields = ["supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "legalEmail"] as const;
-const siteLinkFields = ["websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "googlePlayUrl", "appStoreUrl", "appGalleryUrl", "apkUrl"] as const;
+const siteContactFields = ["supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl", "legalEmail"] as const;
+const siteLinkFields = ["websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl", "googlePlayUrl", "appStoreUrl", "appGalleryUrl", "apkUrl"] as const;
 const siteEmailFields = ["supportEmail", "legalEmail"] as const;
 const founderEmailFields = ["email"] as const;
 type ResourceName = keyof typeof resources;

@@ -1,5 +1,7 @@
-import { Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Instagram, Linkedin } from 'lucide-react';
+import { SiFacebook, SiWhatsapp } from 'react-icons/si';
 import { Link } from 'wouter';
+import type { ReactNode } from 'react';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import bceaoLogo from '@assets/image_search/bceao-logo-official.png';
@@ -24,6 +26,7 @@ export type FooterSettings = {
   linkedinUrl?: string | null;
   instagramUrl?: string | null;
   facebookUrl?: string | null;
+  whatsappUrl?: string | null;
 };
 
 export type FooterContentItem = {
@@ -101,6 +104,11 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
     window.location.assign(`/#${id}`);
   };
   const copy = (key: string, fallback: Copy) => contentValue(content, key, fallback, isFrench);
+  const socialLink = (label: string, href: string | null | undefined, icon: ReactNode, testId: string) => (
+    href
+      ? <a href={href} aria-label={label} title={label} target="_blank" rel="noreferrer" data-testid={testId}>{icon}</a>
+      : <span className="sendflow-footer-social-disabled" aria-label={`${label} · URL non configurée`} title={`${label} · URL non configurée`} data-testid={`${testId}-disabled`}>{icon}</span>
+  );
 
   return (
     <footer id="footer" className="sendflow-reference-footer">
@@ -111,6 +119,13 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
             <img src={bceaoLogo} alt="BCEAO — Banque Centrale des États de l’Afrique de l’Ouest" className="sendflow-official-regulator-logo" />
           </a>
         </section>
+
+        <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
+          {socialLink('WhatsApp', settings?.whatsappUrl, <SiWhatsapp size={22} />, 'link-footer-whatsapp')}
+          {socialLink('Facebook', settings?.facebookUrl, <SiFacebook size={22} />, 'link-footer-facebook')}
+          {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
+          {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
+        </div>
 
         <div className="sendflow-footer-link-groups">
           <section>
@@ -148,12 +163,6 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
           </div>
           <StoreBadge store="AppGallery" icon="gallery" href={settings?.appGalleryUrl} />
         </section>
-
-        <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
-          {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
-          {settings?.facebookUrl && <a href={settings.facebookUrl} aria-label="Facebook" target="_blank" rel="noreferrer" data-testid="link-footer-facebook"><Facebook size={19} fill="currentColor" /></a>}
-          {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
-        </div>
 
         <div className="sendflow-footer-divider" />
 
