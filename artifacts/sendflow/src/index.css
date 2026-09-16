@@ -384,6 +384,7 @@ footer:not(.sendflow-reference-footer) {
   background: #ffffff;
   color: #202833;
   padding: 76px 23px 30px;
+  scroll-margin-top: 96px;
 }
 
 .sendflow-footer-inner {
@@ -594,7 +595,7 @@ footer:not(.sendflow-reference-footer) {
   display: flex;
   justify-content: center;
   gap: 14px;
-  margin-top: 24px;
+  margin: 0 0 30px;
   color: #7a838b;
 }
 

@@ -113,19 +113,19 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
   return (
     <footer id="footer" className="sendflow-reference-footer">
       <div className="sendflow-footer-inner">
-        <section className="sendflow-footer-regulator" aria-label="BCEAO">
-          <p className="sendflow-footer-kicker">{isFrench ? 'Réglementé par :' : 'Regulated by:'}</p>
-          <a href="https://www.bceao.int/" target="_blank" rel="noreferrer" aria-label="Visiter le site officiel de la BCEAO">
-            <img src={bceaoLogo} alt="BCEAO — Banque Centrale des États de l’Afrique de l’Ouest" className="sendflow-official-regulator-logo" />
-          </a>
-        </section>
-
         <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
           {socialLink('WhatsApp', settings?.whatsappUrl, <SiWhatsapp size={22} />, 'link-footer-whatsapp')}
           {socialLink('Facebook', settings?.facebookUrl, <SiFacebook size={22} />, 'link-footer-facebook')}
           {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
           {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
         </div>
+
+        <section className="sendflow-footer-regulator" aria-label="BCEAO">
+          <p className="sendflow-footer-kicker">{isFrench ? 'Réglementé par :' : 'Regulated by:'}</p>
+          <a href="https://www.bceao.int/" target="_blank" rel="noreferrer" aria-label="Visiter le site officiel de la BCEAO">
+            <img src={bceaoLogo} alt="BCEAO — Banque Centrale des États de l’Afrique de l’Ouest" className="sendflow-official-regulator-logo" />
+          </a>
+        </section>
 
         <div className="sendflow-footer-link-groups">
           <section>
