@@ -593,25 +593,37 @@ footer:not(.sendflow-reference-footer) {
 .sendflow-footer-socials {
   display: flex;
   justify-content: center;
-  gap: 22px;
+  gap: 14px;
   margin-top: 24px;
   color: #7a838b;
 }
 
-.sendflow-footer-socials a {
+.sendflow-footer-socials a,
+.sendflow-footer-social-disabled {
   display: inline-flex;
-  color: inherit;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
   transition: color .2s ease, transform .2s ease;
 }
 
+.sendflow-footer-socials > :nth-child(1) {
+  color: #25d366;
+  background: #e9faef;
+}
+
+.sendflow-footer-socials > :nth-child(2) {
+  color: #1877f2;
+  background: #eaf2ff;
+}
+
 .sendflow-footer-social-disabled {
-  display: inline-flex;
-  color: inherit;
-  opacity: .42;
+  opacity: 1;
 }
 
 .sendflow-footer-socials a:hover {
-  color: #6d35d8;
   transform: translateY(-2px);
 }
 
