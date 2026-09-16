@@ -1636,6 +1636,7 @@ section#faq .reveal.space-y-2 > div {
 }
 .sendflow-admin-nav-button svg:last-child { margin-left: auto; }
 .sendflow-admin-nav-button:hover { background: rgba(109,53,216,.2); color: #fff; }
+.sendflow-admin-nav-button.is-active { background: linear-gradient(90deg, rgba(23,105,255,.28), rgba(109,53,216,.34)); color: #fff; box-shadow: inset 3px 0 var(--admin-yellow); }
 .sendflow-admin-sidebar-bottom { margin-top: auto; padding: 14px 10px 0; color: #aeb9c7; font-size: 10px; line-height: 2; }
 .sendflow-admin-sidebar-bottom > div { display: flex; align-items: center; gap: 5px; color: #718095; }
 .sendflow-admin-status-dot, .sendflow-admin-live-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #67d4ab; box-shadow: 0 0 0 3px rgba(103,212,171,.12); }
@@ -1754,6 +1755,30 @@ section#faq .reveal.space-y-2 > div {
 .sendflow-admin-notice { position: fixed; right: 24px; bottom: 24px; z-index: 70; display: flex; align-items: center; gap: 9px; max-width: min(400px, calc(100vw - 30px)); border: 1px solid #b9e4d2; border-radius: 9px; background: #f3fcf8; box-shadow: 0 16px 40px rgba(26,52,73,.15); padding: 12px 12px 12px 14px; color: #287358; font-size: 12px; }
 .sendflow-admin-notice.error { border-color: #f0c9c6; background: #fff7f6; color: #b04d45; }
 .sendflow-admin-notice button { display: grid; place-items: center; margin-left: 5px; border: 0; background: none; color: currentColor; cursor: pointer; }
+.sendflow-admin-newsletter { margin-top: 28px; }
+.sendflow-admin-newsletter-intro { display: flex; align-items: end; justify-content: space-between; gap: 25px; }
+.sendflow-admin-newsletter-intro h2 { margin: 0; color: var(--admin-ink); font-family: var(--app-font-serif); font-size: clamp(36px, 4vw, 56px); font-weight: 400; letter-spacing: -.055em; line-height: .94; }
+.sendflow-admin-newsletter-intro p:last-child { max-width: 570px; margin: 14px 0 0; color: var(--admin-subtle); font-size: 13px; line-height: 1.55; }
+.sendflow-admin-newsletter-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+.sendflow-admin-newsletter-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; margin-top: 18px; }
+.sendflow-admin-newsletter-card, .sendflow-admin-newsletter-editor { border: 1px solid var(--admin-line); border-radius: 13px; background: var(--admin-surface); padding: 21px; box-shadow: 0 15px 35px rgba(33,51,75,.035); }
+.sendflow-admin-newsletter-editor { margin-top: 18px; }
+.sendflow-admin-newsletter-card-head { display: flex; align-items: start; justify-content: space-between; gap: 15px; margin-bottom: 17px; color: var(--admin-violet); }
+.sendflow-admin-newsletter-card-head h3 { margin: 0; color: var(--admin-ink); font-size: 17px; letter-spacing: -.035em; }
+.sendflow-admin-newsletter-search { width: 100%; margin-bottom: 12px; }
+.sendflow-admin-newsletter-list { display: grid; border-top: 1px solid #edf0f4; }
+.sendflow-admin-newsletter-row, .sendflow-admin-newsletter-campaign { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; border-bottom: 1px solid #edf0f4; padding: 12px 0; }
+.sendflow-admin-newsletter-row > div, .sendflow-admin-newsletter-campaign-copy { min-width: 0; }
+.sendflow-admin-newsletter-row strong, .sendflow-admin-newsletter-row small, .sendflow-admin-newsletter-campaign strong, .sendflow-admin-newsletter-campaign small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sendflow-admin-newsletter-row strong, .sendflow-admin-newsletter-campaign strong { color: var(--admin-ink); font-size: 12px; }
+.sendflow-admin-newsletter-row small, .sendflow-admin-newsletter-campaign small { margin-top: 4px; color: var(--admin-faint); font-size: 10px; }
+.sendflow-admin-newsletter-row .sendflow-admin-pill { border: 0; cursor: pointer; white-space: nowrap; }
+.sendflow-admin-newsletter-campaign-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 3px; }
+.sendflow-admin-button-small { min-height: 30px; padding-inline: 9px; font-size: 10px; }
+.sendflow-admin-newsletter-empty { display: grid; min-height: 150px; place-items: center; align-content: center; gap: 8px; border-top: 1px solid #edf0f4; color: var(--admin-faint); }
+.sendflow-admin-newsletter-empty p { margin: 0; font-size: 11px; }
+.sendflow-admin-newsletter-help { grid-column: 1 / -1; margin: 0; color: var(--admin-faint); font-size: 10px; line-height: 1.5; }
+.sendflow-admin-newsletter-help code { border-radius: 4px; background: var(--admin-violet-soft); padding: 2px 4px; color: var(--admin-violet); }
 .sendflow-admin-modal-backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(25,34,49,.42); padding: 20px; backdrop-filter: blur(4px); }
 .sendflow-admin-modal { width: min(760px, 100%); max-height: min(850px, calc(100dvh - 40px)); overflow-y: auto; border: 1px solid #dae2eb; border-radius: 15px; background: #fff; box-shadow: 0 28px 80px rgba(21,36,56,.22); padding: 27px; }
 .sendflow-admin-modal-head { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
@@ -1860,6 +1885,7 @@ section#faq .reveal.space-y-2 > div {
   .sendflow-admin-content { padding-inline: 25px; }
   .sendflow-admin-topbar { padding-inline: 25px; }
   .sendflow-admin-stats { grid-template-columns: repeat(2, 1fr); }
+  .sendflow-admin-newsletter-stats { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 700px) {
   .sendflow-admin-sidebar { transform: translateX(-100%); width: min(280px, 88vw); box-shadow: 15px 0 40px rgba(20,33,50,.2); }
@@ -1881,6 +1907,11 @@ section#faq .reveal.space-y-2 > div {
   .sendflow-admin-stat strong { font-size: 18px; }
   .sendflow-admin-stat div span { font-size: 9px; }
   .sendflow-admin-workspace { margin-top: 20px; padding: 18px 13px 9px; }
+  .sendflow-admin-newsletter { margin-top: 20px; }
+  .sendflow-admin-newsletter-intro { display: block; }
+  .sendflow-admin-newsletter-intro .sendflow-admin-button { width: 100%; margin-top: 18px; }
+  .sendflow-admin-newsletter-grid { grid-template-columns: 1fr; }
+  .sendflow-admin-newsletter-card, .sendflow-admin-newsletter-editor { padding: 15px; }
   .sendflow-admin-section-head { align-items: start; }
   .sendflow-admin-section-title p { display: none; }
   .sendflow-admin-button-primary { padding-inline: 11px; }

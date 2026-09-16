@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import {
@@ -16,8 +16,11 @@ import {
   landingSiteSettings,
   legalPages,
   legalSections,
+  newsletterCampaigns,
+  newsletterSubscribers,
 } from "@workspace/db";
 import { requireAdmin } from "../middlewares/adminAuth";
+import { sendResendBatch } from "../lib/resend";
 import {
   getPublicObjectSearchPaths,
   getSignedObjectUrl,
@@ -147,6 +150,291 @@ async function getLandingBundle() {
 
   return { media, content, sections, features, faqs, countries, operators, countryOperators, globeBadges, legalPages: pages, legalSections: pageSections, founder: founderProfiles[0] ?? null, settings: siteSettings[0] ?? null };
 }
+
+function normalizeNewsletterEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+}
+
+function newsletterPayload(body: unknown): { subject: string; previewText: string | null; bodyHtml: string } | { error: string } {
+  const source = body && typeof body === "object" ? body as Record<string, unknown> : {};
+  const subject = typeof source.subject === "string" ? source.subject.trim() : "";
+  const previewText = typeof source.previewText === "string" ? source.previewText.trim() : "";
+  const bodyHtml = typeof source.bodyHtml === "string" ? source.bodyHtml.trim() : "";
+  if (!subject || subject.length > 180) return { error: "L’objet est requis et doit contenir 180 caractères maximum." };
+  if (!bodyHtml || bodyHtml.length > 500_000) return { error: "Le contenu de la campagne est requis et doit contenir 500 Ko maximum." };
+  return { subject, previewText: previewText ? previewText.slice(0, 240) : null, bodyHtml };
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;",
+  })[character] ?? character);
+}
+
+function publicOrigin(req: { protocol: string; headers: Record<string, string | string[] | undefined>; get(name: string): string | undefined }): string {
+  const forwardedProtocol = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0].trim();
+  const forwardedHost = String(req.headers["x-forwarded-host"] ?? "").split(",")[0].trim();
+  const host = forwardedHost || req.get("host") || "";
+  const protocol = forwardedProtocol || req.protocol || "https";
+  if (!host) throw new Error("Impossible de déterminer l’URL publique du site.");
+  return `${protocol}://${host}`;
+}
+
+async function getNewsletterAdminBundle() {
+  const [subscribers, campaigns] = await Promise.all([
+    db.select({
+      id: newsletterSubscribers.id,
+      email: newsletterSubscribers.email,
+      status: newsletterSubscribers.status,
+      source: newsletterSubscribers.source,
+      subscribedAt: newsletterSubscribers.subscribedAt,
+      unsubscribedAt: newsletterSubscribers.unsubscribedAt,
+      createdAt: newsletterSubscribers.createdAt,
+      updatedAt: newsletterSubscribers.updatedAt,
+    }).from(newsletterSubscribers).orderBy(desc(newsletterSubscribers.createdAt)),
+    db.select().from(newsletterCampaigns).orderBy(desc(newsletterCampaigns.createdAt)),
+  ]);
+  return {
+    subscribers,
+    campaigns,
+    stats: {
+      totalSubscribers: subscribers.length,
+      activeSubscribers: subscribers.filter((subscriber) => subscriber.status === "subscribed").length,
+      totalCampaigns: campaigns.length,
+      sentCampaigns: campaigns.filter((campaign) => campaign.status === "sent").length,
+    },
+  };
+}
+
+router.post("/newsletter/subscribe", async (req, res): Promise<void> => {
+  const email = normalizeNewsletterEmail(req.body?.email);
+  if (!email) {
+    res.status(400).json({ error: "Saisis une adresse email valide." });
+    return;
+  }
+  const token = randomUUID();
+  await db.insert(newsletterSubscribers).values({
+    email,
+    status: "subscribed",
+    source: "landing",
+    unsubscribeToken: token,
+    subscribedAt: new Date(),
+    unsubscribedAt: null,
+    updatedAt: new Date(),
+  }).onConflictDoUpdate({
+    target: newsletterSubscribers.email,
+    set: {
+      status: "subscribed",
+      unsubscribeToken: token,
+      subscribedAt: new Date(),
+      unsubscribedAt: null,
+      updatedAt: new Date(),
+    },
+  });
+  res.status(201).json({ ok: true });
+});
+
+router.get("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => {
+  const token = typeof req.params.token === "string" ? req.params.token.trim() : "";
+  if (!token) {
+    res.status(400).type("html").send("<h1>Lien de désabonnement invalide.</h1>");
+    return;
+  }
+  const [updated] = await db.update(newsletterSubscribers)
+    .set({ status: "unsubscribed", unsubscribedAt: new Date(), updatedAt: new Date() })
+    .where(eq(newsletterSubscribers.unsubscribeToken, token))
+    .returning({ id: newsletterSubscribers.id });
+  if (!updated) {
+    res.status(404).type("html").send("<h1>Lien de désabonnement invalide ou déjà expiré.</h1>");
+    return;
+  }
+  res.type("html").send("<!doctype html><html lang=\"fr\"><meta charset=\"utf-8\"><title>Désabonnement confirmé · SendFlow</title><body style=\"font-family:Arial,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#192231\"><h1>Désabonnement confirmé</h1><p>Cette adresse ne recevra plus les campagnes SendFlow.</p></body></html>");
+});
+
+router.get("/admin/newsletter", requireAdmin, async (_req, res): Promise<void> => {
+  res.json(await getNewsletterAdminBundle());
+});
+
+router.patch("/admin/newsletter/subscribers/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const status = req.body?.status;
+  if (!Number.isInteger(id) || (status !== "subscribed" && status !== "unsubscribed")) {
+    res.status(400).json({ error: "Statut d’abonné invalide." });
+    return;
+  }
+  const [updated] = await db.update(newsletterSubscribers).set({
+    status,
+    subscribedAt: status === "subscribed" ? new Date() : undefined,
+    unsubscribedAt: status === "unsubscribed" ? new Date() : null,
+    updatedAt: new Date(),
+  }).where(eq(newsletterSubscribers.id, id)).returning({
+    id: newsletterSubscribers.id,
+    email: newsletterSubscribers.email,
+    status: newsletterSubscribers.status,
+    source: newsletterSubscribers.source,
+    subscribedAt: newsletterSubscribers.subscribedAt,
+    unsubscribedAt: newsletterSubscribers.unsubscribedAt,
+    createdAt: newsletterSubscribers.createdAt,
+    updatedAt: newsletterSubscribers.updatedAt,
+  });
+  if (!updated) {
+    res.status(404).json({ error: "Abonné introuvable." });
+    return;
+  }
+  res.json(updated);
+});
+
+router.delete("/admin/newsletter/subscribers/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: "Identifiant d’abonné invalide." });
+    return;
+  }
+  const [deleted] = await db.delete(newsletterSubscribers).where(eq(newsletterSubscribers.id, id)).returning({ id: newsletterSubscribers.id });
+  if (!deleted) {
+    res.status(404).json({ error: "Abonné introuvable." });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+router.post("/admin/newsletter/campaigns", requireAdmin, async (req, res): Promise<void> => {
+  const payload = newsletterPayload(req.body);
+  if ("error" in payload) {
+    res.status(400).json({ error: payload.error });
+    return;
+  }
+  const [created] = await db.insert(newsletterCampaigns).values(payload).returning();
+  res.status(201).json(created);
+});
+
+router.patch("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: "Identifiant de campagne invalide." });
+    return;
+  }
+  const [existing] = await db.select().from(newsletterCampaigns).where(eq(newsletterCampaigns.id, id)).limit(1);
+  if (!existing) {
+    res.status(404).json({ error: "Campagne introuvable." });
+    return;
+  }
+  if (existing.status === "sent" || existing.status === "sending") {
+    res.status(409).json({ error: "Cette campagne ne peut plus être modifiée." });
+    return;
+  }
+  const payload = newsletterPayload(req.body);
+  if ("error" in payload) {
+    res.status(400).json({ error: payload.error });
+    return;
+  }
+  const [updated] = await db.update(newsletterCampaigns).set({
+    ...payload,
+    status: "draft",
+    lastError: null,
+    updatedAt: new Date(),
+  }).where(eq(newsletterCampaigns.id, id)).returning();
+  res.json(updated);
+});
+
+router.delete("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: "Identifiant de campagne invalide." });
+    return;
+  }
+  const [existing] = await db.select({ id: newsletterCampaigns.id, status: newsletterCampaigns.status }).from(newsletterCampaigns).where(eq(newsletterCampaigns.id, id)).limit(1);
+  if (!existing) {
+    res.status(404).json({ error: "Campagne introuvable." });
+    return;
+  }
+  if (existing.status === "sent" || existing.status === "sending") {
+    res.status(409).json({ error: "Cette campagne ne peut plus être supprimée." });
+    return;
+  }
+  await db.delete(newsletterCampaigns).where(eq(newsletterCampaigns.id, id));
+  res.sendStatus(204);
+});
+
+router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: "Identifiant de campagne invalide." });
+    return;
+  }
+  const [campaign] = await db.select().from(newsletterCampaigns).where(eq(newsletterCampaigns.id, id)).limit(1);
+  if (!campaign) {
+    res.status(404).json({ error: "Campagne introuvable." });
+    return;
+  }
+  if (campaign.status === "sent" || campaign.status === "sending") {
+    res.status(409).json({ error: "Cette campagne a déjà été envoyée ou est en cours d’envoi." });
+    return;
+  }
+  const subscribers = await db.select({
+    email: newsletterSubscribers.email,
+    unsubscribeToken: newsletterSubscribers.unsubscribeToken,
+  }).from(newsletterSubscribers).where(eq(newsletterSubscribers.status, "subscribed"));
+  if (subscribers.length === 0) {
+    res.status(400).json({ error: "Aucun abonné actif ne peut recevoir cette campagne." });
+    return;
+  }
+
+  await db.update(newsletterCampaigns).set({
+    status: "sending",
+    recipientCount: subscribers.length,
+    sentCount: 0,
+    failedCount: 0,
+    lastError: null,
+    updatedAt: new Date(),
+  }).where(eq(newsletterCampaigns.id, id));
+
+  try {
+    const [settings] = await db.select({ supportEmail: landingSiteSettings.supportEmail }).from(landingSiteSettings).orderBy(asc(landingSiteSettings.id)).limit(1);
+    const from = process.env.RESEND_FROM_EMAIL?.trim() || settings?.supportEmail?.trim();
+    if (!from) throw new Error("Aucune adresse expéditrice Resend n’est configurée.");
+    const origin = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || publicOrigin(req);
+    const batches = [];
+    for (let index = 0; index < subscribers.length; index += 100) batches.push(subscribers.slice(index, index + 100));
+    let sentCount = 0;
+    for (const batch of batches) {
+      await sendResendBatch(batch.map((subscriber) => {
+        const unsubscribeUrl = `${origin}/api/newsletter/unsubscribe/${encodeURIComponent(subscriber.unsubscribeToken)}`;
+        const body = campaign.bodyHtml.includes("{{unsubscribe_url}}")
+          ? campaign.bodyHtml.replaceAll("{{unsubscribe_url}}", escapeHtml(unsubscribeUrl))
+          : `${campaign.bodyHtml}<hr style="margin:32px 0;border:0;border-top:1px solid #e5e7eb"><p style="font:12px Arial,sans-serif;color:#667386">Vous recevez cet email parce que vous avez demandé les nouvelles de SendFlow. <a href="${escapeHtml(unsubscribeUrl)}" style="color:#1769ff">Se désabonner</a></p>`;
+        return { from, to: [subscriber.email], subject: campaign.subject, html: body };
+      }));
+      sentCount += batch.length;
+      await db.update(newsletterCampaigns).set({ sentCount, failedCount: subscribers.length - sentCount, updatedAt: new Date() }).where(eq(newsletterCampaigns.id, id));
+    }
+    const [sent] = await db.update(newsletterCampaigns).set({
+      status: "sent",
+      sentAt: new Date(),
+      failedCount: 0,
+      lastError: null,
+      updatedAt: new Date(),
+    }).where(eq(newsletterCampaigns.id, id)).returning();
+    res.json(sent);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Resend n’a pas pu envoyer la campagne.";
+    req.log.error({ err: error, campaignId: id }, "Newsletter campaign send failed");
+    const [failed] = await db.update(newsletterCampaigns).set({
+      status: "failed",
+      failedCount: subscribers.length,
+      lastError: message.slice(0, 1000),
+      updatedAt: new Date(),
+    }).where(eq(newsletterCampaigns.id, id)).returning();
+    res.status(502).json({ error: message, campaign: failed });
+  }
+});
 
 router.get("/landing", async (_req, res): Promise<void> => {
   res.json(await getLandingBundle());

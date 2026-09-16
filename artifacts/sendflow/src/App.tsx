@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import { ArrowDownRight, ArrowRight, Check, ChevronDown, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
@@ -732,8 +732,31 @@ function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
+  const [newsletterError, setNewsletterError] = useState<string | null>(null);
   const { data: landingBundle } = usePublicLandingBundle();
   activePublicContent = landingBundle?.content;
+
+  const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setNewsletterError(null);
+    setNewsletterSubmitting(true);
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const body = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || (isFrench ? 'Impossible de vous inscrire pour le moment.' : 'We could not subscribe you right now.'));
+      setSubmitted(true);
+      setEmail('');
+    } catch (caught) {
+      setNewsletterError(caught instanceof Error ? caught.message : (isFrench ? 'Impossible de vous inscrire pour le moment.' : 'We could not subscribe you right now.'));
+    } finally {
+      setNewsletterSubmitting(false);
+    }
+  };
 
   const activeCountries = useMemo<LandingCountryView[]>(() => {
     if (!landingBundle?.countries?.length) return countries;
@@ -1097,7 +1120,7 @@ function LandingPage() {
 
         <section id="faq" className="px-5 py-24 sm:px-8 sm:py-32"><div className="mx-auto grid max-w-[1040px] gap-14 lg:grid-cols-[.7fr_1.3fr]"><div className="reveal"><h2 className="mt-0 text-6xl font-extrabold leading-[.88] tracking-[-.075em] text-[#17131f] sm:text-8xl">{t(sectionCopy('faq', { fr: 'Vous avez raison.', en: 'Good questions.' }), language)}</h2><p className="mt-8 max-w-[300px] text-[16px] font-semibold leading-7 text-[#30283b]">{t(sectionBody('faq', { fr: 'Une idée nouvelle mérite des réponses simples.', en: 'A new idea deserves simple answers.' }), language)}</p></div><div className="reveal space-y-2">{activeFaqs.map((faq, index) => <div key={index} className="border-b border-[#2d2535]/15"><button onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex w-full items-center justify-between py-5 text-left text-[16px] font-bold tracking-[-.025em] text-[#17131f]" data-testid={`button-faq-${index}`}><span>{t(faq.q, language)}</span><ChevronDown size={18} className={`shrink-0 text-[#6d35d8] transition-transform ${openFaq === index ? 'rotate-180' : ''}`} /></button><div className={`grid transition-[grid-template-rows] duration-300 ${openFaq === index ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}><div className="overflow-hidden"><p className="pb-5 pr-8 text-[14px] font-medium leading-6 text-[#30283b]">{t(faq.a, language)}</p></div></div></div>)}</div></div></section>
 
-         <section id="join" className="px-5 pb-24 sm:px-8 sm:pb-32"><div className="reveal relative mx-auto max-w-[1240px] overflow-hidden rounded-[32px] bg-[#6d35d8] px-6 py-14 text-[#fbf8ef] sm:px-14 sm:py-20"><div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border border-[#fbf8ef]/20" /><div className="absolute -right-2 -top-10 h-48 w-48 rounded-full border border-[#fbf8ef]/15" /><div className="relative max-w-[680px]"><p className="text-[11px] font-bold uppercase tracking-[.17em] text-[#e8cd4d]">The next move</p><h2 className="mt-5 text-6xl font-extrabold leading-[.86] tracking-[-.08em] sm:text-8xl">{isFrench ? <>Prêt·e à faire<br /><em className="font-serif font-normal text-[#e8cd4d]">bouger les choses ?</em></> : <>Ready to<br /><em className="font-serif font-normal text-[#e8cd4d]">move things?</em></>}</h2><p className="mt-8 max-w-[500px] text-[17px] font-semibold leading-7 text-[#f4edff]">{isFrench ? 'Recevez les prochaines nouvelles de SendFlow. Pas de bruit, juste les avancées.' : 'Get the next SendFlow updates. No noise, just progress.'}</p><form onSubmit={(event) => { event.preventDefault(); if (email) setSubmitted(true); }} className="mt-8 flex max-w-[480px] flex-col gap-3 sm:flex-row"><input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder={isFrench ? 'votre@email.com' : 'your@email.com'} className="min-h-[54px] min-w-0 flex-1 rounded-[14px] border-2 border-white/60 bg-white px-5 py-3.5 text-[14px] font-semibold text-[#211d2c] outline-none placeholder:text-[#7d6b9a] shadow-[0_10px_24px_rgba(33,29,44,.12)] focus:border-[#e8cd4d] focus:ring-2 focus:ring-[#e8cd4d]/30" data-testid="input-email" /><button type="submit" className="inline-flex min-h-[54px] items-center justify-center rounded-[14px] border-2 border-[#a68bea] bg-[#5b21b6] px-6 py-3.5 text-[14px] font-extrabold text-white shadow-[0_14px_28px_rgba(33,29,44,.24)] transition-all hover:-translate-y-0.5 hover:bg-[#4c1d95]" data-testid="button-submit-email">{submitted ? <><Check className="mr-1 inline" size={14} />{isFrench ? 'C’est noté' : 'You’re on it'}</> : <>{isFrench ? 'Me tenir au courant' : 'Keep me posted'} <ArrowRight className="ml-2 inline" size={17} /></>}</button></form><p className="mt-4 text-[11px] font-medium text-[#e5dff0]">{isFrench ? 'Démo uniquement · Aucun engagement' : 'Demo only · No commitment'}</p></div></div></section>
+         <section id="join" className="px-5 pb-24 sm:px-8 sm:pb-32"><div className="reveal relative mx-auto max-w-[1240px] overflow-hidden rounded-[32px] bg-[#6d35d8] px-6 py-14 text-[#fbf8ef] sm:px-14 sm:py-20"><div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border border-[#fbf8ef]/20" /><div className="absolute -right-2 -top-10 h-48 w-48 rounded-full border border-[#fbf8ef]/15" /><div className="relative max-w-[680px]"><p className="text-[11px] font-bold uppercase tracking-[.17em] text-[#e8cd4d]">The next move</p><h2 className="mt-5 text-6xl font-extrabold leading-[.86] tracking-[-.08em] sm:text-8xl">{isFrench ? <>Prêt·e à faire<br /><em className="font-serif font-normal text-[#e8cd4d]">bouger les choses ?</em></> : <>Ready to<br /><em className="font-serif font-normal text-[#e8cd4d]">move things?</em></>}</h2><p className="mt-8 max-w-[500px] text-[17px] font-semibold leading-7 text-[#f4edff]">{isFrench ? 'Recevez les prochaines nouvelles de SendFlow. Pas de bruit, juste les avancées.' : 'Get the next SendFlow updates. No noise, just progress.'}</p><form onSubmit={submitNewsletter} className="mt-8 flex max-w-[480px] flex-col gap-3 sm:flex-row"><input value={email} onChange={(event) => { setEmail(event.target.value); setSubmitted(false); setNewsletterError(null); }} type="email" required placeholder={isFrench ? 'votre@email.com' : 'your@email.com'} className="min-h-[54px] min-w-0 flex-1 rounded-[14px] border-2 border-white/60 bg-white px-5 py-3.5 text-[14px] font-semibold text-[#211d2c] outline-none placeholder:text-[#7d6b9a] shadow-[0_10px_24px_rgba(33,29,44,.12)] focus:border-[#e8cd4d] focus:ring-2 focus:ring-[#e8cd4d]/30" data-testid="input-email" /><button type="submit" disabled={newsletterSubmitting} className="inline-flex min-h-[54px] items-center justify-center rounded-[14px] border-2 border-[#a68bea] bg-[#5b21b6] px-6 py-3.5 text-[14px] font-extrabold text-white shadow-[0_14px_28px_rgba(33,29,44,.24)] transition-all hover:-translate-y-0.5 hover:bg-[#4c1d95] disabled:cursor-wait disabled:opacity-70" data-testid="button-submit-email">{submitted ? <><Check className="mr-1 inline" size={14} />{isFrench ? 'C’est noté' : 'You’re on it'}</> : newsletterSubmitting ? (isFrench ? 'Inscription…' : 'Joining…') : <>{isFrench ? 'Me tenir au courant' : 'Keep me posted'} <ArrowRight className="ml-2 inline" size={17} /></>}</button></form>{newsletterError && <p className="mt-3 text-[12px] font-semibold text-[#ffe5e5]" role="alert">{newsletterError}</p>}<p className="mt-4 text-[11px] font-medium text-[#e5dff0]">{isFrench ? 'Des nouvelles utiles, sans spam. Désinscription en un clic.' : 'Useful updates, no spam. Unsubscribe in one click.'}</p></div></div></section>
         <section id="download" className="px-5 pb-24 sm:px-8 sm:pb-32">
            <div className="reveal relative mx-auto max-w-[1240px] overflow-hidden rounded-[32px] bg-[#6d35d8] px-6 py-10 text-[#fbf8ef] sm:px-14 sm:py-16">
              <p className="text-[11px] font-bold uppercase tracking-[.17em] text-[#e8cd4d]">{t(contentCopy(landingBundle?.content, 'cta.nextMove', { fr: 'Le prochain mouvement', en: 'The next move' }), language)}</p>

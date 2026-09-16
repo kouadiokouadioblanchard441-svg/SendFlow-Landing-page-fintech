@@ -10,6 +10,8 @@ import {
   Languages,
   LayoutDashboard,
   LoaderCircle,
+  Mail,
+  Megaphone,
   LockKeyhole,
   Menu,
   MoreHorizontal,
@@ -19,6 +21,7 @@ import {
   Save,
   Search,
   Server,
+  Send,
   ShieldCheck,
   SlidersHorizontal,
   Trash2,
@@ -46,6 +49,47 @@ type Bundle = {
   legalSections: RecordItem[];
   founder: RecordItem | null;
   settings: RecordItem | null;
+};
+
+type NewsletterSubscriber = {
+  id: number;
+  email: string;
+  status: 'subscribed' | 'unsubscribed';
+  source: string;
+  subscribedAt: string;
+  unsubscribedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+type NewsletterCampaign = {
+  id: number;
+  subject: string;
+  previewText: string | null;
+  bodyHtml: string;
+  status: 'draft' | 'sending' | 'sent' | 'failed';
+  recipientCount: number;
+  sentCount: number;
+  failedCount: number;
+  lastError: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+type NewsletterAdminData = {
+  subscribers: NewsletterSubscriber[];
+  campaigns: NewsletterCampaign[];
+  stats: {
+    totalSubscribers: number;
+    activeSubscribers: number;
+    totalCampaigns: number;
+    sentCampaigns: number;
+  };
+};
+type CampaignDraft = {
+  id?: number;
+  subject: string;
+  previewText: string;
+  bodyHtml: string;
 };
 type ResourceKey = Exclude<keyof Bundle, 'countryOperators' | 'founder' | 'settings'>;
 type InputKind = 'text' | 'textarea' | 'number' | 'checkbox' | 'select';
@@ -809,6 +853,171 @@ function AssignmentEditor({
   );
 }
 
+const emptyCampaignDraft = (): CampaignDraft => ({
+  subject: '',
+  previewText: '',
+  bodyHtml: '<div style="font-family:Arial,sans-serif;color:#192231;line-height:1.6">\n  <h1>Une nouvelle de SendFlow</h1>\n  <p>Écris ici le contenu de ta campagne.</p>\n</div>',
+});
+
+function formatNewsletterDate(value: string | null): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function NewsletterManager({
+  onNotice,
+}: {
+  onNotice: (notice: { tone: 'success' | 'error'; text: string }) => void;
+}) {
+  const [data, setData] = useState<NewsletterAdminData>({ subscribers: [], campaigns: [], stats: { totalSubscribers: 0, activeSubscribers: 0, totalCampaigns: 0, sentCampaigns: 0 } });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState<number | null>(null);
+  const [editor, setEditor] = useState<CampaignDraft | null>(null);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setData(await apiRequest<NewsletterAdminData>('/api/admin/newsletter'));
+    } catch (caught) {
+      onNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible de charger les campagnes.' });
+    } finally {
+      setLoading(false);
+    }
+  }, [onNotice]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const saveCampaign = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editor) return;
+    setSaving(true);
+    try {
+      const path = editor.id ? `/api/admin/newsletter/campaigns/${editor.id}` : '/api/admin/newsletter/campaigns';
+      await apiRequest<NewsletterCampaign>(path, {
+        method: editor.id ? 'PATCH' : 'POST',
+        body: JSON.stringify({ subject: editor.subject, previewText: editor.previewText, bodyHtml: editor.bodyHtml }),
+      });
+      setEditor(null);
+      await load();
+      onNotice({ tone: 'success', text: 'Campagne enregistrée en brouillon.' });
+    } catch (caught) {
+      onNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible d’enregistrer la campagne.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sendCampaign = async (campaign: NewsletterCampaign) => {
+    if (!window.confirm(`Envoyer « ${campaign.subject} » à tous les abonnés actifs ? Cette action est définitive.`)) return;
+    setSending(campaign.id);
+    try {
+      await apiRequest<NewsletterCampaign>(`/api/admin/newsletter/campaigns/${campaign.id}/send`, { method: 'POST' });
+      await load();
+      onNotice({ tone: 'success', text: 'Campagne envoyée aux abonnés actifs.' });
+    } catch (caught) {
+      onNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Resend n’a pas pu envoyer la campagne.' });
+      await load();
+    } finally {
+      setSending(null);
+    }
+  };
+
+  const deleteCampaign = async (campaign: NewsletterCampaign) => {
+    if (!window.confirm(`Supprimer le brouillon « ${campaign.subject} » ?`)) return;
+    try {
+      await apiRequest<void>(`/api/admin/newsletter/campaigns/${campaign.id}`, { method: 'DELETE' });
+      await load();
+      onNotice({ tone: 'success', text: 'Brouillon supprimé.' });
+    } catch (caught) {
+      onNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible de supprimer ce brouillon.' });
+    }
+  };
+
+  const toggleSubscriber = async (subscriber: NewsletterSubscriber) => {
+    try {
+      await apiRequest<NewsletterSubscriber>(`/api/admin/newsletter/subscribers/${subscriber.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: subscriber.status === 'subscribed' ? 'unsubscribed' : 'subscribed' }),
+      });
+      await load();
+      onNotice({ tone: 'success', text: 'Statut de l’abonné mis à jour.' });
+    } catch (caught) {
+      onNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible de modifier cet abonné.' });
+    }
+  };
+
+  const filteredSubscribers = data.subscribers.filter((subscriber) => subscriber.email.includes(subscriberSearch.trim().toLowerCase()));
+
+  return (
+    <section className="sendflow-admin-newsletter" aria-labelledby="newsletter-title">
+      <div className="sendflow-admin-newsletter-intro">
+        <div>
+          <p className="sendflow-admin-overline">Audience et diffusion</p>
+          <h2 id="newsletter-title">Newsletter SendFlow.</h2>
+          <p>Les adresses enregistrées depuis « Me tenir au courant » sont ici. Rédige un brouillon, puis déclenche l’envoi avec Resend quand il est prêt.</p>
+        </div>
+        <button className="sendflow-admin-button sendflow-admin-button-primary" onClick={() => setEditor(emptyCampaignDraft())} data-testid="button-new-campaign"><Plus size={16} /> Nouvelle campagne</button>
+      </div>
+      <div className="sendflow-admin-newsletter-stats">
+        <StatCard label="Abonnés actifs" value={data.stats.activeSubscribers} accent="mint" />
+        <StatCard label="Adresses enregistrées" value={data.stats.totalSubscribers} accent="blue" />
+        <StatCard label="Campagnes" value={data.stats.totalCampaigns} accent="yellow" />
+        <StatCard label="Campagnes envoyées" value={data.stats.sentCampaigns} accent="lilac" />
+      </div>
+      <div className="sendflow-admin-newsletter-grid">
+        <section className="sendflow-admin-newsletter-card" aria-labelledby="newsletter-subscribers-title">
+          <div className="sendflow-admin-newsletter-card-head"><div><p className="sendflow-admin-overline">Audience</p><h3 id="newsletter-subscribers-title">Abonnés</h3></div><Users size={19} /></div>
+          <label className="sendflow-admin-search sendflow-admin-newsletter-search"><Search size={16} /><input value={subscriberSearch} onChange={(event) => setSubscriberSearch(event.target.value)} placeholder="Rechercher un email" data-testid="input-newsletter-search" /></label>
+          {loading ? <SkeletonRows /> : filteredSubscribers.length === 0 ? <div className="sendflow-admin-newsletter-empty"><Mail size={20} /><p>Aucun abonné pour le moment.</p></div> : (
+            <div className="sendflow-admin-newsletter-list">
+              {filteredSubscribers.map((subscriber) => (
+                <div className="sendflow-admin-newsletter-row" key={subscriber.id}>
+                  <div><strong>{subscriber.email}</strong><small>Inscrit le {formatNewsletterDate(subscriber.subscribedAt)}</small></div>
+                  <button className={`sendflow-admin-pill ${subscriber.status === 'subscribed' ? 'is-published' : 'is-muted'}`} onClick={() => void toggleSubscriber(subscriber)} title="Modifier le statut">
+                    <span />{subscriber.status === 'subscribed' ? 'Actif' : 'Désabonné'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+        <section className="sendflow-admin-newsletter-card" aria-labelledby="newsletter-campaigns-title">
+          <div className="sendflow-admin-newsletter-card-head"><div><p className="sendflow-admin-overline">Diffusion</p><h3 id="newsletter-campaigns-title">Campagnes</h3></div><Megaphone size={19} /></div>
+          {loading ? <SkeletonRows /> : data.campaigns.length === 0 ? <div className="sendflow-admin-newsletter-empty"><Megaphone size={20} /><p>Crée ta première campagne.</p></div> : (
+            <div className="sendflow-admin-newsletter-list">
+              {data.campaigns.map((campaign) => (
+                <div className="sendflow-admin-newsletter-campaign" key={campaign.id}>
+                  <div className="sendflow-admin-newsletter-campaign-copy"><strong>{campaign.subject}</strong><small>{campaign.status === 'sent' ? `Envoyée le ${formatNewsletterDate(campaign.sentAt)}` : campaign.status === 'failed' ? `Échec · ${campaign.lastError ?? 'erreur Resend'}` : campaign.status === 'sending' ? 'Envoi en cours…' : `Brouillon · créé le ${formatNewsletterDate(campaign.createdAt)}`}</small></div>
+                  <div className="sendflow-admin-newsletter-campaign-actions">
+                    {campaign.status !== 'sent' && campaign.status !== 'sending' && <button className="sendflow-admin-icon-button" onClick={() => setEditor({ id: campaign.id, subject: campaign.subject, previewText: campaign.previewText ?? '', bodyHtml: campaign.bodyHtml })} aria-label={`Modifier ${campaign.subject}`}><Pencil size={15} /></button>}
+                    {campaign.status !== 'sent' && <button className="sendflow-admin-button sendflow-admin-button-primary sendflow-admin-button-small" onClick={() => void sendCampaign(campaign)} disabled={sending === campaign.id || campaign.status === 'sending'}>{sending === campaign.id ? <LoaderCircle className="sendflow-admin-spin" size={14} /> : <Send size={14} />} Envoyer</button>}
+                    {campaign.status !== 'sent' && campaign.status !== 'sending' && <button className="sendflow-admin-icon-button danger" onClick={() => void deleteCampaign(campaign)} aria-label={`Supprimer ${campaign.subject}`}><Trash2 size={15} /></button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+      {editor && (
+        <div className="sendflow-admin-newsletter-editor">
+          <div className="sendflow-admin-newsletter-card-head"><div><p className="sendflow-admin-overline">{editor.id ? 'Modifier le brouillon' : 'Nouveau brouillon'}</p><h3>Écrire la campagne</h3></div><button className="sendflow-admin-icon-button" onClick={() => setEditor(null)} aria-label="Fermer l’éditeur"><X size={18} /></button></div>
+          <form onSubmit={saveCampaign} className="sendflow-admin-form-grid">
+            <label className="sendflow-admin-field"><span>Objet de l’email</span><input required maxLength={180} value={editor.subject} onChange={(event) => setEditor({ ...editor, subject: event.target.value })} placeholder="Les nouvelles de SendFlow" data-testid="input-campaign-subject" /></label>
+            <label className="sendflow-admin-field"><span>Texte d’aperçu</span><input maxLength={240} value={editor.previewText} onChange={(event) => setEditor({ ...editor, previewText: event.target.value })} placeholder="Ce que le lecteur verra avant d’ouvrir" data-testid="input-campaign-preview" /></label>
+            <label className="sendflow-admin-field sendflow-admin-field-wide"><span>Contenu HTML</span><textarea required rows={12} value={editor.bodyHtml} onChange={(event) => setEditor({ ...editor, bodyHtml: event.target.value })} data-testid="input-campaign-body" /></label>
+            <p className="sendflow-admin-newsletter-help">Le lien de désabonnement est ajouté automatiquement. Tu peux aussi placer <code>{'{{unsubscribe_url}}'}</code> où tu veux dans le HTML.</p>
+            <div className="sendflow-admin-modal-foot"><button type="button" className="sendflow-admin-button sendflow-admin-button-quiet" onClick={() => setEditor(null)}>Annuler</button><button type="submit" className="sendflow-admin-button sendflow-admin-button-primary" disabled={saving}>{saving ? <LoaderCircle className="sendflow-admin-spin" size={16} /> : <Save size={16} />} {saving ? 'Enregistrement…' : 'Enregistrer le brouillon'}</button></div>
+          </form>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function AdminPage() {
   const [bundle, setBundle] = useState<Bundle>(emptyBundle);
   const [loading, setLoading] = useState(true);
@@ -825,6 +1034,7 @@ export default function AdminPage() {
   const [selectedCountry, setSelectedCountry] = useState<number | undefined>();
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
 
   const loadBundle = useCallback(async () => {
     setLoading(true);
@@ -859,7 +1069,13 @@ export default function AdminPage() {
 
   const chooseResource = (resource: ResourceKey) => {
     setActiveResource(resource);
+    setNewsletterOpen(false);
     setSearch('');
+    setMobileNavOpen(false);
+  };
+
+  const chooseNewsletter = () => {
+    setNewsletterOpen(true);
     setMobileNavOpen(false);
   };
 
@@ -979,7 +1195,8 @@ export default function AdminPage() {
         <nav className="sendflow-admin-nav" aria-label="Ressources éditoriales">
           {navigation.slice(0, 8).map(({ key: resource, icon: Icon }) => <button key={resource} className={activeResource === resource ? 'is-active' : ''} onClick={() => chooseResource(resource)} data-testid={`nav-${resource}`}><Icon size={16} /><span>{resourceConfigs[resource].label}</span>{activeResource === resource && <ChevronRight size={14} />}</button>)}
         </nav>
-        <button className="sendflow-admin-nav-button" onClick={chooseSiteSettings} data-testid="nav-site-settings"><SlidersHorizontal size={16} /><span>Réglages du site</span><ChevronRight size={14} /></button>
+         <button className="sendflow-admin-nav-button" onClick={chooseSiteSettings} data-testid="nav-site-settings"><SlidersHorizontal size={16} /><span>Réglages du site</span><ChevronRight size={14} /></button>
+         <button className={`sendflow-admin-nav-button ${newsletterOpen ? 'is-active' : ''}`} onClick={chooseNewsletter} data-testid="nav-newsletter"><Megaphone size={16} /><span>Campagnes</span><ChevronRight size={14} /></button>
         <p className="sendflow-admin-nav-label sendflow-admin-nav-label-spaced">Conformité</p>
         <nav className="sendflow-admin-nav">
           {navigation.slice(8).map(({ key: resource, icon: Icon }) => <button key={resource} className={activeResource === resource ? 'is-active' : ''} onClick={() => chooseResource(resource)} data-testid={`nav-${resource}`}><Icon size={16} /><span>{resourceConfigs[resource].label}</span>{activeResource === resource && <ChevronRight size={14} />}</button>)}
@@ -990,7 +1207,7 @@ export default function AdminPage() {
       <main className="sendflow-admin-main">
         <header className="sendflow-admin-topbar">
           <button className="sendflow-admin-icon-button sendflow-admin-mobile-menu" onClick={() => setMobileNavOpen(true)} aria-label="Ouvrir le menu"><Menu size={20} /></button>
-          <div className="sendflow-admin-breadcrumb"><span>SendFlow</span><ChevronRight size={14} /><strong>Admin</strong><ChevronRight size={14} /><span>{config.label}</span></div>
+           <div className="sendflow-admin-breadcrumb"><span>SendFlow</span><ChevronRight size={14} /><strong>Admin</strong><ChevronRight size={14} /><span>{newsletterOpen ? 'Campagnes' : config.label}</span></div>
           <div className="sendflow-admin-topbar-actions"><span className="sendflow-admin-live-dot" /> <span>Production</span><a href="/" target="_blank" rel="noreferrer" className="sendflow-admin-view-link" data-testid="link-view-site">Voir le site <ArrowUpRight size={14} /></a></div>
         </header>
         <div className="sendflow-admin-content">
@@ -1006,7 +1223,7 @@ export default function AdminPage() {
               <StatCard label="Médias référencés" value={bundle.media.length} accent="lilac" />
             </div>
           )}
-          <section className="sendflow-admin-workspace">
+           {newsletterOpen ? <NewsletterManager onNotice={setNotice} /> : <section className="sendflow-admin-workspace">
             <div className="sendflow-admin-section-head">
               <div><div className="sendflow-admin-section-title"><span className="sendflow-admin-section-icon"><ConfigIcon resource={activeResource} /></span><div><h2>{config.label}</h2><p>{config.description}</p></div></div></div>
               <button className="sendflow-admin-button sendflow-admin-button-primary" onClick={() => setEditor({ resource: activeResource, item: null })} disabled={loading || Boolean(error)} data-testid="button-add-resource"><Plus size={16} /> Ajouter</button>
@@ -1029,7 +1246,7 @@ export default function AdminPage() {
                 </table>
               </div>
             )}
-          </section>
+           </section>}
           <footer className="sendflow-admin-footer"><span>SendFlow Editorial Desk</span><span>Les modifications sont enregistrées directement sur la landing de production.</span><span>v1.0 · <a href={`mailto:${String(bundle.settings?.supportEmail || 'support@sendflow.studio')}`}>Besoin d’aide ?</a></span></footer>
         </div>
       </main>

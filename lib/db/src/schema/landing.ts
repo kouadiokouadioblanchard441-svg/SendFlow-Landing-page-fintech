@@ -314,3 +314,38 @@ export const adminSessions = pgTable(
     tokenUnique: uniqueIndex("admin_sessions_token_unique").on(table.tokenHash),
   }),
 );
+
+export const newsletterSubscribers = pgTable(
+  "newsletter_subscribers",
+  {
+    id: serial("id").primaryKey(),
+    email: varchar("email", { length: 320 }).notNull(),
+    status: varchar("status", { length: 24 }).default("subscribed").notNull(),
+    source: varchar("source", { length: 40 }).default("landing").notNull(),
+    unsubscribeToken: varchar("unsubscribe_token", { length: 80 }).notNull(),
+    subscribedAt: timestamp("subscribed_at", { withTimezone: true }).defaultNow().notNull(),
+    unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => ({
+    emailUnique: uniqueIndex("newsletter_subscribers_email_unique").on(table.email),
+    unsubscribeTokenUnique: uniqueIndex("newsletter_subscribers_token_unique").on(table.unsubscribeToken),
+  }),
+);
+
+export const newsletterCampaigns = pgTable(
+  "newsletter_campaigns",
+  {
+    id: serial("id").primaryKey(),
+    subject: text("subject").notNull(),
+    previewText: text("preview_text"),
+    bodyHtml: text("body_html").notNull(),
+    status: varchar("status", { length: 24 }).default("draft").notNull(),
+    recipientCount: integer("recipient_count").default(0).notNull(),
+    sentCount: integer("sent_count").default(0).notNull(),
+    failedCount: integer("failed_count").default(0).notNull(),
+    lastError: text("last_error"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    ...timestamps,
+  },
+);
