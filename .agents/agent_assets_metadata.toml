@@ -238,3 +238,17 @@ mtime_ms = 1789068365497
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:463b82a6-9ded-41aa-86f0-7dc9a11e743f/8344c042-2df3-4929-9455-68358fcd11ce/648c4d7c-c189-44b5-ab25-c8f9c80f8eb0"
 storage_version_token = "1789077892723451"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "V2poMuOS6wIsFT5JEV-Yy"
+uri = "file://screenshots/sendflow-email-template-preview.jpg"
+type = "image"
+title = "Aperçu du template email SendFlow"
+description = "Template newsletter avec le logo SendFlow, le bloc de campagne, le bouton d’action et le lien de désabonnement automatique."
+logical_id = "1ceb8c4d-36e5-4739-9dc9-43bfcf3e202f"
+content_hash = "sha256:560e57556382917e0fd5c59b46f61f602338cc19550dbb68aed229a018ead427"
+size = 69406
+mtime_ms = 1789575715583
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:463b82a6-9ded-41aa-86f0-7dc9a11e743f/1ceb8c4d-36e5-4739-9dc9-43bfcf3e202f/52b4038a-05f0-4104-8563-b13427384120"
+storage_version_token = "1789575777267932"
+content_type = "image/jpeg"
