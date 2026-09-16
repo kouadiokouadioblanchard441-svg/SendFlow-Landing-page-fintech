@@ -594,7 +594,7 @@ footer:not(.sendflow-reference-footer) {
 .sendflow-footer-socials {
   display: flex;
   justify-content: center;
-  gap: 14px;
+  gap: 20px;
   margin: 0 0 30px;
   color: #7a838b;
 }
@@ -604,8 +604,8 @@ footer:not(.sendflow-reference-footer) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   transition: color .2s ease, transform .2s ease;
 }
