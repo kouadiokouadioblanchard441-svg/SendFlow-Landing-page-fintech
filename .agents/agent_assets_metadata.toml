@@ -252,3 +252,17 @@ mtime_ms = 1789575715583
 storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:463b82a6-9ded-41aa-86f0-7dc9a11e743f/1ceb8c4d-36e5-4739-9dc9-43bfcf3e202f/52b4038a-05f0-4104-8563-b13427384120"
 storage_version_token = "1789575777267932"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "_lZ6FILoSbl7pjHosEhQX"
+uri = "file://screenshots/sendflow-official-logo-template.jpg"
+type = "image"
+title = "Template email SendFlow — logo officiel"
+description = "Aperçu mobile avec le logo officiel SendFlow, le titre de campagne modifiable et le lien de désabonnement."
+logical_id = "44f46222-1a18-45cf-93f6-a2c7f264bc46"
+content_hash = "sha256:c45b15afc7702f27a9756ab95ed4fca7d26005eb9d241820ecd3f83042ef2f70"
+size = 27918
+mtime_ms = 1789576874099
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:463b82a6-9ded-41aa-86f0-7dc9a11e743f/44f46222-1a18-45cf-93f6-a2c7f264bc46/efe8cafe-0812-48ad-979b-70df705d09d1"
+storage_version_token = "1789576881260068"
+content_type = "image/jpeg"
