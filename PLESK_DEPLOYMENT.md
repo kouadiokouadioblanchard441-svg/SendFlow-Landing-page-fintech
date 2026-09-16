@@ -109,4 +109,4 @@ La réponse attendue est :
 
 ## Limite actuelle des médias
 
-Les routes d’upload et de lecture de médias utilisent encore le sidecar Object Storage de Replit (`127.0.0.1:1106`). Le build unifié Plesk est prêt pour le frontend, l’API et Resend, mais les uploads médias nécessitent encore une migration vers un stockage compatible Plesk, S3 ou R2.
+Les routes d’upload et de lecture de médias utilisent encore un service de stockage local (`127.0.0.1:1106`). Le build unifié Plesk est prêt pour le frontend, l’API et Resend, mais les uploads médias nécessitent encore une migration vers un stockage compatible Plesk, S3 ou R2.

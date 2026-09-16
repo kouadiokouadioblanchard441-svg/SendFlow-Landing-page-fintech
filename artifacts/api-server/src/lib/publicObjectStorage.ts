@@ -1,4 +1,4 @@
-const REPLIT_SIDECAR_ENDPOINT = 'http://127.0.0.1:1106';
+const OBJECT_STORAGE_ENDPOINT = 'http://127.0.0.1:1106';
 
 export type SignedObjectMethod = 'GET' | 'PUT';
 
@@ -43,7 +43,7 @@ export async function getSignedObjectUrl({
   method: SignedObjectMethod;
 }): Promise<string> {
   const response = await fetch(
-    `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
+    `${OBJECT_STORAGE_ENDPOINT}/object-storage/signed-object-url`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
