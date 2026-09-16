@@ -187,6 +187,12 @@ function publicOrigin(req: { protocol: string; headers: Record<string, string | 
   return `${protocol}://${host}`;
 }
 
+function publicSiteAssetUrl(origin: string, assetName: string): string {
+  const configuredSite = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  const basePath = process.env.BASE_PATH?.trim().replace(/\/+$/, "") || "";
+  return `${configuredSite || origin}${basePath}/${assetName}`;
+}
+
 async function getNewsletterAdminBundle() {
   const [subscribers, campaigns] = await Promise.all([
     db.select({
@@ -400,16 +406,18 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
     const [settings] = await db.select({ supportEmail: landingSiteSettings.supportEmail }).from(landingSiteSettings).orderBy(asc(landingSiteSettings.id)).limit(1);
     const from = process.env.RESEND_FROM_EMAIL?.trim() || settings?.supportEmail?.trim();
     if (!from) throw new Error("Aucune adresse expéditrice Resend n’est configurée.");
-    const origin = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || publicOrigin(req);
+     const origin = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || publicOrigin(req);
+     const logoUrl = publicSiteAssetUrl(origin, "sendflow-wordmark.png");
     const batches = [];
     for (let index = 0; index < subscribers.length; index += 100) batches.push(subscribers.slice(index, index + 100));
     let sentCount = 0;
     for (const batch of batches) {
       await sendResendBatch(batch.map((subscriber) => {
         const unsubscribeUrl = `${origin}/api/newsletter/unsubscribe/${encodeURIComponent(subscriber.unsubscribeToken)}`;
-        const body = campaign.bodyHtml.includes("{{unsubscribe_url}}")
-          ? campaign.bodyHtml.replaceAll("{{unsubscribe_url}}", escapeHtml(unsubscribeUrl))
-          : `${campaign.bodyHtml}<hr style="margin:32px 0;border:0;border-top:1px solid #e5e7eb"><p style="font:12px Arial,sans-serif;color:#667386">Vous recevez cet email parce que vous avez demandé les nouvelles de SendFlow. <a href="${escapeHtml(unsubscribeUrl)}" style="color:#1769ff">Se désabonner</a></p>`;
+         const withLogo = campaign.bodyHtml.replaceAll("{{logo_url}}", escapeHtml(logoUrl));
+         const body = withLogo.includes("{{unsubscribe_url}}")
+           ? withLogo.replaceAll("{{unsubscribe_url}}", escapeHtml(unsubscribeUrl))
+           : `${withLogo}<hr style="margin:32px 0;border:0;border-top:1px solid #e5e7eb"><p style="font:12px Arial,sans-serif;color:#667386">Vous recevez cet email parce que vous avez demandé les nouvelles de SendFlow. <a href="${escapeHtml(unsubscribeUrl)}" style="color:#1769ff">Se désabonner</a></p>`;
         return { from, to: [subscriber.email], subject: campaign.subject, html: body };
       }));
       sentCount += batch.length;

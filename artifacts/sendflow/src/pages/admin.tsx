@@ -854,9 +854,32 @@ function AssignmentEditor({
 }
 
 const emptyCampaignDraft = (): CampaignDraft => ({
-  subject: '',
-  previewText: '',
-  bodyHtml: '<div style="font-family:Arial,sans-serif;color:#192231;line-height:1.6">\n  <h1>Une nouvelle de SendFlow</h1>\n  <p>Écris ici le contenu de ta campagne.</p>\n</div>',
+  subject: 'SendFlow Confirmation Email',
+  previewText: 'Thank you for joining SendFlow.',
+  bodyHtml: `<div style="margin:0;padding:0;background:#eeeeee;font-family:Arial,Helvetica,sans-serif;color:#101010">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background:#eeeeee">
+    <tr><td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:620px;border-collapse:collapse;background:#ffffff">
+        <tr><td style="padding:27px 19px 12px;background:#ffffff">
+          <img src="{{logo_url}}" alt="SendFlow" width="142" style="display:block;width:142px;height:auto;border:0">
+        </td></tr>
+        <tr><td style="padding:8px 19px 34px;background:#ffffff">
+          <h1 style="margin:0 0 22px;color:#090909;font-size:29px;font-weight:700;letter-spacing:-.045em;line-height:1.15">SendFlow <span style="color:#6d35d8">Confirmation Email</span></h1>
+          <p style="margin:0 0 19px;font-size:15px;line-height:1.45">Dear User,</p>
+          <p style="margin:0 0 14px;font-size:15px;line-height:1.42">Thank you for joining SendFlow. Please click the link below to confirm your registration:</p>
+          <p style="margin:0 0 15px;font-size:15px;line-height:1.42"><a href="#" style="color:#4285f4;text-decoration:none">Confirm your registration</a></p>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.42">If you did not make this request, please ignore this email.</p>
+          <p style="margin:0 0 17px;font-size:15px;line-height:1.42">Best regards,</p>
+          <p style="margin:0;font-size:15px;line-height:1.42"><span style="color:#6d35d8;font-weight:700">SendFlow</span> Team</p>
+        </td></tr>
+        <tr><td style="padding:18px 19px 22px;border-top:1px solid #eeeeee;background:#ffffff">
+          <p style="margin:0 0 9px;color:#727272;font-size:11px;line-height:1.5">Vous recevez cet email parce que vous avez demandé les nouvelles de SendFlow.</p>
+          <p style="margin:0;font-size:12px;line-height:1.5"><a href="{{unsubscribe_url}}" style="color:#4285f4;text-decoration:none">Se désabonner</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</div>`,
 });
 
 function formatNewsletterDate(value: string | null): string {
