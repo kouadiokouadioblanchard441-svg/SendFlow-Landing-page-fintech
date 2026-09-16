@@ -1,93 +1,112 @@
 # Déploiement SendFlow sur Plesk
 
-## Architecture
+## Structure de production
 
-Le projet se déploie en deux services :
+Le projet garde ses packages frontend et backend séparés dans le monorepo, mais le build de production les assemble pour Plesk :
 
-1. **Web statique** : le contenu de `artifacts/sendflow/dist/public`.
-2. **API Node.js** : le serveur compilé dans `artifacts/api-server/dist`.
+- Frontend React/Vite : `artifacts/sendflow`
+- Backend Express : `artifacts/api-server`
+- Build final Plesk : `dist/index.cjs`
+- Frontend servi par Express : `dist/public`
 
-Le site utilise des URLs relatives pour l’API (`/api/...`). Le domaine Plesk doit donc servir le web et proxyfier `/api/*` vers l’application Node.js, en conservant les en-têtes `Host`, `X-Forwarded-Host` et `X-Forwarded-Proto`.
+Plesk doit exécuter uniquement :
 
-## Variables Plesk
+```bash
+node dist/index.cjs
+```
 
-Copier `.env.example` dans la configuration d’environnement Plesk. Les secrets doivent être saisis dans Plesk, jamais dans le dépôt.
+Le même serveur Express sert les routes `/api/*` et les fichiers du frontend. Les routes React inconnues retombent sur `dist/public/index.html`.
 
-### API Node.js
+## Commandes
 
-- `NODE_ENV=production`
-- `PORT` : port attribué par Plesk à l’application Node.js
-- `NEON_DATABASE_URL` : chaîne de connexion Neon de la base de production
-- `RESEND_API_KEY` : clé API Resend
-- `RESEND_FROM_EMAIL` : adresse ou nom d’expéditeur appartenant à un domaine vérifié dans Resend
-- `PUBLIC_SITE_URL` : URL HTTPS publique complète, sans slash final
-- `BASE_PATH=/` pour un domaine à la racine
-- `CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` si l’authentification Clerk est activée
-- `LOG_LEVEL=info` (facultatif)
-
-`RESEND_FROM_EMAIL` est volontairement obligatoire. L’API utilise directement `https://api.resend.com/emails/batch` avec `Authorization: Bearer $RESEND_API_KEY`; elle ne dépend plus du connecteur Replit.
-
-### Web
-
-Ces variables sont nécessaires au moment du build Vite :
-
-- `PORT`
-- `BASE_PATH=/`
-- `VITE_PUBLIC_SITE_URL`
-- `VITE_CLERK_PUBLISHABLE_KEY`
-- `VITE_CLERK_PROXY_URL=/api/__clerk`
-
-Les variables `VITE_*` sont intégrées au JavaScript produit. Elles ne doivent donc jamais contenir de secret serveur.
-
-## Build
-
-Depuis la racine du dépôt :
+Installation :
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run typecheck
-
-NODE_ENV=production PORT=3000 BASE_PATH=/ \
-  VITE_PUBLIC_SITE_URL=https://www.example.com \
-  VITE_CLERK_PUBLISHABLE_KEY=pk_live_xxx \
-  VITE_CLERK_PROXY_URL=/api/__clerk \
-  pnpm --filter @workspace/sendflow run build
-
-pnpm --filter @workspace/api-server run build
 ```
 
-Remplacer les valeurs `example.com` et `pk_live_xxx` par les variables configurées pour le domaine Plesk avant le build final.
-
-## Démarrage de l’API
-
-Dans l’application Node.js Plesk :
+Développement frontend + backend :
 
 ```bash
-NODE_ENV=production pnpm --filter @workspace/api-server run start
+npm run dev
 ```
 
-Le serveur écoute obligatoirement le `PORT` fourni par Plesk. Le contrôle de santé est disponible sur :
+Le script démarre l’API sur `API_PORT` (8080 par défaut) et Vite sur `WEB_PORT` (26095 par défaut). Vite proxyfie `/api` vers l’API.
+
+Build de production :
+
+```bash
+npm run build
+```
+
+Le build :
+
+1. vérifie les types ;
+2. compile le frontend ;
+3. compile l’API Express en CommonJS ;
+4. copie le frontend dans `dist/public` ;
+5. produit `dist/index.cjs`.
+
+## Configuration Plesk
+
+Configurer le document root ou le dossier de l’application sur la racine du projet, puis utiliser `dist/index.cjs` comme fichier de démarrage.
+
+Variables API :
+
+- `NODE_ENV=production`
+- `PORT` : port fourni par Plesk
+- `NEON_DATABASE_URL`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `PUBLIC_SITE_URL=https://votre-domaine.com`
+- `BASE_PATH=/`
+- `CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- `LOG_LEVEL=info` (facultatif)
+
+Variables nécessaires au build frontend :
+
+- `PORT`
+- `BASE_PATH=/`
+- `VITE_PUBLIC_SITE_URL=https://votre-domaine.com`
+- `VITE_CLERK_PUBLISHABLE_KEY`
+- `VITE_CLERK_PROXY_URL=/api/__clerk`
+
+Les variables `VITE_*` sont intégrées au frontend lors de `npm run build`. Elles ne doivent jamais contenir de secret serveur.
+
+## Resend
+
+L’API utilise directement :
 
 ```text
-GET /api/healthz
+https://api.resend.com/emails/batch
 ```
 
-## Publication du web
+`RESEND_FROM_EMAIL` doit être une adresse appartenant à un domaine vérifié dans Resend. Le lien de désabonnement est généré avec `PUBLIC_SITE_URL` et chaque destinataire reçoit son propre token.
 
-Configurer le document root Plesk sur :
+## Base de données et administration
+
+La base de production utilise `NEON_DATABASE_URL`. Les scripts de provisionnement peuvent également utiliser :
+
+- `ADMIN_BOOTSTRAP_EMAIL`
+- `ADMIN_BOOTSTRAP_PASSWORD`
+- `ADMIN_PANEL_TOKEN`
+- `ADMIN_PANEL_EMAIL`
+
+Ne jamais ajouter les valeurs réelles dans le dépôt.
+
+## Vérification après démarrage
 
 ```text
-artifacts/sendflow/dist/public
+GET https://votre-domaine.com/api/healthz
 ```
 
-Ajouter une réécriture SPA de toutes les routes web vers `/index.html`, sans réécrire `/api/*` qui doit être envoyé à l’application Node.js.
+La réponse attendue est :
 
-## Base et administration
+```json
+{"status":"ok"}
+```
 
-La base de production doit être initialisée avec `NEON_DATABASE_URL`. Les scripts d’administration utilisent aussi `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`, `ADMIN_PANEL_TOKEN` et, pour le script du panel, `ADMIN_PANEL_EMAIL`.
+## Limite actuelle des médias
 
-Ne jamais afficher ni committer les valeurs de ces variables.
-
-## Point à traiter avant une migration complète
-
-Les routes d’upload et de lecture de médias utilisent encore le sidecar Object Storage de Replit (`127.0.0.1:1106`). Elles ne sont donc pas portables vers Plesk avec des variables d’environnement seules. La landing peut être servie avec des URLs publiques déjà migrées, mais l’upload média de l’admin nécessite soit un stockage compatible Plesk/S3/R2, soit une migration dédiée avant la mise en production complète.
+Les routes d’upload et de lecture de médias utilisent encore le sidecar Object Storage de Replit (`127.0.0.1:1106`). Le build unifié Plesk est prêt pour le frontend, l’API et Resend, mais les uploads médias nécessitent encore une migration vers un stockage compatible Plesk, S3 ou R2.

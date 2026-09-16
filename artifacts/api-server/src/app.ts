@@ -1,3 +1,5 @@
+import path from "node:path";
+import { existsSync } from "node:fs";
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
@@ -45,5 +47,18 @@ app.use(
 );
 
 app.use("/api", router);
+
+const webDistDir = path.resolve(process.env.WEB_DIST_DIR ?? path.join(process.cwd(), "dist", "public"));
+app.use(express.static(webDistDir, { index: false }));
+app.use((req, res, next) => {
+  const isPageRequest = req.method === "GET" || req.method === "HEAD";
+  const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
+  const indexPath = path.join(webDistDir, "index.html");
+  if (!isPageRequest || isApiRequest || !existsSync(indexPath)) {
+    next();
+    return;
+  }
+  res.sendFile(indexPath);
+});
 
 export default app;
