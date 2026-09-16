@@ -604,8 +604,8 @@ footer:not(.sendflow-reference-footer) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   transition: color .2s ease, transform .2s ease;
 }

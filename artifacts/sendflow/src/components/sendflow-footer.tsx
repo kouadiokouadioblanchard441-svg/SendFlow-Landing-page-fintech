@@ -114,8 +114,8 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
     <footer id="footer" className="sendflow-reference-footer">
       <div className="sendflow-footer-inner">
         <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
-          {socialLink('WhatsApp', settings?.whatsappUrl, <SiWhatsapp size={36} />, 'link-footer-whatsapp')}
-          {socialLink('Facebook', settings?.facebookUrl, <SiFacebook size={36} />, 'link-footer-facebook')}
+          {socialLink('WhatsApp', settings?.whatsappUrl, <SiWhatsapp size={44} />, 'link-footer-whatsapp')}
+          {socialLink('Facebook', settings?.facebookUrl, <SiFacebook size={44} />, 'link-footer-facebook')}
           {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
           {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
         </div>
