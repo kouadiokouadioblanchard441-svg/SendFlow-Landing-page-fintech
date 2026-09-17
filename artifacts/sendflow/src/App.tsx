@@ -250,12 +250,25 @@ const fallbackCountries = [
   { name: 'Sierra Leone', code: 'SL', networks: ['Africell', 'Orange', 'QCell'], flag: '🇸🇱', tone: '#dbeaff' },
   { name: 'Sénégal', code: 'SN', networks: ['Orange', 'Free', 'Moov Africa', 'Expresso', 'Wave'], flag: '🇸🇳', tone: '#dbeaff' },
   { name: 'Ghana', code: 'GH', networks: ['MTN', 'Telecel', 'AT'], flag: '🇬🇭', tone: '#dbeaff' },
+  { name: 'Gabon', code: 'GA', networks: ['Airtel', 'Moov Africa'], flag: '🇬🇦', tone: '#dbeaff' },
   { name: 'Kenya', code: 'KE', networks: ['Safaricom', 'Airtel', 'Telkom'], flag: '🇰🇪', tone: '#dbeaff' },
 ];
+const fallbackHeroFlagPositions: Record<string, { x: number; y: number }> = {
+  CI: { x: 5, y: 55 },
+  BJ: { x: 6, y: 25 },
+  TG: { x: 6, y: 78 },
+  BF: { x: 3, y: 40 },
+  GH: { x: 88, y: 13 },
+  SN: { x: 89, y: 41 },
+  NG: { x: 84, y: 70 },
+  GN: { x: 63, y: 88 },
+  CM: { x: 34, y: 88 },
+  GA: { x: 17, y: 88 },
+};
 const countries = fallbackCountries.map((country) => ({
   ...country,
-  heroPositionX: (({ CI: 7, BJ: 78, TG: 95, CM: 34 } as Record<string, number>)[country.code] ?? null) as number | null,
-  heroPositionY: (({ CI: 53, BJ: 24, TG: 54, CM: 84 } as Record<string, number>)[country.code] ?? null) as number | null,
+  heroPositionX: fallbackHeroFlagPositions[country.code]?.x ?? null,
+  heroPositionY: fallbackHeroFlagPositions[country.code]?.y ?? null,
 }));
 type LandingCountryView = {
   name: string;
