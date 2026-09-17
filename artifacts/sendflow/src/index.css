@@ -89,6 +89,16 @@
   button, a { -webkit-tap-highlight-color: transparent; }
 }
 
+/* Discourage casual saving of non-interactive landing visuals without hiding
+   the underlying <img> from search engines, assistive technology, or layout. */
+.protected-visual {
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  pointer-events: none;
+}
+
 @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(-1deg); } }
 @keyframes orbit { from { transform: rotate(0deg) translateX(112px) rotate(0deg); } to { transform: rotate(360deg) translateX(112px) rotate(-360deg); } }

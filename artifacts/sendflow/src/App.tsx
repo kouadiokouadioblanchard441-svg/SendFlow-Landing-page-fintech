@@ -17,6 +17,7 @@ import DownloadPage from '@/pages/download';
 import FeaturesPage from '@/pages/features';
 import SecurityPage from '@/pages/security';
 import { SendFlowFooter } from '@/components/sendflow-footer';
+import { ProtectedImage } from '@/components/protected-image';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import heroPlaceholder from '@assets/generated_images/sendflow-hero-placeholder.png';
@@ -185,9 +186,9 @@ function BrandLockup() {
   return (
     <span className="flex items-center gap-2">
       <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-[#6d35d8]/20">
-        <img src={sendflowMark} alt="" className="h-7 w-6 object-contain" />
+        <ProtectedImage src={sendflowMark} alt="" className="h-7 w-6 object-contain" />
       </span>
-      <img src={sendflowWordmark} alt="SendFlow" className="h-5 w-auto object-contain" />
+      <ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-5 w-auto object-contain" />
     </span>
   );
 }
@@ -195,10 +196,10 @@ function BrandLockup() {
 function BrandedCharacter({ src, alt, className = '' }: { src: string; alt: string; className?: string }) {
   return (
     <div className={`relative flex min-w-0 items-end justify-center ${className}`}>
-      <img src={src} alt={alt} className="h-40 w-full object-contain sm:h-52" />
+      <ProtectedImage src={src} alt={alt} className="h-40 w-full object-contain sm:h-52" />
       <span className="absolute left-1/2 top-0 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-[#6d35d8]/20 bg-white px-2.5 py-1.5 shadow-[0_8px_18px_rgba(80,40,170,.16)]">
-        <img src={sendflowMark} alt="" className="h-4 w-4 object-contain" />
-        <img src={sendflowWordmark} alt="SendFlow" className="h-3.5 w-auto object-contain" />
+        <ProtectedImage src={sendflowMark} alt="" className="h-4 w-4 object-contain" />
+        <ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-3.5 w-auto object-contain" />
       </span>
     </div>
   );
@@ -301,7 +302,7 @@ function OperatorRow({
   return (
     <div className="flex items-center justify-center">
       <span role="img" aria-label={`${network} logo`} className={`flex h-14 w-14 items-center justify-center shadow-[0_8px_18px_rgba(58,38,83,.08)] sm:h-16 sm:w-16 ${logo.image ? 'rounded-2xl border border-[#dbe5f2] bg-white p-2' : 'rounded-full'}`} style={logo.image ? undefined : { backgroundColor: logo.background, color: logo.foreground }}>
-        {logo.image ? <img src={logo.image} alt="" className="max-h-full max-w-full object-contain" /> : network === 'Orange' ? <span className="h-3 w-6 bg-white" aria-hidden="true" /> : <span className="text-[10px] font-extrabold tracking-[-.04em]">{logo.mark}</span>}
+        {logo.image ? <ProtectedImage src={logo.image} alt="" className="max-h-full max-w-full object-contain" /> : network === 'Orange' ? <span className="h-3 w-6 bg-white" aria-hidden="true" /> : <span className="text-[10px] font-extrabold tracking-[-.04em]">{logo.mark}</span>}
       </span>
     </div>
   );
@@ -949,7 +950,7 @@ function LandingPage() {
           <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[1.04fr_.96fr] lg:gap-8">
             <div className="relative z-10 max-w-[680px]">
               <div className="rise relative mb-7 aspect-[1.45/1] w-full max-w-[640px] overflow-hidden rounded-[34px] border border-[#6d35d8]/10 bg-white shadow-[0_22px_55px_rgba(75,44,180,.1)]" data-testid="hero-image-slot">
-                <img src={heroPlaceholder} alt={isFrench ? 'Illustration temporaire du passage entre plusieurs réseaux' : 'Temporary illustration of a path across multiple networks'} className="h-full w-full object-cover" />
+                <ProtectedImage src={heroPlaceholder} alt={isFrench ? 'Illustration temporaire du passage entre plusieurs réseaux' : 'Temporary illustration of a path across multiple networks'} className="h-full w-full object-cover" />
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
                   <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full border border-[#6d35d8]/15 bg-white/90 px-3 py-2 shadow-[0_8px_20px_rgba(50,30,130,.1)] backdrop-blur-sm">
                     <BrandLockup />
@@ -958,7 +959,7 @@ function LandingPage() {
                 </div>
                 <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
                   <span className="hero-globe-spin block h-32 w-32 sm:h-48 sm:w-48">
-                    <img src={heroGlobe} alt={isFrench ? 'Terre centrée sur l’Afrique' : 'Earth centered on Africa'} className="h-full w-full object-contain drop-shadow-[0_10px_16px_rgba(20,50,150,.22)]" />
+                    <ProtectedImage src={heroGlobe} alt={isFrench ? 'Terre centrée sur l’Afrique' : 'Earth centered on Africa'} className="h-full w-full object-contain drop-shadow-[0_10px_16px_rgba(20,50,150,.22)]" />
                   </span>
                 </div>
               </div>
@@ -970,7 +971,7 @@ function LandingPage() {
               </div>
             </div>
               <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)]">
-               <img
+                <ProtectedImage
                  src={heroGlobalConnection}
                  alt={isFrench ? 'Homme devant un globe connecté entre l’Afrique et l’Europe' : 'Man in front of a globe connecting Africa and Europe'}
                   className="h-full w-full object-cover"
@@ -980,7 +981,7 @@ function LandingPage() {
                 </div>
                  <div className="hero-globe-motion pointer-events-none absolute right-[4%] top-[3%] z-10 aspect-square w-[61%] rounded-full" aria-hidden="true">
                    <div className="hero-globe-motion__surface hero-globe-spin">
-                     <img src={heroGlobe} alt="" className="hero-globe-motion__earth" />
+                     <ProtectedImage src={heroGlobe} alt="" className="hero-globe-motion__earth" />
                    </div>
                    <div className="hero-globe-motion__badge-layer">
                       {heroBadges.map(({ operator, position }, index) => {
@@ -993,7 +994,7 @@ function LandingPage() {
                             style={{ ...position, animationDelay: `${index * -0.7}s` }}
                             aria-label={`${operator.name} logo`}
                          >
-                            {logoUrl || fallbackLogo.image ? <img src={logoUrl || fallbackLogo.image} alt="" /> : <span>{fallbackLogo.mark}</span>}
+                            {logoUrl || fallbackLogo.image ? <ProtectedImage src={logoUrl || fallbackLogo.image} alt="" /> : <span>{fallbackLogo.mark}</span>}
                          </span>
                        );
                      })}
@@ -1013,12 +1014,12 @@ function LandingPage() {
              </div>
              <div className="reveal mt-10 overflow-hidden rounded-[28px] border border-[#6d35d8]/10 bg-[#fbf8ef] shadow-[0_18px_50px_rgba(58,38,83,.07)]">
                <div className="grid items-center gap-2 p-4 sm:grid-cols-[1.25fr_.75fr] sm:p-6">
-                 <img src={networkSectionArt} alt={isFrench ? 'Réseaux de paiement interconnectés' : 'Interconnected payment networks'} className="mx-auto h-52 w-full object-contain sm:h-64" />
+                  <ProtectedImage src={networkSectionArt} alt={isFrench ? 'Réseaux de paiement interconnectés' : 'Interconnected payment networks'} className="mx-auto h-52 w-full object-contain sm:h-64" />
                  <BrandedCharacter src={networkPersonArt} alt={isFrench ? 'Personne SendFlow aux côtés des réseaux interconnectés' : 'SendFlow person beside interconnected networks'} className="h-52 sm:h-64" />
                </div>
              </div>
               <div className="reveal mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {remoteFeatures.map((feature) => <div key={feature.title.fr} className="group min-h-[360px] rounded-[24px] border border-[#dbe5f2] bg-white p-5 shadow-[0_18px_48px_rgba(35,76,135,.08)] transition-transform hover:-translate-y-1 sm:p-6"><div className="flex h-36 items-center justify-between gap-2 overflow-hidden rounded-[18px] bg-[#f4f7fc] px-3 sm:h-40 sm:px-4"><img src={feature.icon} alt="" className="h-full min-w-0 flex-1 object-contain p-2 transition-transform duration-300 group-hover:scale-105 sm:p-3" /><span className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#6d35d8]/15 bg-white px-2 py-1.5 shadow-[0_6px_14px_rgba(58,38,83,.08)]" aria-label="SendFlow"><img src={sendflowMark} alt="" className="h-5 w-5 object-contain" /><img src={sendflowWordmark} alt="SendFlow" className="h-3.5 w-auto object-contain" /></span></div><h3 className="mt-6 text-[18px] font-extrabold tracking-[-.035em] text-[#17131f]">{t(feature.title, language)}</h3><p className="mt-3 max-w-[270px] text-[14px] font-medium leading-6 text-[#3d4654]">{t(feature.text, language)}</p></div>)}
+                {remoteFeatures.map((feature) => <div key={feature.title.fr} className="group min-h-[360px] rounded-[24px] border border-[#dbe5f2] bg-white p-5 shadow-[0_18px_48px_rgba(35,76,135,.08)] transition-transform hover:-translate-y-1 sm:p-6"><div className="flex h-36 items-center justify-between gap-2 overflow-hidden rounded-[18px] bg-[#f4f7fc] px-3 sm:h-40 sm:px-4"><ProtectedImage src={feature.icon} alt="" className="h-full min-w-0 flex-1 object-contain p-2 transition-transform duration-300 group-hover:scale-105 sm:p-3" /><span className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#6d35d8]/15 bg-white px-2 py-1.5 shadow-[0_6px_14px_rgba(58,38,83,.08)]" aria-label="SendFlow"><ProtectedImage src={sendflowMark} alt="" className="h-5 w-5 object-contain" /><ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-3.5 w-auto object-contain" /></span></div><h3 className="mt-6 text-[18px] font-extrabold tracking-[-.035em] text-[#17131f]">{t(feature.title, language)}</h3><p className="mt-3 max-w-[270px] text-[14px] font-medium leading-6 text-[#3d4654]">{t(feature.text, language)}</p></div>)}
              </div>
               <div className="reveal mt-16 rounded-[28px] border-2 border-[#dbe5f2] bg-[#eef5ff] p-6 shadow-[0_18px_50px_rgba(35,76,135,.08)] sm:p-8">
                  <p className="text-[11px] font-extrabold uppercase tracking-[.17em] text-[#5b21b6]">{t(contentCopy(landingBundle?.content, 'features.principles.kicker', { fr: 'Une expérience, trois repères', en: 'One experience, three principles' }), language)}</p>
@@ -1028,7 +1029,7 @@ function LandingPage() {
                    { n: '01', title: { fr: 'Simplicité', en: 'Simplicity' }, text: { fr: 'Des choix clairs, sans détour.', en: 'Clear choices, no detours.' }, art: howPersonArt, artAlt: { fr: 'Personnage SendFlow illustrant la simplicité', en: 'SendFlow character illustrating simplicity' }, artBg: 'bg-[#f4f0ff]' },
                    { n: '02', title: { fr: 'Rapidité', en: 'Speed' }, text: { fr: 'Un parcours court et lisible.', en: 'A short, readable journey.' }, art: internationalPersonArt, artAlt: { fr: 'Personnage SendFlow illustrant la rapidité', en: 'SendFlow character illustrating speed' }, artBg: 'bg-[#eef7ff]' },
                    { n: '03', title: { fr: 'Interopérabilité', en: 'Interoperability' }, text: { fr: 'Des réseaux qui peuvent mieux dialoguer.', en: 'Networks that can speak more clearly.' }, art: networkPersonArt, artAlt: { fr: 'Personnage SendFlow illustrant l’interopérabilité', en: 'SendFlow character illustrating interoperability' }, artBg: 'bg-[#edf9f6]' },
-                  ].map((principle) => <div key={principle.title.fr} className="group relative min-h-[250px] overflow-hidden rounded-[22px] border-2 border-white bg-white p-5 shadow-[0_12px_28px_rgba(35,76,135,.08)] transition-transform hover:-translate-y-1"><div className={`absolute right-3 top-3 flex h-24 w-24 items-end justify-center overflow-hidden rounded-[18px] ${principle.artBg}`}><img src={principle.art} alt={t(principle.artAlt, language)} loading="lazy" decoding="async" className="h-24 w-24 object-contain object-bottom transition-transform duration-300 group-hover:scale-105" /></div><span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[#211d2c] px-2 text-[11px] font-extrabold text-white">{principle.n}</span><h4 className="mt-16 max-w-[180px] text-[19px] font-extrabold leading-tight tracking-[-.04em] text-[#17131f]">{t(principle.title, language)}</h4><p className="mt-3 max-w-[190px] text-[14px] font-semibold leading-6 text-[#3d4654]">{t(principle.text, language)}</p></div>)}
+                  ].map((principle) => <div key={principle.title.fr} className="group relative min-h-[250px] overflow-hidden rounded-[22px] border-2 border-white bg-white p-5 shadow-[0_12px_28px_rgba(35,76,135,.08)] transition-transform hover:-translate-y-1 sm:p-6"><div className={`absolute right-3 top-3 flex h-24 w-24 items-end justify-center overflow-hidden rounded-[18px] ${principle.artBg}`}><ProtectedImage src={principle.art} alt={t(principle.artAlt, language)} loading="lazy" decoding="async" className="h-24 w-24 object-contain object-bottom transition-transform duration-300 group-hover:scale-105" /></div><span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[#211d2c] px-2 text-[11px] font-extrabold text-white">{principle.n}</span><h4 className="mt-16 max-w-[180px] text-[19px] font-extrabold leading-tight tracking-[-.04em] text-[#17131f]">{t(principle.title, language)}</h4><p className="mt-3 max-w-[190px] text-[14px] font-semibold leading-6 text-[#3d4654]">{t(principle.text, language)}</p></div>)}
                 </div>
               </div>
            </div>
@@ -1039,11 +1040,11 @@ function LandingPage() {
             <div className="reveal grid gap-12 lg:grid-cols-[.75fr_1.25fr] lg:gap-24">
                <div><h2 className="mt-0 max-w-[500px] whitespace-pre-line text-5xl font-extrabold leading-[.9] tracking-[-.075em] text-[#fbf8ef] sm:text-7xl lg:text-8xl">{t(localizedSection('how', { title: { fr: 'Un passage\nsimple.', en: 'One clear\npassage.' }, body: { fr: '', en: '' } }).title, language)}</h2><p className="mt-8 max-w-[360px] text-[16px] font-semibold leading-7 text-[#f4edff] sm:text-[17px]">{t(localizedSection('how', { title: { fr: '', en: '' }, body: { fr: 'Le réseau ne devrait jamais être votre problème. SendFlow rend chaque étape visible, du premier clic au dernier.', en: 'The network should never be your problem. SendFlow makes every step visible, from first click to last.' } }).body, language)}</p></div>
               <div className="grid gap-3 sm:grid-cols-3">
-                {[{ n: '01', title: { fr: 'Choisissez', en: 'Choose' }, text: { fr: 'Votre pays, votre réseau, votre destination.', en: 'Your country, your network, your destination.' }, icon: Globe2, art: chooseStepArt }, { n: '02', title: { fr: 'Vérifiez', en: 'Check' }, text: { fr: 'Le montant et le chemin, sans surprise.', en: 'The amount and the path, no surprises.' }, icon: Sparkles, art: checkStepArt }, { n: '03', title: { fr: 'Envoyez', en: 'Send' }, text: { fr: 'Un dernier regard. Puis, c’est parti.', en: 'One last look. Then, it moves.' }, icon: ArrowDownRight, art: sendStepArt }].map((step) => <div key={step.n} className="group grid min-h-[210px] grid-cols-[.78fr_1.22fr] items-center gap-3 rounded-[24px] border border-[#fbf8ef]/15 bg-[#2b2638] p-4 transition-colors hover:border-[#9adacb]/60 sm:p-5"><div className="flex h-full items-center justify-center rounded-[18px] bg-[#211d2c]/55 p-2"><img src={step.art} alt="" className="h-28 w-full object-contain sm:h-32" /></div><div className="min-w-0"><div className="flex items-start justify-between gap-2"><span className="text-[11px] font-bold text-[#9adacb]">{step.n}</span><step.icon size={18} className="shrink-0 text-[#e8cd4d] transition-transform group-hover:rotate-12" /></div><h3 className="mt-10 text-xl font-bold tracking-[-.04em] text-[#fbf8ef]">{t(step.title, language)}</h3><p className="mt-3 text-[13px] font-medium leading-5 text-[#e5dff0]">{t(step.text, language)}</p></div></div>)}</div>
+                {[{ n: '01', title: { fr: 'Choisissez', en: 'Choose' }, text: { fr: 'Votre pays, votre réseau, votre destination.', en: 'Your country, your network, your destination.' }, icon: Globe2, art: chooseStepArt }, { n: '02', title: { fr: 'Vérifiez', en: 'Check' }, text: { fr: 'Le montant et le chemin, sans surprise.', en: 'The amount and the path, no surprises.' }, icon: Sparkles, art: checkStepArt }, { n: '03', title: { fr: 'Envoyez', en: 'Send' }, text: { fr: 'Un dernier regard. Puis, c’est parti.', en: 'One last look. Then, it moves.' }, icon: ArrowDownRight, art: sendStepArt }].map((step) => <div key={step.n} className="group grid min-h-[210px] grid-cols-[.78fr_1.22fr] items-center gap-3 rounded-[24px] border border-[#fbf8ef]/15 bg-[#2b2638] p-4 transition-colors hover:border-[#9adacb]/60 sm:p-5"><div className="flex h-full items-center justify-center rounded-[18px] bg-[#211d2c]/55 p-2"><ProtectedImage src={step.art} alt="" className="h-28 w-full object-contain sm:h-32" /></div><div className="min-w-0"><div className="flex items-start justify-between gap-2"><span className="text-[11px] font-bold text-[#9adacb]">{step.n}</span><step.icon size={18} className="shrink-0 text-[#e8cd4d] transition-transform group-hover:rotate-12" /></div><h3 className="mt-10 text-xl font-bold tracking-[-.04em] text-[#fbf8ef]">{t(step.title, language)}</h3><p className="mt-3 text-[13px] font-medium leading-5 text-[#e5dff0]">{t(step.text, language)}</p></div></div>)}</div>
              </div>
              <div className="reveal mt-12 overflow-hidden rounded-[28px] border border-[#fbf8ef]/15 bg-[#2b2638] p-4 sm:p-6">
                <div className="grid items-center gap-2 sm:grid-cols-[1.25fr_.75fr]">
-                 <img src={howItWorksSectionArt} alt={isFrench ? 'Parcours de transfert en trois étapes' : 'Three-step transfer journey'} className="mx-auto h-48 w-full object-contain sm:h-64" />
+                  <ProtectedImage src={howItWorksSectionArt} alt={isFrench ? 'Parcours de transfert en trois étapes' : 'Three-step transfer journey'} className="mx-auto h-48 w-full object-contain sm:h-64" />
                  <BrandedCharacter src={howPersonArt} alt={isFrench ? 'Personne SendFlow qui guide le parcours de transfert' : 'SendFlow person guiding the transfer journey'} className="h-48 sm:h-64" />
                </div>
              </div>
@@ -1064,13 +1065,13 @@ function LandingPage() {
              <div className="reveal mt-12 grid gap-4 sm:grid-cols-2">
                <div className="overflow-hidden rounded-[28px] border border-[#2d2535]/10 bg-[#fbf8ef] shadow-[0_18px_50px_rgba(58,38,83,.07)]">
                  <div className="grid items-center gap-1 p-4 sm:grid-cols-[1.15fr_.85fr] sm:p-5">
-                   <img src={internationalSectionArt} alt={isFrench ? 'Transferts internationaux autour de l’Afrique' : 'International transfers around Africa'} className="h-52 w-full object-contain sm:h-60" />
+                    <ProtectedImage src={internationalSectionArt} alt={isFrench ? 'Transferts internationaux autour de l’Afrique' : 'International transfers around Africa'} className="h-52 w-full object-contain sm:h-60" />
                    <BrandedCharacter src={internationalPersonArt} alt={isFrench ? 'Personne SendFlow pour les transferts internationaux' : 'SendFlow person for international transfers'} className="h-52 sm:h-60" />
                  </div>
                </div>
                <div className="overflow-hidden rounded-[28px] border border-[#2d2535]/10 bg-[#d7eee8] shadow-[0_18px_50px_rgba(58,38,83,.07)]">
                  <div className="grid items-center gap-1 p-4 sm:grid-cols-[1.15fr_.85fr] sm:p-5">
-                   <img src={coverageSectionArt} alt={isFrench ? 'Couverture africaine de SendFlow' : 'SendFlow African coverage'} className="h-52 w-full object-contain sm:h-60" />
+                    <ProtectedImage src={coverageSectionArt} alt={isFrench ? 'Couverture africaine de SendFlow' : 'SendFlow African coverage'} className="h-52 w-full object-contain sm:h-60" />
                    <BrandedCharacter src={coveragePersonArt} alt={isFrench ? 'Ambassadrice SendFlow pour la couverture africaine' : 'SendFlow ambassador for African coverage'} className="h-52 sm:h-60" />
                  </div>
                </div>
@@ -1101,23 +1102,23 @@ function LandingPage() {
         <section id="security" className="overflow-hidden px-5 py-12 sm:px-8 sm:py-20">
           <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[.9fr_1.1fr]">
             <div className="reveal relative min-h-[380px] sm:min-h-[480px]">
-               <img src={securitySectionArt} alt={isFrench ? 'Protection et sécurité des transferts' : 'Transfer protection and security'} className="absolute bottom-0 left-[1%] z-10 h-[220px] w-[220px] object-contain object-center sm:left-[2%] sm:h-[360px] sm:w-[360px]" />
+               <ProtectedImage src={securitySectionArt} alt={isFrench ? 'Protection et sécurité des transferts' : 'Transfer protection and security'} className="absolute bottom-0 left-[1%] z-10 h-[220px] w-[220px] object-contain object-center sm:left-[2%] sm:h-[360px] sm:w-[360px]" />
                <div className="absolute bottom-0 right-[5%] z-20 h-[300px] w-[300px] sm:right-[3%] sm:h-[460px] sm:w-[460px]">
-                 <img src={securityGuardianArt} alt={isFrench ? 'Gardien 3D de la sécurité SendFlow' : '3D SendFlow security guardian'} className="h-full w-full object-contain object-center" />
+                  <ProtectedImage src={securityGuardianArt} alt={isFrench ? 'Gardien 3D de la sécurité SendFlow' : '3D SendFlow security guardian'} className="h-full w-full object-contain object-center" />
                </div>
                <div className="absolute left-1/2 top-[-2%] z-30 flex w-max max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-3 rounded-full border-2 border-[#6d35d8]/25 bg-white px-4 py-2.5 shadow-[0_12px_28px_rgba(80,40,170,.2)] sm:top-[-1%] sm:gap-4 sm:px-6 sm:py-3.5">
-                 <img src={sendflowMark} alt="" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
-                 <img src={sendflowWordmark} alt="SendFlow" className="h-8 w-auto object-contain sm:h-12" />
+                  <ProtectedImage src={sendflowMark} alt="" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
+                  <ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-8 w-auto object-contain sm:h-12" />
                </div>
                <div className="security-ground-shadow absolute bottom-[1%] left-1/2 z-0 h-12 w-64 -translate-x-1/2 sm:h-16 sm:w-[390px]" />
               <div className="absolute left-[30%] top-[34%] flex h-24 w-24 items-center justify-center rounded-[28px] bg-[#6d35d8] text-[#fbf8ef] shadow-[0_18px_35px_rgba(109,53,216,.25)] sm:h-32 sm:w-32"><LockKeyhole size={34} strokeWidth={1.5} /></div>
               <div className="absolute bottom-[4%] left-[3%] rounded-2xl bg-[#211d2c] px-4 py-3 text-[11px] text-[#fbf8ef] shadow-lg"><span className="mr-2 inline-block h-2 w-2 rounded-full bg-[#9adacb]" />{isFrench ? 'En contrôle' : 'In control'}</div>
             </div>
-             <div className="reveal"><h2 className="mt-0 max-w-[760px] whitespace-pre-line text-5xl font-extrabold leading-[.9] tracking-[-.075em] text-[#17131f] sm:text-7xl lg:text-8xl">{t(contentCopy(landingBundle?.content, 'security.title', { fr: 'Chaque étape\nà découvert.', en: 'Every step,\nin the clear.' }), language)}</h2><p className="mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px]">{t(contentCopy(landingBundle?.content, 'security.body', { fr: 'Le calme vient de ce que l’on comprend. SendFlow rend les détails lisibles, les choix explicites et le contrôle toujours à portée de main.', en: 'Calm comes from understanding. SendFlow makes details readable, choices explicit, and control always within reach.' }), language)}</p><div className="mt-8 grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-[#dbe5f2] bg-white p-4 shadow-[0_12px_28px_rgba(35,76,135,.06)]"><div className="flex items-center justify-between gap-3"><img src={visibleDetailsIcon} alt="" className="h-14 w-20 object-contain" /><span className="flex shrink-0 items-center gap-1 rounded-full border border-[#6d35d8]/15 bg-[#f4f7fc] px-2 py-1.5"><img src={sendflowMark} alt="" className="h-4 w-4 object-contain" /><img src={sendflowWordmark} alt="SendFlow" className="h-3 w-auto object-contain" /></span></div><h3 className="mt-5 text-[15px] font-extrabold">{t(contentCopy(landingBundle?.content, 'security.visible.title', { fr: 'Détails visibles', en: 'Visible details' }), language)}</h3><p className="mt-2 text-[12px] font-medium leading-5 text-[#3d4654]">{t(contentCopy(landingBundle?.content, 'security.visible.body', { fr: 'Comprendre avant de confirmer.', en: 'Understand before you confirm.' }), language)}</p></div><div className="rounded-2xl border border-[#dbe5f2] bg-white p-4 shadow-[0_12px_28px_rgba(35,76,135,.06)]"><div className="flex items-center justify-between gap-3"><img src={privateIcon} alt="" className="h-14 w-20 object-contain" /><span className="flex shrink-0 items-center gap-1 rounded-full border border-[#6d35d8]/15 bg-[#f4f7fc] px-2 py-1.5"><img src={sendflowMark} alt="" className="h-4 w-4 object-contain" /><img src={sendflowWordmark} alt="SendFlow" className="h-3 w-auto object-contain" /></span></div><h3 className="mt-5 text-[15px] font-extrabold">{t(contentCopy(landingBundle?.content, 'security.private.title', { fr: 'Pensé privé', en: 'Privacy-minded' }), language)}</h3><p className="mt-2 text-[12px] font-medium leading-5 text-[#3d4654]">{t(contentCopy(landingBundle?.content, 'security.private.body', { fr: 'Moins de données, plus de sérénité.', en: 'Less data, more peace of mind.' }), language)}</p></div></div></div>
+             <div className="reveal"><h2 className="mt-0 max-w-[760px] whitespace-pre-line text-5xl font-extrabold leading-[.9] tracking-[-.075em] text-[#17131f] sm:text-7xl lg:text-8xl">{t(contentCopy(landingBundle?.content, 'security.title', { fr: 'Chaque étape\nà découvert.', en: 'Every step,\nin the clear.' }), language)}</h2><p className="mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px]">{t(contentCopy(landingBundle?.content, 'security.body', { fr: 'Le calme vient de ce que l’on comprend. SendFlow rend les détails lisibles, les choix explicites et le contrôle toujours à portée de main.', en: 'Calm comes from understanding. SendFlow makes details readable, choices explicit, and control always within reach.' }), language)}</p><div className="mt-8 grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-[#dbe5f2] bg-white p-4 shadow-[0_12px_28px_rgba(35,76,135,.06)]"><div className="flex items-center justify-between gap-3"><ProtectedImage src={visibleDetailsIcon} alt="" className="h-14 w-20 object-contain" /><span className="flex shrink-0 items-center gap-1 rounded-full border border-[#6d35d8]/15 bg-[#f4f7fc] px-2 py-1.5"><ProtectedImage src={sendflowMark} alt="" className="h-4 w-4 object-contain" /><ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-3 w-auto object-contain" /></span></div><h3 className="mt-5 text-[15px] font-extrabold">{t(contentCopy(landingBundle?.content, 'security.visible.title', { fr: 'Détails visibles', en: 'Visible details' }), language)}</h3><p className="mt-2 text-[12px] font-medium leading-5 text-[#3d4654]">{t(contentCopy(landingBundle?.content, 'security.visible.body', { fr: 'Comprendre avant de confirmer.', en: 'Understand before you confirm.' }), language)}</p></div><div className="rounded-2xl border border-[#dbe5f2] bg-white p-4 shadow-[0_12px_28px_rgba(35,76,135,.06)]"><div className="flex items-center justify-between gap-3"><ProtectedImage src={privateIcon} alt="" className="h-14 w-20 object-contain" /><span className="flex shrink-0 items-center gap-1 rounded-full border border-[#6d35d8]/15 bg-[#f4f7fc] px-2 py-1.5"><ProtectedImage src={sendflowMark} alt="" className="h-4 w-4 object-contain" /><ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-3 w-auto object-contain" /></span></div><h3 className="mt-5 text-[15px] font-extrabold">{t(contentCopy(landingBundle?.content, 'security.private.title', { fr: 'Pensé privé', en: 'Privacy-minded' }), language)}</h3><p className="mt-2 text-[12px] font-medium leading-6 text-[#3d4654]">{t(contentCopy(landingBundle?.content, 'security.private.body', { fr: 'Moins de données, plus de sérénité.', en: 'Less data, more peace of mind.' }), language)}</p></div></div></div>
           </div>
         </section>
 
-          <section id="about" aria-label={isFrench ? 'Opérateurs de paiement partenaires' : 'Partner payment operators'} className="overflow-hidden border-b border-[#2d2535]/10 bg-white/70 py-4 sm:py-5"><div className="flex flex-col gap-2" aria-hidden="false"><div className="marquee-track marquee-track--reverse flex w-max items-center"><img src={operatorLogosTicker} alt={isFrench ? 'Logos des opérateurs de paiement partenaires' : 'Partner payment operator logos'} className="h-10 w-auto max-w-none object-contain sm:h-12" /><img src={operatorLogosTicker} alt="" aria-hidden="true" className="h-10 w-auto max-w-none object-contain sm:h-12" /></div><div className="marquee-track flex w-max items-center"><img src={operatorLogosTicker} alt="" aria-hidden="true" className="h-10 w-auto max-w-none object-contain sm:h-12" /><img src={operatorLogosTicker} alt="" aria-hidden="true" className="h-10 w-auto max-w-none object-contain sm:h-12" /></div></div></section>
+          <section id="about" aria-label={isFrench ? 'Opérateurs de paiement partenaires' : 'Partner payment operators'} className="overflow-hidden border-b border-[#2d2535]/10 bg-white/70 py-4 sm:py-5"><div className="flex flex-col gap-2" aria-hidden="false"><div className="marquee-track marquee-track--reverse flex w-max items-center"><ProtectedImage src={operatorLogosTicker} alt={isFrench ? 'Logos des opérateurs de paiement partenaires' : 'Partner payment operator logos'} className="h-10 w-auto max-w-none object-contain sm:h-12" /><ProtectedImage src={operatorLogosTicker} alt="" aria-hidden="true" className="h-10 w-auto max-w-none object-contain sm:h-12" /></div><div className="marquee-track flex w-max items-center"><ProtectedImage src={operatorLogosTicker} alt="" aria-hidden="true" className="h-10 w-auto max-w-none object-contain sm:h-12" /><ProtectedImage src={operatorLogosTicker} alt="" aria-hidden="true" className="h-10 w-auto max-w-none object-contain sm:h-12" /></div></div></section>
 
         <section id="faq" className="px-5 py-24 sm:px-8 sm:py-32"><div className="mx-auto grid max-w-[1040px] gap-14 lg:grid-cols-[.7fr_1.3fr]"><div className="reveal"><h2 className="mt-0 text-6xl font-extrabold leading-[.88] tracking-[-.075em] text-[#17131f] sm:text-8xl">{t(sectionCopy('faq', { fr: 'Vous avez raison.', en: 'Good questions.' }), language)}</h2><p className="mt-8 max-w-[300px] text-[16px] font-semibold leading-7 text-[#30283b]">{t(sectionBody('faq', { fr: 'Une idée nouvelle mérite des réponses simples.', en: 'A new idea deserves simple answers.' }), language)}</p></div><div className="reveal space-y-2">{activeFaqs.map((faq, index) => <div key={index} className="border-b border-[#2d2535]/15"><button onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex w-full items-center justify-between py-5 text-left text-[16px] font-bold tracking-[-.025em] text-[#17131f]" data-testid={`button-faq-${index}`}><span>{t(faq.q, language)}</span><ChevronDown size={18} className={`shrink-0 text-[#6d35d8] transition-transform ${openFaq === index ? 'rotate-180' : ''}`} /></button><div className={`grid transition-[grid-template-rows] duration-300 ${openFaq === index ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}><div className="overflow-hidden"><p className="pb-5 pr-8 text-[14px] font-medium leading-6 text-[#30283b]">{t(faq.a, language)}</p></div></div></div>)}</div></div></section>
 
@@ -1133,7 +1134,7 @@ function LandingPage() {
                <StoreBadge store="App Store" icon="apple" href={appStoreUrl} soonLabel={isFrench ? 'bientôt' : 'coming soon'} className="sendflow-store-badge--large sendflow-store-badge--featured" />
             </div>
               <div className="mt-8 grid items-end gap-1 sm:grid-cols-[1.1fr_.9fr] lg:absolute lg:right-8 lg:top-1/2 lg:mt-0 lg:w-[430px] lg:-translate-y-1/2">
-                <img src={downloadSectionArt} alt={isFrench ? 'Application mobile SendFlow' : 'SendFlow mobile app'} className="h-44 w-full object-contain sm:h-56" />
+                <ProtectedImage src={downloadSectionArt} alt={isFrench ? 'Application mobile SendFlow' : 'SendFlow mobile app'} className="h-44 w-full object-contain sm:h-56" />
                 <BrandedCharacter src={downloadPersonArt} alt={isFrench ? 'Personne SendFlow avec l’application mobile' : 'SendFlow person with the mobile app'} className="h-44 sm:h-56" />
              </div>
           </div>
