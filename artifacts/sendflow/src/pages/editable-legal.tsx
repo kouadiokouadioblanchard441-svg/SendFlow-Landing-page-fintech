@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import { ProtectedImage } from '@/components/protected-image';
+import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 
 type LegalPage = {
   slug: string;
@@ -25,6 +26,9 @@ type LegalSettings = {
   legalForm: string;
   legalAddress: string;
   legalEmail: string;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  whatsappNumber?: string | null;
 };
 
 function renderLegalBody(body: string) {
@@ -73,6 +77,9 @@ export function EditableLegalPage({
   const companyName = settings?.companyName || 'Flow Digital SARL';
   const address = settings?.legalAddress || 'Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire';
   const email = settings?.legalEmail || 'legal@sendflow.studio';
+  const contactEmail = settings?.contactEmail || email;
+  const contactPhoneHref = getTelHref(settings?.contactPhone);
+  const whatsappHref = getWhatsAppHref(settings?.whatsappNumber);
   const title = isFrench ? page.titleFr : page.titleEn;
   const intro = isFrench ? page.introFr : page.introEn;
 
@@ -108,7 +115,7 @@ export function EditableLegalPage({
             <p className="mt-5 text-justify text-[15px] leading-7 text-[#666] sm:text-base">{intro}</p>
             <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-y border-[#e5e7eb] py-4 text-[13px] text-[#666]">
               <span><strong className="text-[#1d1d1f]">{isFrench ? 'Version' : 'Version'} :</strong> {isFrench ? '17 septembre 2026' : 'September 17, 2026'}</span>
-              <span><strong className="text-[#1d1d1f]">{isFrench ? 'Contact' : 'Contact'} :</strong> {email}</span>
+              <span><strong className="text-[#1d1d1f]">{isFrench ? 'Contact' : 'Contact'} :</strong> {contactEmail}</span>
             </div>
           </div>
 
@@ -140,7 +147,9 @@ export function EditableLegalPage({
           <div className="mt-16 border-t border-[#e5e7eb] pt-6 text-[14px] leading-6 text-[#666]">
             <p className="font-bold text-[#1d1d1f]">{companyName} · {settings?.legalForm || 'Société à responsabilité limitée'}</p>
             <p>{address}</p>
-            <a href={`mailto:${email}`} className="font-semibold text-[#2563eb] hover:underline">{email}</a>
+            <a href={`mailto:${contactEmail}`} className="font-semibold text-[#2563eb] hover:underline">{contactEmail}</a>
+            {contactPhoneHref && <a href={contactPhoneHref} className="ml-4 font-semibold text-[#2563eb] hover:underline">{settings?.contactPhone}</a>}
+            {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" className="ml-4 font-semibold text-[#2563eb] hover:underline">WhatsApp</a>}
           </div>
         </article>
       </main>

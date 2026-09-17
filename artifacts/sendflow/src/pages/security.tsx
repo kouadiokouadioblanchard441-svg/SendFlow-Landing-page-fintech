@@ -118,7 +118,12 @@ export default function SecurityPage() {
     setLanguage((current) => current === 'fr' ? 'en' : 'fr');
     closeMenu();
   };
-  const supportEmail = settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportEmail = settings?.securityContactEmail?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const pageContact = {
+    email: settings?.securityContactEmail,
+    phone: settings?.securityContactPhone,
+    whatsapp: settings?.securityContactWhatsapp,
+  };
 
   return (
     <div className="sf-security-page">
@@ -192,7 +197,7 @@ export default function SecurityPage() {
         </section>
       </main>
 
-      <SendFlowFooter isFrench={language === 'fr'} settings={settings} content={content} />
+      <SendFlowFooter isFrench={language === 'fr'} settings={settings} content={content} contact={pageContact} />
     </div>
   );
 }

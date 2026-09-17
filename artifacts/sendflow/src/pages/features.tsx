@@ -160,7 +160,12 @@ export default function FeaturesPage() {
     setLanguage((current) => current === 'fr' ? 'en' : 'fr');
     closeMenu();
   };
-  const supportEmail = settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportEmail = settings?.featuresContactEmail?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const pageContact = {
+    email: settings?.featuresContactEmail,
+    phone: settings?.featuresContactPhone,
+    whatsapp: settings?.featuresContactWhatsapp,
+  };
 
   return (
     <div className="sf-features-page">
@@ -266,7 +271,7 @@ export default function FeaturesPage() {
         </section>
       </main>
 
-      <SendFlowFooter isFrench={language === 'fr'} settings={settings} content={content} />
+      <SendFlowFooter isFrench={language === 'fr'} settings={settings} content={content} contact={pageContact} />
     </div>
   );
 }

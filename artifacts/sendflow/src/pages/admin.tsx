@@ -733,6 +733,24 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   instagramUrl: '',
   facebookUrl: '',
   whatsappUrl: '',
+  homeContactEmail: '',
+  homeContactPhone: '',
+  homeContactWhatsapp: '',
+  featuresContactEmail: '',
+  featuresContactPhone: '',
+  featuresContactWhatsapp: '',
+  securityContactEmail: '',
+  securityContactPhone: '',
+  securityContactWhatsapp: '',
+  downloadContactEmail: '',
+  downloadContactPhone: '',
+  downloadContactWhatsapp: '',
+  aboutContactEmail: '',
+  aboutContactPhone: '',
+  aboutContactWhatsapp: '',
+  legalContactEmail: '',
+  legalContactPhone: '',
+  legalContactWhatsapp: '',
   companyName: 'Flow Digital SARL',
   legalForm: 'Société à responsabilité limitée',
   legalAddress: 'Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire',
@@ -781,6 +799,30 @@ function SiteSettingsEditor({
       <div className="sendflow-admin-form-grid">
         {field('supportEmail', 'Email support public', 'email')}
         {field('supportPhone', 'Téléphone support', 'tel')}
+        <div className="sendflow-admin-settings-group-title">Accueil</div>
+        {field('homeContactEmail', 'Email de contact · accueil', 'email')}
+        {field('homeContactPhone', 'Téléphone · accueil', 'tel')}
+        {field('homeContactWhatsapp', 'WhatsApp · accueil', 'tel', '+225 07 00 00 00 00')}
+        <div className="sendflow-admin-settings-group-title">Fonctionnalités</div>
+        {field('featuresContactEmail', 'Email de contact · fonctionnalités', 'email')}
+        {field('featuresContactPhone', 'Téléphone · fonctionnalités', 'tel')}
+        {field('featuresContactWhatsapp', 'WhatsApp · fonctionnalités', 'tel', '+225 07 00 00 00 00')}
+        <div className="sendflow-admin-settings-group-title">Sécurité</div>
+        {field('securityContactEmail', 'Email de contact · sécurité', 'email')}
+        {field('securityContactPhone', 'Téléphone · sécurité', 'tel')}
+        {field('securityContactWhatsapp', 'WhatsApp · sécurité', 'tel', '+225 07 00 00 00 00')}
+        <div className="sendflow-admin-settings-group-title">Téléchargement / assistance</div>
+        {field('downloadContactEmail', 'Email service client · téléchargement', 'email')}
+        {field('downloadContactPhone', 'Téléphone service client', 'tel')}
+        {field('downloadContactWhatsapp', 'Numéro WhatsApp service client', 'tel', '+225 07 00 00 00 00')}
+        <div className="sendflow-admin-settings-group-title">À propos</div>
+        {field('aboutContactEmail', 'Email de contact · à propos', 'email')}
+        {field('aboutContactPhone', 'Téléphone · à propos', 'tel')}
+        {field('aboutContactWhatsapp', 'WhatsApp · à propos', 'tel', '+225 07 00 00 00 00')}
+        <div className="sendflow-admin-settings-group-title">Pages légales</div>
+        {field('legalContactEmail', 'Email de contact · pages légales', 'email')}
+        {field('legalContactPhone', 'Téléphone · pages légales', 'tel')}
+        {field('legalContactWhatsapp', 'WhatsApp · pages légales', 'tel', '+225 07 00 00 00 00')}
         {field('websiteUrl', 'Site officiel', 'url', 'https://sendflow.example')}
         {field('linkedinUrl', 'LinkedIn SendFlow', 'url', 'https://www.linkedin.com/company/...')}
         {field('instagramUrl', 'Instagram SendFlow', 'url', 'https://www.instagram.com/...')}

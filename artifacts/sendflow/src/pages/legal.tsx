@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import { ProtectedImage } from '@/components/protected-image';
+import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 
 const legalCompanyDetails = {
   name: 'Flow Digital SARL',
@@ -25,6 +26,8 @@ type LegalSectionProps = {
 export type LegalPageProps = {
   supportEmail?: string | null;
   legalEmail?: string | null;
+  contactPhone?: string | null;
+  whatsappNumber?: string | null;
 };
 
 function normalizeSupportEmail(value?: string | null): string {
@@ -45,8 +48,10 @@ function LegalBulletList({ children }: { children: ReactNode }) {
   return <ul className="list-disc space-y-2 pl-5 marker:text-[#6d35d8]">{children}</ul>;
 }
 
-function LegalLayout({ title, eyebrow, intro, legalEmail, children }: { title: string; eyebrow: string; intro: string; legalEmail?: string | null; children: ReactNode }) {
+function LegalLayout({ title, eyebrow, intro, legalEmail, contactPhone, whatsappNumber, children }: { title: string; eyebrow: string; intro: string; legalEmail?: string | null; contactPhone?: string | null; whatsappNumber?: string | null; children: ReactNode }) {
   const contactEmail = normalizeSupportEmail(legalEmail);
+  const phoneHref = getTelHref(contactPhone);
+  const whatsappHref = getWhatsAppHref(whatsappNumber);
   return (
     <div className="sendflow-legal-page min-h-screen bg-white text-[#17131f]">
       <header className="sticky top-0 z-40 border-b border-[#2d2535]/10 bg-[#f7f3e9]/90 px-5 py-4 backdrop-blur-md sm:px-8">
@@ -89,6 +94,8 @@ function LegalLayout({ title, eyebrow, intro, legalEmail, children }: { title: s
             <Link href="/confidentialite" className="hover:text-[#e8cd4d]">Confidentialité</Link>
             <Link href="/mentions-legales" className="hover:text-[#e8cd4d]">Mentions légales</Link>
             <a href={`mailto:${contactEmail}`} className="hover:text-[#e8cd4d]">Contact</a>
+            {phoneHref && <a href={phoneHref} className="hover:text-[#e8cd4d]">{contactPhone}</a>}
+            {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" className="hover:text-[#e8cd4d]">WhatsApp</a>}
           </div>
         </div>
       </footer>
@@ -96,7 +103,7 @@ function LegalLayout({ title, eyebrow, intro, legalEmail, children }: { title: s
   );
 }
 
-export function LegalMentionsPage({ legalEmail }: LegalPageProps) {
+export function LegalMentionsPage({ legalEmail, contactPhone, whatsappNumber }: LegalPageProps) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
@@ -104,6 +111,8 @@ export function LegalMentionsPage({ legalEmail }: LegalPageProps) {
       title="Mentions légales"
       intro="Cette page présente l’identité de l’éditeur de SendFlow, les informations de publication, les règles d’utilisation du site et les responsabilités liées aux contenus et aux services proposés."
       legalEmail={legalEmail}
+      contactPhone={contactPhone}
+      whatsappNumber={whatsappNumber}
     >
       <LegalSection number="01" title="Éditeur du site">
         <p>Le site SendFlow est édité par <strong>{legalCompanyDetails.name}</strong>, société de droit ivoirien, exploitant la marque et le projet technologique SendFlow.</p>
@@ -205,7 +214,7 @@ export function LegalMentionsPage({ legalEmail }: LegalPageProps) {
   );
 }
 
-export function TermsPage({ legalEmail }: LegalPageProps) {
+export function TermsPage({ legalEmail, contactPhone, whatsappNumber }: LegalPageProps) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
@@ -213,6 +222,8 @@ export function TermsPage({ legalEmail }: LegalPageProps) {
       title="Conditions générales d’utilisation"
       intro="Les présentes conditions encadrent l’accès au site, à l’application et aux fonctionnalités SendFlow proposées par Flow Digital SARL. Elles expliquent ce que SendFlow fait, ce qu’il ne fait pas, les responsabilités de chacun et les règles applicables aux transferts."
       legalEmail={legalEmail}
+      contactPhone={contactPhone}
+      whatsappNumber={whatsappNumber}
     >
       <LegalSection number="01" title="Identification de l’éditeur">
         <p>SendFlow est une marque et une solution technologique développées par <strong>Flow Digital SARL</strong>, société établie en Côte d’Ivoire, dont l’adresse officielle de contact est : Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire.</p>
@@ -323,7 +334,7 @@ export function TermsPage({ legalEmail }: LegalPageProps) {
   );
 }
 
-export function PrivacyPage({ legalEmail }: LegalPageProps) {
+export function PrivacyPage({ legalEmail, contactPhone, whatsappNumber }: LegalPageProps) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
@@ -331,6 +342,8 @@ export function PrivacyPage({ legalEmail }: LegalPageProps) {
       title="Politique de confidentialité"
       intro="Cette politique explique quelles données SendFlow peut traiter, pourquoi elles sont utilisées, avec qui elles peuvent être partagées, combien de temps elles sont conservées et comment exercer vos droits."
       legalEmail={legalEmail}
+      contactPhone={contactPhone}
+      whatsappNumber={whatsappNumber}
     >
       <LegalSection number="01" title="Responsable du traitement">
         <p>Le responsable du traitement présenté dans cette politique est <strong>Flow Digital SARL</strong>, opérateur de la marque SendFlow, établi à Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire.</p>

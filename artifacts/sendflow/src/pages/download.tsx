@@ -14,6 +14,7 @@ import materialWalletIcon from '../assets/google-material/account-balance-wallet
 import materialOutboxIcon from '../assets/google-material/outbox.svg';
 import { SendFlowFooter } from '@/components/sendflow-footer';
 import { ProtectedImage } from '@/components/protected-image';
+import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 import { useSeo } from '@/lib/seo';
 
 type Language = 'fr' | 'en';
@@ -35,6 +36,9 @@ type DownloadSettings = {
   appStoreUrl?: string | null;
   appGalleryUrl?: string | null;
   apkUrl?: string | null;
+  downloadContactEmail?: string | null;
+  downloadContactPhone?: string | null;
+  downloadContactWhatsapp?: string | null;
   linkedinUrl?: string | null;
   instagramUrl?: string | null;
   facebookUrl?: string | null;
@@ -292,7 +296,15 @@ export default function DownloadPage() {
 
   const closeMenu = () => setMenuOpen(false);
   const toggleLanguage = () => { setLanguage((current) => current === 'fr' ? 'en' : 'fr'); closeMenu(); };
-  const supportEmail = settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportEmail = settings?.downloadContactEmail?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportPhone = settings?.downloadContactPhone?.trim() || '';
+  const whatsappHref = getWhatsAppHref(settings?.downloadContactWhatsapp);
+  const phoneHref = getTelHref(supportPhone);
+  const pageContact = {
+    email: settings?.downloadContactEmail,
+    phone: settings?.downloadContactPhone,
+    whatsapp: settings?.downloadContactWhatsapp,
+  };
   const apkUrl = getSafeApkUrl(settings?.apkUrl);
   const googlePlayUrl = settings?.googlePlayUrl?.trim() || null;
   const appStoreUrl = settings?.appStoreUrl?.trim() || null;
@@ -403,7 +415,11 @@ export default function DownloadPage() {
 
         <section className="sf-download-support">
           <div><p className="sf-download-kicker">{t.supportKicker}</p><h2>{t.supportTitle}</h2><p>{t.supportBody}</p></div>
-          <a href={`mailto:${supportEmail}`}><Headphones size={18} />{t.contact}<ArrowRight size={17} /></a>
+          <div className="sf-download-support-actions">
+            <a href={`mailto:${supportEmail}`}><Headphones size={18} />{t.contact}<ArrowRight size={17} /></a>
+            {phoneHref && <a href={phoneHref} className="sf-download-support-secondary">{supportPhone}</a>}
+            {whatsappHref && <a href={whatsappHref} className="sf-download-support-secondary" target="_blank" rel="noreferrer">WhatsApp</a>}
+          </div>
         </section>
       </main>
 
@@ -412,6 +428,7 @@ export default function DownloadPage() {
         onNavigate={navigateToLandingSection}
         settings={settings}
         content={content ?? []}
+        contact={pageContact}
       />
     </div>
   );

@@ -56,14 +56,32 @@ const founderEditableFields = [
 
 const siteSettingsEditableFields = [
   "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl",
+  "homeContactEmail", "homeContactPhone", "homeContactWhatsapp",
+  "featuresContactEmail", "featuresContactPhone", "featuresContactWhatsapp",
+  "securityContactEmail", "securityContactPhone", "securityContactWhatsapp",
+  "downloadContactEmail", "downloadContactPhone", "downloadContactWhatsapp",
+  "aboutContactEmail", "aboutContactPhone", "aboutContactWhatsapp",
+  "legalContactEmail", "legalContactPhone", "legalContactWhatsapp",
   "companyName", "legalForm", "legalAddress", "legalEmail", "footerAddressFlag", "footerAddressCountry", "footerAddress",
   "regulatorNameFr", "regulatorNameEn", "regulatorLogoKey", "googlePlayUrl", "appStoreUrl", "appGalleryUrl", "apkUrl",
 ] as const;
 
 const founderContactFields = ["linkedinUrl", "websiteUrl", "instagramUrl", "xUrl", "email"] as const;
-const siteContactFields = ["supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl", "legalEmail"] as const;
+const siteContactFields = [
+  "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl", "legalEmail",
+  "homeContactEmail", "homeContactPhone", "homeContactWhatsapp",
+  "featuresContactEmail", "featuresContactPhone", "featuresContactWhatsapp",
+  "securityContactEmail", "securityContactPhone", "securityContactWhatsapp",
+  "downloadContactEmail", "downloadContactPhone", "downloadContactWhatsapp",
+  "aboutContactEmail", "aboutContactPhone", "aboutContactWhatsapp",
+  "legalContactEmail", "legalContactPhone", "legalContactWhatsapp",
+] as const;
 const siteLinkFields = ["websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl", "googlePlayUrl", "appStoreUrl", "appGalleryUrl", "apkUrl"] as const;
-const siteEmailFields = ["supportEmail", "legalEmail"] as const;
+const siteEmailFields = [
+  "supportEmail", "legalEmail",
+  "homeContactEmail", "featuresContactEmail", "securityContactEmail",
+  "downloadContactEmail", "aboutContactEmail", "legalContactEmail",
+] as const;
 const founderEmailFields = ["email"] as const;
 type ResourceName = keyof typeof resources;
 
@@ -501,8 +519,18 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
   );
   try {
     normalizePublicLinks(values, siteLinkFields, ["apkUrl"]);
+    const emailLabels: Record<string, string> = {
+      supportEmail: "L’email du support",
+      legalEmail: "L’email légal",
+      homeContactEmail: "L’email de contact de l’accueil",
+      featuresContactEmail: "L’email de contact des fonctionnalités",
+      securityContactEmail: "L’email de contact de la sécurité",
+      downloadContactEmail: "L’email de contact du téléchargement",
+      aboutContactEmail: "L’email de contact de la page à propos",
+      legalContactEmail: "L’email de contact légal",
+    };
     for (const fieldName of siteEmailFields) {
-      normalizeOptionalEmail(values, fieldName, fieldName === "supportEmail" ? "L’email du support" : "L’email légal");
+      normalizeOptionalEmail(values, fieldName, emailLabels[fieldName]);
     }
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : "Les coordonnées du site sont invalides." });

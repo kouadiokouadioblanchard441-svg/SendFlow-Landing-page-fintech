@@ -7,11 +7,13 @@ import bceaoLogo from '@assets/image_search/bceao-logo-official.png';
 import facebookLogo from '@assets/facebook-logo-clean-icon-png_1789582951886.png';
 import whatsappLogo from '@assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg';
 import { ProtectedImage } from '@/components/protected-image';
+import { getTelHref, getWhatsAppHref, type ContactDetails } from '@/lib/contact';
 
 type Copy = { fr: string; en: string };
 
 export type FooterSettings = {
   supportEmail?: string | null;
+  supportPhone?: string | null;
   companyName?: string | null;
   legalForm?: string | null;
   legalAddress?: string | null;
@@ -29,6 +31,24 @@ export type FooterSettings = {
   instagramUrl?: string | null;
   facebookUrl?: string | null;
   whatsappUrl?: string | null;
+  homeContactEmail?: string | null;
+  homeContactPhone?: string | null;
+  homeContactWhatsapp?: string | null;
+  featuresContactEmail?: string | null;
+  featuresContactPhone?: string | null;
+  featuresContactWhatsapp?: string | null;
+  securityContactEmail?: string | null;
+  securityContactPhone?: string | null;
+  securityContactWhatsapp?: string | null;
+  downloadContactEmail?: string | null;
+  downloadContactPhone?: string | null;
+  downloadContactWhatsapp?: string | null;
+  aboutContactEmail?: string | null;
+  aboutContactPhone?: string | null;
+  aboutContactWhatsapp?: string | null;
+  legalContactEmail?: string | null;
+  legalContactPhone?: string | null;
+  legalContactWhatsapp?: string | null;
 };
 
 export type FooterContentItem = {
@@ -43,6 +63,7 @@ type SendFlowFooterProps = {
   onNavigate?: (id: string) => void;
   settings: FooterSettings | null | undefined;
   content: FooterContentItem[];
+  contact?: ContactDetails;
 };
 
 function StoreLogo({ icon }: { icon: 'play' | 'apple' | 'gallery' }) {
@@ -92,8 +113,13 @@ function contentValue(content: FooterContentItem[], key: string, fallback: Copy,
   return content.find((item) => item.contentKey === key && item.locale === (isFrench ? 'fr' : 'en') && item.isVisible)?.value ?? fallback[isFrench ? 'fr' : 'en'];
 }
 
-export function SendFlowFooter({ isFrench, onNavigate, settings, content }: SendFlowFooterProps) {
-  const supportEmail = settings?.supportEmail?.trim() || 'support@sendflow.studio';
+export function SendFlowFooter({ isFrench, onNavigate, settings, content, contact }: SendFlowFooterProps) {
+  const supportEmail = contact?.email?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportPhone = contact?.phone?.trim() || settings?.supportPhone?.trim() || '';
+  const whatsappHref = contact?.whatsapp?.trim()
+    ? getWhatsAppHref(contact.whatsapp)
+    : settings?.whatsappUrl?.trim() || null;
+  const phoneHref = getTelHref(supportPhone);
   const legalCompany = settings?.companyName?.trim() || 'Flow Digital SARL';
   const legalForm = settings?.legalForm?.trim();
   const legalAddress = settings?.legalAddress?.trim() || settings?.footerAddress?.trim() || 'Côte d’Ivoire, Abidjan, Cocody Riviera Palmeraie';
@@ -116,7 +142,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
     <footer id="footer" className="sendflow-reference-footer">
       <div className="sendflow-footer-inner">
         <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
-          {socialLink('WhatsApp', settings?.whatsappUrl, <ProtectedImage src={whatsappLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-whatsapp')}
+          {socialLink('WhatsApp', whatsappHref, <ProtectedImage src={whatsappLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-whatsapp')}
           {socialLink('Facebook', settings?.facebookUrl, <ProtectedImage src={facebookLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-facebook')}
           {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
           {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
@@ -137,6 +163,8 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
           <section>
             <h3>{isFrench ? 'Assistance' : 'Support'}</h3>
             <a href={`mailto:${supportEmail}`} data-testid="link-footer-support-email">{supportEmail}</a>
+            {phoneHref && <a href={phoneHref} data-testid="link-footer-support-phone">{supportPhone}</a>}
+            {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" data-testid="link-footer-support-whatsapp">WhatsApp</a>}
             <button onClick={() => navigate('join')}>{copy('footer.referral', { fr: 'Parrainage', en: 'Referral' })}</button>
           </section>
           <section>

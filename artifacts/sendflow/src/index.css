@@ -882,6 +882,9 @@ footer > div > div:first-child {
 .sf-download-support p:last-child { max-width: 460px; margin: 15px 0 0; color: var(--sf-muted); font-size: 15px; line-height: 1.5; }
 .sf-download-support > a { display: inline-flex; width: fit-content; align-items: center; gap: 9px; border-radius: 10px; background: var(--sf-violet); padding: 14px 17px; color: #fff; font-size: 13px; font-weight: 800; }
 .sf-download-support > a svg:last-child { margin-left: 8px; }
+.sf-download-support-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.sf-download-support-actions > a { display: inline-flex; width: fit-content; align-items: center; gap: 9px; border-radius: 10px; background: var(--sf-violet); padding: 14px 17px; color: #fff; font-size: 13px; font-weight: 800; }
+.sf-download-support-actions > a.sf-download-support-secondary { background: #fff; color: var(--sf-violet); box-shadow: inset 0 0 0 1px rgba(109,53,216,.2); }
 .sf-download-footer { background: var(--sf-violet-dark); color: #dfd3f6; }
 .sf-download-footer-inner { width: min(100% - 38px, 1110px); margin: 0 auto; padding: 58px 0 27px; }
 .sf-download-footer .sf-download-brand { color: #fff; }
@@ -1844,6 +1847,7 @@ section#faq .reveal.space-y-2 > div {
 .sendflow-admin-modal h2 { margin: 0; color: var(--admin-ink); font-size: 23px; letter-spacing: -.045em; }
 .sendflow-admin-modal-intro { margin: 11px 0 22px; color: var(--admin-subtle); font-size: 11px; }
 .sendflow-admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.sendflow-admin-settings-group-title { grid-column: 1 / -1; margin-top: 8px; padding-top: 12px; border-top: 1px solid #e4dff0; color: #6d35d8; font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .sendflow-admin-field { display: grid; gap: 6px; color: #617084; font-size: 10px; font-weight: 700; }
 .sendflow-admin-field-wide { grid-column: 1 / -1; }
 .sendflow-admin-field input, .sendflow-admin-field textarea, .sendflow-admin-field select { width: 100%; border: 1px solid #dce3eb; border-radius: 7px; outline: 0; background: #fbfcfd; color: var(--admin-ink); padding: 9px 10px; font-size: 12px; font-weight: 500; transition: border-color .18s ease, box-shadow .18s ease; }

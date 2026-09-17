@@ -28,6 +28,7 @@ import crossNetworkIcon from '../assets/sendflow-icon-cross-network.svg';
 import internationalTransferIcon from '../assets/sendflow-icon-international-transfer.svg';
 import visibleDetailsIcon from '../assets/sendflow-icon-visible-details.svg';
 import { ProtectedImage } from '@/components/protected-image';
+import { getTelHref, getWhatsAppHref, type ContactDetails } from '@/lib/contact';
 
 export type AboutLocale = 'fr' | 'en';
 
@@ -53,6 +54,7 @@ export type AboutPageProps = {
   content?: Array<{ contentKey: string; locale: string; value: string; isVisible: boolean }>;
   onBackHome: () => void;
   onToggleLocale?: () => void;
+  contact?: ContactDetails;
 };
 
 type Copy = {
@@ -177,8 +179,12 @@ function Feature({
   );
 }
 
-export function AboutPage({ locale, profile, content = [], onBackHome, onToggleLocale }: AboutPageProps) {
+export function AboutPage({ locale, profile, content = [], onBackHome, onToggleLocale, contact }: AboutPageProps) {
   const isFrench = locale === 'fr';
+  const contactEmail = contact?.email?.trim() || profile.email?.trim() || '';
+  const contactPhone = contact?.phone?.trim() || '';
+  const contactPhoneHref = getTelHref(contactPhone);
+  const contactWhatsappHref = getWhatsAppHref(contact?.whatsapp);
   const t = (value: Copy) => {
     const key = Object.entries(editorialFallbacks).find(([, fallback]) => fallback.fr === value.fr && fallback.en === value.en)?.[0];
     const override = key ? content.find((item) => item.contentKey === key && item.locale === locale && item.isVisible) : undefined;
@@ -535,14 +541,34 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
                   X
                 </a>
               )}
-              {profile.email && (
+              {contactEmail && (
                 <a
-                  href={`mailto:${profile.email}`}
+                  href={`mailto:${contactEmail}`}
                   className="inline-flex min-w-[214px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition-transform hover:-translate-y-0.5"
                   style={{ backgroundColor: colors.violet, color: colors.paper }}
                 >
                   <SiGmail size={18} color="#EA4335" aria-hidden="true" />
                   {t({ fr: 'Écrire au fondateur', en: 'Email the founder' })}
+                </a>
+              )}
+              {contactPhoneHref && (
+                <a
+                  href={contactPhoneHref}
+                  className="inline-flex min-w-[214px] items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-transform hover:-translate-y-0.5"
+                  style={{ borderColor: colors.line, color: colors.navy }}
+                >
+                  {contactPhone}
+                </a>
+              )}
+              {contactWhatsappHref && (
+                <a
+                  href={contactWhatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-w-[214px] items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-transform hover:-translate-y-0.5"
+                  style={{ borderColor: colors.line, color: colors.navy }}
+                >
+                  WhatsApp
                 </a>
               )}
             </div>
