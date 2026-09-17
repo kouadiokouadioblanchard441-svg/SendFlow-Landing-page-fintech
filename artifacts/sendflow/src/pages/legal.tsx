@@ -47,7 +47,7 @@ function LegalBulletList({ children }: { children: ReactNode }) {
 function LegalLayout({ title, eyebrow, intro, legalEmail, children }: { title: string; eyebrow: string; intro: string; legalEmail?: string | null; children: ReactNode }) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
-    <div className="min-h-screen bg-[#f7f3e9] text-[#17131f]">
+    <div className="sendflow-legal-page min-h-screen bg-white text-[#17131f]">
       <header className="sticky top-0 z-40 border-b border-[#2d2535]/10 bg-[#f7f3e9]/90 px-5 py-4 backdrop-blur-md sm:px-8">
         <div className="mx-auto flex max-w-[1060px] items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2" aria-label="Retour à SendFlow">

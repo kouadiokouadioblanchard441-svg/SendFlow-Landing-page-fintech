@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Protest+Strike&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.cdnfonts.com/css/satoshi');
 @layer theme, base, clerk, components, utilities;
 @import 'tailwindcss';
 @import '@clerk/themes/shadcn.css';
@@ -52,9 +53,9 @@
   --accent-foreground: 255 24% 13%;
   --destructive: 5 70% 49%;
   --destructive-foreground: 42 35% 97%;
-  --app-font-sans: 'DM Sans', ui-sans-serif, sans-serif;
-  --app-font-serif: 'Instrument Serif', Georgia, serif;
-  --app-font-mono: 'DM Sans', ui-monospace, monospace;
+  --app-font-sans: 'Work Sans', ui-sans-serif, sans-serif;
+  --app-font-serif: 'Merriweather Sans', Georgia, sans-serif;
+  --app-font-mono: 'Work Sans', ui-monospace, monospace;
   --radius: 1rem;
   --shadow-sm: 0 10px 30px rgba(58, 38, 83, .07);
   --shadow-md: 0 18px 50px rgba(58, 38, 83, .12);
@@ -158,6 +159,31 @@
 [class*="text-[#bcb6c5]"] { color: #aeb6c4 !important; }
 [class*="text-[#e7dcfb]"] { color: #d6e3ff !important; }
 [class*="text-[#d5c8f0]"] { color: #c2d6fb !important; }
+
+/* Legal pages follow the same editorial system as the Sendchap reference:
+   Satoshi for long-form reading, Work Sans for interface labels. */
+.sendflow-legal-page {
+  font-family: 'Satoshi', 'Work Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+.sendflow-legal-page h1,
+.sendflow-legal-page h2,
+.sendflow-legal-page h3,
+.sendflow-legal-page strong,
+.sendflow-legal-page button,
+.sendflow-legal-page a {
+  font-family: 'Satoshi', 'Work Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.sendflow-legal-page .sendflow-legal-body {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.sendflow-legal-page .sendflow-legal-body ul {
+  text-align: left;
+}
 [class*="border-[#2d2535]"] { border-color: #e6eaf0 !important; }
 [class*="border-[#fbf8ef]"] { border-color: rgba(255,255,255,.16) !important; }
 [class*="bg-[#f0ece3]"] { background-color: #f4f6f9 !important; }
