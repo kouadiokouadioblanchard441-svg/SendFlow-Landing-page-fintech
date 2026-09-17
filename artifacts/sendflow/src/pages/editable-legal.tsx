@@ -79,13 +79,23 @@ export function EditableLegalPage({
     <div className="sendflow-legal-page min-h-screen bg-white text-[#1d1d1f]">
       <header className="sticky top-0 z-40 border-b border-[#e5e7eb] bg-white/95 px-3 py-3 shadow-sm backdrop-blur-md md:px-10">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2" aria-label="Retour à SendFlow">
+          <Link href="/" className="flex items-center gap-2" aria-label={isFrench ? 'Retour à SendFlow' : 'Back to SendFlow'}>
             <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white"><img src={sendflowMark} alt="" className="h-8 w-7 object-contain" /></span>
             <img src={sendflowWordmark} alt="SendFlow" className="h-6 w-auto object-contain" />
           </Link>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => setLocale(isFrench ? 'en' : 'fr')} className="rounded-full border border-[#1d1d1f]/15 bg-white px-3 py-2 text-[11px] font-bold transition-colors hover:border-[#7c3aed] hover:text-[#7c3aed]">{isFrench ? 'EN' : 'FR'}</button>
-            <Link href="/" className="inline-flex min-w-[164px] items-center justify-center rounded-full bg-[#7c3aed] px-5 py-2.5 text-center text-[12px] font-bold text-white transition-colors hover:bg-[#6d28d9]">Retour à l’accueil</Link>
+            <button
+              type="button"
+              onClick={() => setLocale(isFrench ? 'en' : 'fr')}
+              aria-label={isFrench ? 'Passer en anglais' : 'Passer en français'}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#1d1d1f]/15 bg-white px-2.5 py-2 text-[11px] font-bold transition-colors hover:border-[#7c3aed] hover:text-[#7c3aed] sm:px-3"
+            >
+              <span aria-hidden="true" className="text-[15px] leading-none">{isFrench ? '🇫🇷' : '🇬🇧'}</span>
+              <span>{isFrench ? 'FR' : 'EN'}</span>
+            </button>
+            <Link href="/" className="inline-flex min-w-[144px] items-center justify-center rounded-full bg-[#7c3aed] px-3 py-2.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-[#6d28d9] sm:min-w-[164px] sm:px-5 sm:text-[12px]">
+              {isFrench ? 'Retour à l’accueil' : 'Back to home'}
+            </Link>
           </div>
         </div>
       </header>
@@ -135,10 +145,10 @@ export function EditableLegalPage({
       </main>
       <footer className="border-t border-[#e5e7eb] bg-white px-4 py-8 sm:px-8">
         <div className="mx-auto flex max-w-[760px] flex-wrap gap-4 text-[12px] text-[#666]">
-          <Link href="/" className="font-semibold text-[#7c3aed]">Accueil</Link>
-          <Link href="/conditions-utilisation" className="hover:text-[#7c3aed]">Conditions</Link>
-          <Link href="/confidentialite" className="hover:text-[#7c3aed]">Confidentialité</Link>
-          <Link href="/mentions-legales" className="hover:text-[#7c3aed]">Mentions légales</Link>
+          <Link href="/" className="font-semibold text-[#7c3aed]">{isFrench ? 'Accueil' : 'Home'}</Link>
+          <Link href="/conditions-utilisation" className="hover:text-[#7c3aed]">{isFrench ? 'Conditions' : 'Terms'}</Link>
+          <Link href="/confidentialite" className="hover:text-[#7c3aed]">{isFrench ? 'Confidentialité' : 'Privacy'}</Link>
+          <Link href="/mentions-legales" className="hover:text-[#7c3aed]">{isFrench ? 'Mentions légales' : 'Legal notice'}</Link>
         </div>
       </footer>
     </div>
