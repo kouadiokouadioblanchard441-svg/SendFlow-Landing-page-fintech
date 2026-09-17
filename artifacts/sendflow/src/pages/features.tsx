@@ -11,6 +11,7 @@ import mixxByYasOperatorLogo from '../assets/operator-logos/operator-logo-08.png
 import crossNetworkIcon from '../assets/sendflow-icon-cross-network.svg';
 import internationalIcon from '../assets/sendflow-icon-international-transfer.svg';
 import { SendFlowFooter, type FooterContentItem, type FooterSettings } from '@/components/sendflow-footer';
+import { ProtectedImage } from '@/components/protected-image';
 import { useSeo } from '@/lib/seo';
 
 type Language = 'fr' | 'en';
@@ -85,8 +86,8 @@ const operatorLogos = [
 function Brand() {
   return (
     <Link href="/" className="sf-features-brand" aria-label="SendFlow">
-      <img src={sendflowMark} alt="" />
-      <img src={sendflowWordmark} alt="SendFlow" />
+      <ProtectedImage src={sendflowMark} alt="" />
+      <ProtectedImage src={sendflowWordmark} alt="SendFlow" />
     </Link>
   );
 }
@@ -104,7 +105,7 @@ function TransferRoute({
       <div className="sf-features-route-brand">
         <span className="sf-features-route-flag" aria-hidden="true">🇨🇮</span>
         <span className="sf-features-route-logo">
-          <img src={momoMtnOperatorLogo} alt="MTN MoMo" />
+          <ProtectedImage src={momoMtnOperatorLogo} alt="MTN MoMo" />
         </span>
         <small>{international ? 'Côte d’Ivoire' : 'MTN'}</small>
       </div>
@@ -112,7 +113,7 @@ function TransferRoute({
       <div className="sf-features-route-brand">
         <span className="sf-features-route-flag" aria-hidden="true">{isTmoney ? '🇹🇬' : '🇨🇮'}</span>
         <span className={`sf-features-route-logo ${isTmoney ? 'sf-features-tmoney-logo' : ''}`}>
-          {isTmoney ? <img src={mixxByYasOperatorLogo} alt="Mixx by Yas" /> : <img src={waveOperatorLogo} alt="Wave" />}
+          {isTmoney ? <ProtectedImage src={mixxByYasOperatorLogo} alt="Mixx by Yas" /> : <ProtectedImage src={waveOperatorLogo} alt="Wave" />}
         </span>
         <small>{isTmoney ? 'Togo' : 'Wave'}</small>
       </div>
@@ -215,7 +216,7 @@ export default function FeaturesPage() {
           <div className="sf-features-operator-row">
             {operatorLogos.map((operator) => (
               <div className="sf-features-operator" key={operator.name}>
-                <img src={operator.src} alt={operator.name} />
+                <ProtectedImage src={operator.src} alt={operator.name} />
               </div>
             ))}
           </div>
@@ -225,7 +226,7 @@ export default function FeaturesPage() {
           <div className="sf-features-card-grid">
             <article className="sf-features-card">
               <div className="sf-features-card-icon">
-                <img src={crossNetworkIcon} alt="" />
+                <ProtectedImage src={crossNetworkIcon} alt="" />
               </div>
               <TransferRoute destination="wave" />
               <h2>{t.networkTitle}</h2>
@@ -234,7 +235,7 @@ export default function FeaturesPage() {
             </article>
             <article className="sf-features-card">
               <div className="sf-features-card-icon">
-                <img src={internationalIcon} alt="" />
+                <ProtectedImage src={internationalIcon} alt="" />
               </div>
               <TransferRoute destination="tmoney" international />
               <h2>{t.internationalTitle}</h2>

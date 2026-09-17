@@ -27,6 +27,7 @@ import aboutHeroHandshake from '@assets/file_00000000f8e081f489c8c5b8c185ca4e_17
 import crossNetworkIcon from '../assets/sendflow-icon-cross-network.svg';
 import internationalTransferIcon from '../assets/sendflow-icon-international-transfer.svg';
 import visibleDetailsIcon from '../assets/sendflow-icon-visible-details.svg';
+import { ProtectedImage } from '@/components/protected-image';
 
 export type AboutLocale = 'fr' | 'en';
 
@@ -132,7 +133,7 @@ function FounderPhoto({ profile }: { profile: FounderProfile }) {
   }
 
   return (
-    <img
+    <ProtectedImage
       src={imageUrl}
       alt={profile.name}
       className="h-full w-full object-cover"
@@ -145,7 +146,7 @@ function FounderPhoto({ profile }: { profile: FounderProfile }) {
 function Mark({ className = '' }: { className?: string }) {
   return (
     <span className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#fffdf7] shadow-[0_5px_14px_rgba(33,29,44,.12)] ring-1 ring-[#1769ff]/25 ${className}`}>
-      <img src={sendflowMark} alt="" className="h-9 w-9 object-contain" />
+      <ProtectedImage src={sendflowMark} alt="" className="h-9 w-9 object-contain" />
     </span>
   );
 }
@@ -164,7 +165,7 @@ function Feature({
   return (
     <article className="group rounded-[26px] border p-6 transition-transform duration-300 hover:-translate-y-1" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
       <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-[#f7f3e9] px-3 py-2" style={{ borderColor: colors.line }}>
-        <img src={Icon} alt={iconAlt} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.04]" />
+        <ProtectedImage src={Icon} alt={iconAlt} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.04]" />
       </div>
       <h3 className="font-serif text-[28px] leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>
         {title}
@@ -298,7 +299,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
             <div className="absolute h-[240px] w-[240px] rounded-full border border-[#6d35d8]/25 sm:h-[350px] sm:w-[350px]" />
             <div className="absolute h-[180px] w-[180px] rounded-full bg-[#9adacb]/50 sm:h-[270px] sm:w-[270px]" />
             <div className="float-art relative h-[260px] w-[250px] rotate-[-5deg] overflow-hidden rounded-[26px] border-4 border-[#fffdf7] bg-white shadow-[0_26px_50px_rgba(33,29,44,.18)] sm:h-[330px] sm:w-[315px]">
-              <img
+              <ProtectedImage
                 src={aboutHeroWoman}
                 alt={isFrench ? 'Femme tenant un téléphone avec le logo SendFlow' : 'Woman holding a phone with the SendFlow logo'}
                 className="h-full w-full object-cover object-[center_20%]"
@@ -308,7 +309,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
               <ArrowRight size={21} />
             </div>
             <div className="absolute bottom-[13%] left-[5%] flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_12px_22px_rgba(33,29,44,.16)] sm:bottom-[18%] sm:left-[7%]">
-              <img
+              <ProtectedImage
                 src={aboutHeroHandshake}
                 alt={isFrench ? 'Illustration de poignée de main' : 'Handshake illustration'}
                 className="h-full w-full object-cover"
@@ -465,7 +466,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
             <FounderPhoto profile={profile} />
             <div className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-sm" style={{ backgroundColor: colors.yellow, color: colors.navy }}>
               <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
-                <img src={sendflowMark} alt="" className="h-full w-full object-contain" />
+                <ProtectedImage src={sendflowMark} alt="" className="h-full w-full object-contain" />
               </span>
               SendFlow
             </div>

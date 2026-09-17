@@ -13,6 +13,7 @@ import materialPersonIcon from '../assets/google-material/person.svg';
 import materialWalletIcon from '../assets/google-material/account-balance-wallet.svg';
 import materialOutboxIcon from '../assets/google-material/outbox.svg';
 import { SendFlowFooter } from '@/components/sendflow-footer';
+import { ProtectedImage } from '@/components/protected-image';
 import { useSeo } from '@/lib/seo';
 
 type Language = 'fr' | 'en';
@@ -209,8 +210,8 @@ const downloadContentKeys: Record<DownloadCopyKey, string> = {
 function Brand() {
   return (
     <Link href="/" className="sf-download-brand" aria-label="SendFlow">
-      <img src={sendflowMark} alt="" />
-      <img src={sendflowWordmark} alt="SendFlow" />
+      <ProtectedImage src={sendflowMark} alt="" />
+      <ProtectedImage src={sendflowWordmark} alt="SendFlow" />
     </Link>
   );
 }
@@ -358,7 +359,7 @@ export default function DownloadPage() {
           <div className="sf-download-hero-shape sf-download-hero-shape-one" />
           <div className="sf-download-hero-shape sf-download-hero-shape-two" />
           <div className="sf-download-hero-content">
-            <div className="sf-download-app-icon"><img src={sendflowMark} alt="SendFlow" /></div>
+            <div className="sf-download-app-icon"><ProtectedImage src={sendflowMark} alt="SendFlow" /></div>
             <h1>{t.title}</h1>
             <p className="sf-download-hero-body">{t.body}</p>
             <div className="sf-download-stores">
@@ -366,7 +367,7 @@ export default function DownloadPage() {
               <StoreButton store="play" label={t.download} href={settings?.googlePlayUrl} language={language} />
             </div>
             <a className={`sf-download-apk ${loading || !apkUrl ? 'is-disabled' : ''}`} href={apkUrl || undefined} onClick={(event) => { if (!apkUrl) event.preventDefault(); }} target={apkUrl ? '_blank' : undefined} rel={apkUrl ? 'noreferrer' : undefined} aria-disabled={!apkUrl} aria-label={t.apkTitle}>
-              <span className="sf-download-apk-icon"><img src={androidMaterialIcon} alt="" /></span>
+              <span className="sf-download-apk-icon"><ProtectedImage src={androidMaterialIcon} alt="" /></span>
               <span><strong>{t.apkTitle}</strong><small>{apkUrl ? t.apkReady : t.apkMeta}</small></span>
               {apkUrl && <ArrowRight size={18} />}
             </a>
@@ -386,11 +387,11 @@ export default function DownloadPage() {
               return (
                 <article className={`sf-download-step sf-download-step-${index + 1}`} key={step.title}>
                   <div className="sf-download-step-art">
-                    <img src={step.art} alt={step.alt} loading="lazy" decoding="async" />
-                    <span className="sf-download-step-icon" aria-hidden="true"><img src={step.icon} alt="" /></span>
+                    <ProtectedImage src={step.art} alt={step.alt} loading="lazy" decoding="async" />
+                    <span className="sf-download-step-icon" aria-hidden="true"><ProtectedImage src={step.icon} alt="" /></span>
                   </div>
                   <div className="sf-download-step-copy">
-                    <div className="sf-download-step-meta"><span>0{index + 1}</span><img src={step.icon} alt="" aria-hidden="true" /></div>
+                    <div className="sf-download-step-meta"><span>0{index + 1}</span><ProtectedImage src={step.icon} alt="" aria-hidden="true" /></div>
                     <h3>{step.title}</h3>
                     <p>{step.body}</p>
                   </div>

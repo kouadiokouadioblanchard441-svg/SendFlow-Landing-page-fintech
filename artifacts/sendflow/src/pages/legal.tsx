@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
+import { ProtectedImage } from '@/components/protected-image';
 
 const legalCompanyDetails = {
   name: 'Flow Digital SARL',
@@ -52,9 +53,9 @@ function LegalLayout({ title, eyebrow, intro, legalEmail, children }: { title: s
         <div className="mx-auto flex max-w-[1060px] items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2" aria-label="Retour à SendFlow">
             <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-[#6d35d8]/20">
-              <img src={sendflowMark} alt="" className="h-8 w-7 object-contain" />
+              <ProtectedImage src={sendflowMark} alt="" className="h-8 w-7 object-contain" />
             </span>
-            <img src={sendflowWordmark} alt="SendFlow" className="h-6 w-auto object-contain" />
+            <ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-6 w-auto object-contain" />
           </Link>
           <Link
             href="/"

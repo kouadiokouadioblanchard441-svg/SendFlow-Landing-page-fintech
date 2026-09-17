@@ -6,6 +6,7 @@ import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import bceaoLogo from '@assets/image_search/bceao-logo-official.png';
 import facebookLogo from '@assets/facebook-logo-clean-icon-png_1789582951886.png';
 import whatsappLogo from '@assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg';
+import { ProtectedImage } from '@/components/protected-image';
 
 type Copy = { fr: string; en: string };
 
@@ -115,8 +116,8 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
     <footer id="footer" className="sendflow-reference-footer">
       <div className="sendflow-footer-inner">
         <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
-          {socialLink('WhatsApp', settings?.whatsappUrl, <img src={whatsappLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-whatsapp')}
-          {socialLink('Facebook', settings?.facebookUrl, <img src={facebookLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-facebook')}
+          {socialLink('WhatsApp', settings?.whatsappUrl, <ProtectedImage src={whatsappLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-whatsapp')}
+          {socialLink('Facebook', settings?.facebookUrl, <ProtectedImage src={facebookLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-facebook')}
           {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
           {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
         </div>
@@ -124,7 +125,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content }: Send
         <section className="sendflow-footer-regulator" aria-label="BCEAO">
           <p className="sendflow-footer-kicker">{isFrench ? 'Réglementé par :' : 'Regulated by:'}</p>
           <a href="https://www.bceao.int/" target="_blank" rel="noreferrer" aria-label="Visiter le site officiel de la BCEAO">
-            <img src={bceaoLogo} alt="BCEAO — Banque Centrale des États de l’Afrique de l’Ouest" className="sendflow-official-regulator-logo" />
+            <ProtectedImage src={bceaoLogo} alt="BCEAO — Banque Centrale des États de l’Afrique de l’Ouest" className="sendflow-official-regulator-logo" />
           </a>
         </section>
 

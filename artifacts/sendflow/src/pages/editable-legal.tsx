@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
+import { ProtectedImage } from '@/components/protected-image';
 
 type LegalPage = {
   slug: string;
@@ -80,8 +81,8 @@ export function EditableLegalPage({
       <header className="sticky top-0 z-40 border-b border-[#e5e7eb] bg-white/95 px-3 py-3 shadow-sm backdrop-blur-md md:px-10">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2" aria-label={isFrench ? 'Retour à SendFlow' : 'Back to SendFlow'}>
-            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white"><img src={sendflowMark} alt="" className="h-8 w-7 object-contain" /></span>
-            <img src={sendflowWordmark} alt="SendFlow" className="h-6 w-auto object-contain" />
+            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white"><ProtectedImage src={sendflowMark} alt="" className="h-8 w-7 object-contain" /></span>
+            <ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-6 w-auto object-contain" />
           </Link>
           <div className="flex items-center gap-2">
             <button

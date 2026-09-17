@@ -7,6 +7,7 @@ import securityLockIcon from '@assets/generated_images/sendflow-security-lock-ic
 import securityCheckIcon from '../assets/sendflow-security-check.svg';
 import securityHeroArt from '@assets/generated_images/sendflow-security-hero-3d-clean.png';
 import { SendFlowFooter, type FooterContentItem, type FooterSettings } from '@/components/sendflow-footer';
+import { ProtectedImage } from '@/components/protected-image';
 import { useSeo } from '@/lib/seo';
 
 type Language = 'fr' | 'en';
@@ -72,8 +73,8 @@ const copy = {
 function Brand() {
   return (
     <Link href="/" className="sf-features-brand" aria-label="SendFlow">
-      <img src={sendflowMark} alt="" />
-      <img src={sendflowWordmark} alt="SendFlow" />
+      <ProtectedImage src={sendflowMark} alt="" />
+      <ProtectedImage src={sendflowWordmark} alt="SendFlow" />
     </Link>
   );
 }
@@ -170,14 +171,14 @@ export default function SecurityPage() {
 
         <section className="sf-security-guarantees" aria-labelledby="sf-security-guarantees-title">
           <div className="sf-security-lock" aria-hidden="true">
-            <img src={securityLockIcon} alt="" />
+            <ProtectedImage src={securityLockIcon} alt="" />
           </div>
           <h2 id="sf-security-guarantees-title">{t.guarantees}</h2>
           <ul>
             {t.items.map((item) => (
               <li key={item}>
                 <span className="sf-security-check" aria-hidden="true">
-                  <img src={securityCheckIcon} alt="" />
+                  <ProtectedImage src={securityCheckIcon} alt="" />
                 </span>
                 <strong>{item}</strong>
               </li>
@@ -187,7 +188,7 @@ export default function SecurityPage() {
 
         <section className="sf-security-art" aria-label={language === 'fr' ? 'Illustration de protection SendFlow' : 'SendFlow protection illustration'}>
           <div className="sf-security-art-glow" aria-hidden="true" />
-          <img src={securityHeroArt} alt="" />
+          <ProtectedImage src={securityHeroArt} alt="" />
         </section>
       </main>
 
