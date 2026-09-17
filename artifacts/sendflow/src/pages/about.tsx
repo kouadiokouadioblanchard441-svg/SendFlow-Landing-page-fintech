@@ -22,6 +22,8 @@ import {
 import { SiGmail } from 'react-icons/si';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import founderPortrait from '@assets/file_00000000d41881f4b07497287b39201e_1789085205545.png';
+import aboutHeroWoman from '@assets/file_0000000078c88210a7a3043febb33e01_1789621535794.png';
+import aboutHeroHandshake from '@assets/file_00000000f8e081f489c8c5b8c185ca4e_1789621548418.png';
 import crossNetworkIcon from '../assets/sendflow-icon-cross-network.svg';
 import internationalTransferIcon from '../assets/sendflow-icon-international-transfer.svg';
 import visibleDetailsIcon from '../assets/sendflow-icon-visible-details.svg';
@@ -295,23 +297,22 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
           <div className="relative mx-auto flex min-h-[330px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]">
             <div className="absolute h-[240px] w-[240px] rounded-full border border-[#6d35d8]/25 sm:h-[350px] sm:w-[350px]" />
             <div className="absolute h-[180px] w-[180px] rounded-full bg-[#9adacb]/50 sm:h-[270px] sm:w-[270px]" />
-            <div className="float-art relative flex h-[165px] w-[235px] rotate-[-7deg] flex-col justify-between rounded-[26px] p-6 shadow-[0_26px_50px_rgba(33,29,44,.18)] sm:h-[200px] sm:w-[290px] sm:p-7" style={{ backgroundColor: colors.navy }}>
-              <div className="flex items-center justify-between text-[#fffdf7]">
-                <span className="text-xs font-bold uppercase tracking-[0.15em]">SendFlow</span>
-                <Globe2 size={20} strokeWidth={1.5} />
-              </div>
-              <div>
-                <div className="mb-2 h-1.5 w-20 rounded-full bg-[#e8cd4d]" />
-                <p className="font-serif text-3xl leading-none text-[#fffdf7] sm:text-4xl">
-                  {t({ fr: 'Tout circule.', en: 'Keep it moving.' })}
-                </p>
-              </div>
+            <div className="float-art relative h-[260px] w-[250px] rotate-[-5deg] overflow-hidden rounded-[26px] border-4 border-[#fffdf7] bg-white shadow-[0_26px_50px_rgba(33,29,44,.18)] sm:h-[330px] sm:w-[315px]">
+              <img
+                src={aboutHeroWoman}
+                alt={isFrench ? 'Femme tenant un téléphone avec le logo SendFlow' : 'Woman holding a phone with the SendFlow logo'}
+                className="h-full w-full object-cover object-[center_20%]"
+              />
             </div>
             <div className="absolute right-[6%] top-[16%] flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8cd4d] shadow-[0_12px_22px_rgba(33,29,44,.14)] sm:right-[12%] sm:top-[13%]">
               <ArrowRight size={21} />
             </div>
-            <div className="absolute bottom-[13%] left-[5%] flex h-14 w-14 items-center justify-center rounded-full bg-[#6d35d8] text-[#fffdf7] shadow-[0_12px_22px_rgba(33,29,44,.16)] sm:bottom-[18%] sm:left-[7%]">
-              <HeartHandshake size={23} strokeWidth={1.7} />
+            <div className="absolute bottom-[13%] left-[5%] flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_12px_22px_rgba(33,29,44,.16)] sm:bottom-[18%] sm:left-[7%]">
+              <img
+                src={aboutHeroHandshake}
+                alt={isFrench ? 'Illustration de poignée de main' : 'Handshake illustration'}
+                className="h-full w-full object-cover"
+              />
             </div>
           </div>
         </div>
