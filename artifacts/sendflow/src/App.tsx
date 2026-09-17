@@ -19,9 +19,8 @@ import SecurityPage from '@/pages/security';
 import { SendFlowFooter } from '@/components/sendflow-footer';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
-import heroPlaceholder from '@assets/generated_images/sendflow-hero-placeholder.png';
-import heroGlobe from '@assets/generated_images/sendflow-earth-globe-transparent.png';
-import heroGlobalConnection from '@assets/file_000000003d2481f8a4200aa758aa64b9_1789047674015.png';
+import heroWoman from '@assets/file_0000000078c88210a7a3043febb33e01_1789621535794.png';
+import heroHandshake from '@assets/file_00000000f8e081f489c8c5b8c185ca4e_1789621548418.png';
 import networkSectionArt from '@assets/generated_images/sendflow-section-network-3d-transparent.png';
 import howItWorksSectionArt from '@assets/generated_images/sendflow-section-how-it-works-3d-transparent.png';
 import internationalSectionArt from '@assets/generated_images/sendflow-section-international-3d-transparent.png';
@@ -949,18 +948,11 @@ function LandingPage() {
           <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[1.04fr_.96fr] lg:gap-8">
             <div className="relative z-10 max-w-[680px]">
               <div className="rise relative mb-7 aspect-[1.45/1] w-full max-w-[640px] overflow-hidden rounded-[34px] border border-[#6d35d8]/10 bg-white shadow-[0_22px_55px_rgba(75,44,180,.1)]" data-testid="hero-image-slot">
-                <img src={heroPlaceholder} alt={isFrench ? 'Illustration temporaire du passage entre plusieurs réseaux' : 'Temporary illustration of a path across multiple networks'} className="h-full w-full object-cover" />
-                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-                  <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full border border-[#6d35d8]/15 bg-white/90 px-3 py-2 shadow-[0_8px_20px_rgba(50,30,130,.1)] backdrop-blur-sm">
-                    <BrandLockup />
-                  </div>
-                   {activeCountries.filter((country) => country.heroPositionX !== null && country.heroPositionY !== null).map((country) => <div key={country.code} className="absolute flex items-center gap-1 rounded-full border border-white/80 bg-white/95 px-2 py-1 text-[10px] font-bold text-[#211d2c] shadow-[0_8px_18px_rgba(20,30,80,.12)]" style={{ left: `${country.heroPositionX}%`, top: `${country.heroPositionY}%` }}><span className="text-sm leading-none">{country.flag}</span><span className="hidden sm:inline">{country.name}</span></div>)}
-                </div>
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-                  <span className="hero-globe-spin block h-32 w-32 sm:h-48 sm:w-48">
-                    <img src={heroGlobe} alt={isFrench ? 'Terre centrée sur l’Afrique' : 'Earth centered on Africa'} className="h-full w-full object-contain drop-shadow-[0_10px_16px_rgba(20,50,150,.22)]" />
-                  </span>
-                </div>
+                <img
+                  src={heroWoman}
+                  alt={isFrench ? 'Femme tenant un téléphone avec le logo SendFlow' : 'Woman holding a phone with the SendFlow logo'}
+                  className="h-full w-full object-cover object-[center_24%]"
+                />
               </div>
               <h1 className="rise delay-1 mt-6 max-w-[760px] whitespace-pre-line text-[clamp(3.7rem,9vw,7.6rem)] font-extrabold leading-[.88] tracking-[-.09em] text-[#17131f]">{t(localizedSection('hero', { title: { fr: 'L’argent circule.\nLes réseaux aussi.', en: 'Money moves.\nNetworks do too.' }, body: { fr: '', en: '' } }).title, language)}</h1>
               <p className="rise delay-2 mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px]">{t(localizedSection('hero', { title: { fr: '', en: '' }, body: { fr: 'SendFlow simplifie vos transferts d’argent entre différents réseaux de paiement, localement et au-delà des frontières.', en: 'SendFlow simplifies money transfers across different payment networks, locally and across borders.' } }).body, language)}</p>
@@ -969,38 +961,12 @@ function LandingPage() {
                  <Link href="/a-propos" className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-discover"><Play className="mr-2 text-white" size={14} fill="currentColor" />{t(contentCopy(landingBundle?.content, 'cta.discover', { fr: 'Découvrir SendFlow', en: 'Discover SendFlow' }), language)}</Link>
               </div>
             </div>
-              <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)]">
+               <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)]">
                <img
-                 src={heroGlobalConnection}
-                 alt={isFrench ? 'Homme devant un globe connecté entre l’Afrique et l’Europe' : 'Man in front of a globe connecting Africa and Europe'}
-                  className="h-full w-full object-cover"
+                 src={heroHandshake}
+                 alt={isFrench ? 'Illustration de deux personnes qui se serrent la main' : 'Illustration of two people shaking hands'}
+                  className="h-full w-full object-contain"
                />
-                 <div className="pointer-events-none absolute left-3 top-3 z-10 flex origin-top-left scale-[0.76] items-center rounded-full border border-[#6d35d8]/20 bg-white/90 px-3 py-2 shadow-[0_8px_20px_rgba(50,30,130,.16)] backdrop-blur-sm sm:left-4 sm:top-4 sm:scale-[0.88]" aria-label="SendFlow">
-                  <BrandLockup />
-                </div>
-                 <div className="hero-globe-motion pointer-events-none absolute right-[4%] top-[3%] z-10 aspect-square w-[61%] rounded-full" aria-hidden="true">
-                   <div className="hero-globe-motion__surface hero-globe-spin">
-                     <img src={heroGlobe} alt="" className="hero-globe-motion__earth" />
-                   </div>
-                   <div className="hero-globe-motion__badge-layer">
-                      {heroBadges.map(({ operator, position }, index) => {
-                        const fallbackLogo = operatorLogoMarks[operator.name] ?? { mark: operator.name.slice(0, 1).toUpperCase(), background: '#6d35d8', foreground: '#ffffff' };
-                        const logoUrl = operator.logoKey ? landingBundle?.media.find((item) => item.slug === operator.logoKey && item.isVisible)?.publicUrl : null;
-                       return (
-                         <span
-                            key={operator.id}
-                            className="hero-operator-badge"
-                            style={{ ...position, animationDelay: `${index * -0.7}s` }}
-                            aria-label={`${operator.name} logo`}
-                         >
-                            {logoUrl || fallbackLogo.image ? <img src={logoUrl || fallbackLogo.image} alt="" /> : <span>{fallbackLogo.mark}</span>}
-                         </span>
-                       );
-                     })}
-                   </div>
-                  <span className="hero-globe-motion__meridian hero-globe-motion__meridian--wide" />
-                  <span className="hero-globe-motion__meridian hero-globe-motion__meridian--narrow" />
-                </div>
             </div>
            </div>
          </section>
