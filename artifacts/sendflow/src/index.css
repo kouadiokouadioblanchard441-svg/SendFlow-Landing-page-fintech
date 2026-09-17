@@ -1975,7 +1975,8 @@ section#faq .reveal.space-y-2 > div {
   .sendflow-admin-newsletter-intro .sendflow-admin-button { width: 100%; margin-top: 18px; }
   .sendflow-admin-newsletter-grid { grid-template-columns: 1fr; }
   .sendflow-admin-newsletter-card, .sendflow-admin-newsletter-editor { padding: 15px; }
-  .sendflow-admin-section-head { align-items: start; }
+  .sendflow-admin-section-head { align-items: start; flex-wrap: wrap; }
+  .sendflow-admin-section-head > .sendflow-admin-button { width: 100%; }
   .sendflow-admin-section-title p { display: none; }
   .sendflow-admin-button-primary { padding-inline: 11px; }
   .sendflow-admin-assignment { display: block; }
@@ -1987,6 +1988,8 @@ section#faq .reveal.space-y-2 > div {
   .sendflow-admin-founder-foot .sendflow-admin-button { width: 100%; margin-top: 15px; }
   .sendflow-admin-check-list { margin-bottom: 13px; }
   .sendflow-admin-country-switcher { margin-top: 12px; }
+  .sendflow-admin-toolbar { flex-wrap: wrap; }
+  .sendflow-admin-toolbar .sendflow-admin-search { width: 100%; }
   .sendflow-admin-footer { display: block; line-height: 1.8; }
   .sendflow-admin-footer span { display: block; }
   .sendflow-admin-footer span:nth-child(2) { margin-top: 5px; }
