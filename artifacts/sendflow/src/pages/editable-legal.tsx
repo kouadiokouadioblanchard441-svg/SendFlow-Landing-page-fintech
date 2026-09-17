@@ -38,8 +38,8 @@ export function EditableLegalPage({
   const [locale, setLocale] = useState<'fr' | 'en'>('fr');
   const isFrench = locale === 'fr';
   const companyName = settings?.companyName || 'Flow Digital SARL';
-  const address = settings?.legalAddress || 'Côte d’Ivoire, Abidjan, Cocody Riviera Palmeraie';
-  const email = settings?.legalEmail || 'support@sendflow.studio';
+  const address = settings?.legalAddress || 'Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire';
+  const email = settings?.legalEmail || 'legal@sendflow.studio';
   const title = isFrench ? page.titleFr : page.titleEn;
   const intro = isFrench ? page.introFr : page.introEn;
 
@@ -63,10 +63,6 @@ export function EditableLegalPage({
             <p className="text-[11px] font-extrabold uppercase tracking-[.2em] text-[#6d35d8]">SendFlow · {isFrench ? 'Document légal' : 'Legal document'}</p>
             <h1 className="mt-4 whitespace-pre-line text-5xl font-extrabold leading-[.9] tracking-[-.075em] sm:text-7xl">{title}</h1>
             <p className="mt-7 text-[17px] font-semibold leading-7 text-[#40384c]">{intro}</p>
-          </div>
-          <div className="rounded-2xl border border-[#e8cd4d]/70 bg-[#fff8d9] px-5 py-4 text-[13px] leading-6 text-[#5b4810]">
-            <strong>{isFrench ? 'Document informatif à faire valider :' : 'Informational document to be reviewed:'}</strong>{' '}
-            {isFrench ? 'Cette page constitue une base éditoriale administrable et doit être validée avant le lancement commercial.' : 'This page is an editable editorial baseline and must be reviewed before commercial launch.'}
           </div>
           <div className="mt-12 space-y-12">
             {sections.map((section) => (

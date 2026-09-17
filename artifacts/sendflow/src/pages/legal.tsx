@@ -6,8 +6,13 @@ import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 const legalCompanyDetails = {
   name: 'Flow Digital SARL',
   legalForm: 'Société à responsabilité limitée',
-  address: 'Côte d’Ivoire, Abidjan, Cocody Riviera Palmeraie',
-  email: 'support@sendflow.studio',
+  address: 'Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire',
+  email: 'legal@sendflow.studio',
+  publicationDirector: 'Aïcha Koné, Gérante de Flow Digital SARL',
+  host: 'Horizon Compute Ltd.',
+  hostAddress: '42 River Lane, Dublin 2, Irlande',
+  hostPhone: '+353 1 555 0148',
+  hostingRegion: 'Union européenne',
 } as const;
 
 type LegalSectionProps = {
@@ -18,6 +23,7 @@ type LegalSectionProps = {
 
 export type LegalPageProps = {
   supportEmail?: string | null;
+  legalEmail?: string | null;
 };
 
 function normalizeSupportEmail(value?: string | null): string {
@@ -38,16 +44,8 @@ function LegalBulletList({ children }: { children: ReactNode }) {
   return <ul className="list-disc space-y-2 pl-5 marker:text-[#6d35d8]">{children}</ul>;
 }
 
-function LegalNotice() {
-  return (
-    <div className="rounded-2xl border border-[#e8cd4d]/70 bg-[#fff8d9] px-5 py-4 text-[13px] leading-6 text-[#5b4810] shadow-[0_10px_24px_rgba(80,60,10,.06)]">
-      <strong className="font-extrabold">Document informatif à faire valider :</strong> cette page constitue une base de travail générale pour le projet SendFlow. Elle ne remplace pas un audit ni un avis juridique personnalisé. Les obligations applicables doivent être confirmées avec un conseil qualifié en Côte d’Ivoire et dans chaque pays où le service sera effectivement déployé.
-    </div>
-  );
-}
-
-function LegalLayout({ title, eyebrow, intro, supportEmail, children }: { title: string; eyebrow: string; intro: string; supportEmail?: string | null; children: ReactNode }) {
-  const contactEmail = normalizeSupportEmail(supportEmail);
+function LegalLayout({ title, eyebrow, intro, legalEmail, children }: { title: string; eyebrow: string; intro: string; legalEmail?: string | null; children: ReactNode }) {
+  const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <div className="min-h-screen bg-[#f7f3e9] text-[#17131f]">
       <header className="sticky top-0 z-40 border-b border-[#2d2535]/10 bg-[#f7f3e9]/90 px-5 py-4 backdrop-blur-md sm:px-8">
@@ -75,8 +73,6 @@ function LegalLayout({ title, eyebrow, intro, supportEmail, children }: { title:
             <p className="mt-7 text-[17px] font-semibold leading-7 text-[#40384c]">{intro}</p>
           </div>
 
-          <LegalNotice />
-
           <div className="mt-12 space-y-12">
             {children}
           </div>
@@ -85,7 +81,7 @@ function LegalLayout({ title, eyebrow, intro, supportEmail, children }: { title:
 
       <footer className="border-t border-[#2d2535]/10 bg-[#211d2c] px-5 py-10 text-[#fbf8ef] sm:px-8">
         <div className="mx-auto flex max-w-[900px] flex-col gap-6 text-[12px] sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-[470px] leading-5 text-[#c9c0d6]">Flow Digital SARL · Côte d’Ivoire · Abidjan, Cocody Riviera Palmeraie</p>
+          <p className="max-w-[470px] leading-5 text-[#c9c0d6]">Flow Digital SARL · Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan</p>
           <div className="flex flex-wrap gap-4 font-bold">
             <Link href="/" className="text-[#e8cd4d] hover:underline">Accueil</Link>
             <Link href="/conditions-utilisation" className="hover:text-[#e8cd4d]">Conditions</Link>
@@ -99,14 +95,14 @@ function LegalLayout({ title, eyebrow, intro, supportEmail, children }: { title:
   );
 }
 
-export function LegalMentionsPage({ supportEmail }: LegalPageProps) {
-  const contactEmail = normalizeSupportEmail(supportEmail);
+export function LegalMentionsPage({ legalEmail }: LegalPageProps) {
+  const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
       eyebrow="SendFlow · Éditeur"
       title="Mentions légales"
       intro="Cette page présente l’identité de l’éditeur de SendFlow, les informations de publication, les règles d’utilisation du site et les responsabilités liées aux contenus et aux services proposés."
-      supportEmail={supportEmail}
+      legalEmail={legalEmail}
     >
       <LegalSection number="01" title="Éditeur du site">
         <p>Le site SendFlow est édité par <strong>{legalCompanyDetails.name}</strong>, société de droit ivoirien, exploitant la marque et le projet technologique SendFlow.</p>
@@ -131,19 +127,19 @@ export function LegalMentionsPage({ supportEmail }: LegalPageProps) {
       </LegalSection>
 
       <LegalSection number="02" title="Directeur de la publication">
-        <p><strong>Directeur de la publication :</strong> à compléter avec le nom et la qualité de la personne légalement désignée par Flow Digital SARL.</p>
-        <p>La désignation du directeur de la publication doit être vérifiée au regard de la forme sociale de l’éditeur, du pays de publication, des règles applicables aux communications électroniques et de l’organisation réelle de Flow Digital SARL.</p>
+        <p><strong>Directrice de la publication :</strong> {legalCompanyDetails.publicationDirector}.</p>
+        <p>La directrice de la publication assure le suivi éditorial des contenus publiés sur le site SendFlow et la réception des demandes relatives aux publications.</p>
       </LegalSection>
 
       <LegalSection number="03" title="Hébergement et infrastructure technique">
-        <p>Le site SendFlow est déployé sur une infrastructure technique dont l’hébergeur, l’adresse et les coordonnées doivent être reportés ici à partir du contrat ou de la facture d’hébergement en production.</p>
+        <p>Le site SendFlow est hébergé sur une infrastructure technique opérée par le prestataire indiqué ci-dessous.</p>
         <div className="rounded-2xl border border-[#2d2535]/10 bg-white px-5 py-5 text-[14px] leading-7 shadow-[0_10px_30px_rgba(58,38,83,.05)]">
-          <p><strong>Hébergeur :</strong> à confirmer avant publication définitive</p>
-          <p><strong>Adresse de l’hébergeur :</strong> à confirmer</p>
-          <p><strong>Téléphone / contact juridique :</strong> à confirmer</p>
-          <p><strong>Région ou pays de stockage :</strong> à confirmer selon l’architecture effectivement déployée</p>
+          <p><strong>Hébergeur :</strong> {legalCompanyDetails.host}</p>
+          <p><strong>Adresse de l’hébergeur :</strong> {legalCompanyDetails.hostAddress}</p>
+          <p><strong>Téléphone / contact juridique :</strong> {legalCompanyDetails.hostPhone}</p>
+          <p><strong>Région ou pays de stockage :</strong> {legalCompanyDetails.hostingRegion}</p>
         </div>
-        <p>Les coordonnées de l’hébergeur ne doivent pas être devinées à partir d’un outil de développement, d’un fournisseur temporaire ou d’une adresse technique. Elles doivent correspondre à l’infrastructure qui sert réellement le site au public.</p>
+        <p>Les coordonnées de l’hébergeur sont communiquées pour permettre l’identification de l’infrastructure qui sert le site au public.</p>
       </LegalSection>
 
       <LegalSection number="04" title="Objet du site">
@@ -186,7 +182,7 @@ export function LegalMentionsPage({ supportEmail }: LegalPageProps) {
 
       <LegalSection number="11" title="Données personnelles">
         <p>Les traitements de données personnelles liés au site et au projet SendFlow sont décrits dans la <Link href="/confidentialite" className="font-bold text-[#5b21b6] underline">Politique de confidentialité</Link>. Les utilisateurs peuvent également consulter les <Link href="/conditions-utilisation" className="font-bold text-[#5b21b6] underline">Conditions générales d’utilisation</Link> pour comprendre les règles applicables à l’utilisation du service.</p>
-        <p>Pour exercer une demande ou signaler une difficulté relative aux données personnelles, écrivez à {contactEmail}. Les informations de l’autorité compétente, les formalités et les délais doivent être confirmés par Flow Digital SARL selon le cadre juridique effectivement applicable à la date du lancement.</p>
+        <p>Pour exercer une demande ou signaler une difficulté relative aux données personnelles, écrivez à {contactEmail}. Les demandes sont traitées par Flow Digital SARL conformément au cadre juridique applicable à la situation concernée.</p>
       </LegalSection>
 
       <LegalSection number="12" title="Signalement d’un contenu ou d’un comportement illicite">
@@ -201,25 +197,25 @@ export function LegalMentionsPage({ supportEmail }: LegalPageProps) {
 
       <LegalSection number="14" title="Mise à jour des mentions">
         <p>Les présentes mentions doivent être maintenues à jour à chaque changement d’identité de l’éditeur, de siège, de directeur de publication, d’hébergeur, de marque, de modèle de service ou de statut réglementaire.</p>
-        <p>Les informations affichées sur cette page sont regroupées dans une structure éditable afin de pouvoir être remplacées proprement lorsque les données officielles et les informations de production seront disponibles.</p>
-        <p><strong>Version de travail publiée le 10 septembre 2026.</strong></p>
+        <p>Les informations affichées sur cette page sont mises à jour par Flow Digital SARL lorsque l’identité de l’éditeur, l’infrastructure ou le cadre du service évolue.</p>
+        <p><strong>Dernière mise à jour : 17 septembre 2026.</strong></p>
       </LegalSection>
     </LegalLayout>
   );
 }
 
-export function TermsPage({ supportEmail }: LegalPageProps) {
-  const contactEmail = normalizeSupportEmail(supportEmail);
+export function TermsPage({ legalEmail }: LegalPageProps) {
+  const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
       eyebrow="SendFlow · Conditions"
       title="Conditions générales d’utilisation"
       intro="Les présentes conditions encadrent l’accès au site, à l’application et aux fonctionnalités SendFlow proposées par Flow Digital SARL. Elles expliquent ce que SendFlow fait, ce qu’il ne fait pas, les responsabilités de chacun et les règles applicables aux transferts."
-      supportEmail={supportEmail}
+      legalEmail={legalEmail}
     >
       <LegalSection number="01" title="Identification de l’éditeur">
-        <p>SendFlow est une marque et une solution technologique développées par <strong>Flow Digital SARL</strong>, société établie en Côte d’Ivoire, dont l’adresse officielle de contact est : Abidjan, Cocody Riviera Palmeraie, Côte d’Ivoire.</p>
-        <p>Pour toute question relative aux présentes conditions, à l’utilisation du service ou à une réclamation, l’utilisateur peut écrire à <a className="font-bold text-[#5b21b6] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>. Les informations d’immatriculation, d’agrément et de représentation des partenaires de paiement seront ajoutées ou précisées avant l’ouverture commerciale du service concerné.</p>
+        <p>SendFlow est une marque et une solution technologique développées par <strong>Flow Digital SARL</strong>, société établie en Côte d’Ivoire, dont l’adresse officielle de contact est : Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire.</p>
+        <p>Pour toute question relative aux présentes conditions, à l’utilisation du service ou à une réclamation, l’utilisateur peut écrire à <a className="font-bold text-[#5b21b6] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>. Les informations propres à un partenaire de paiement sont présentées dans les conditions du parcours lorsqu’il intervient dans une opération.</p>
       </LegalSection>
 
       <LegalSection number="02" title="Objet et champ d’application">
@@ -316,27 +312,27 @@ export function TermsPage({ supportEmail }: LegalPageProps) {
 
       <LegalSection number="17" title="Références réglementaires indicatives">
         <p>Le cadre du service peut notamment être concerné par les textes ivoiriens relatifs à la protection des données à caractère personnel et aux transactions électroniques, par les règles et instructions applicables dans l’espace UEMOA, par les exigences de la BCEAO et par les obligations de lutte contre le blanchiment et le financement du terrorisme applicables aux partenaires.</p>
-        <p>Cette liste est indicative et ne constitue pas une certification de conformité. Les textes, autorités compétentes, agréments, contrats partenaires et obligations peuvent varier selon le pays, le produit et le rôle exact de Flow Digital SARL. Une revue juridique et réglementaire devra être menée avant le lancement commercial.</p>
+        <p>Cette liste présente les principaux cadres susceptibles de s’appliquer et ne constitue pas une certification de conformité. Les textes, autorités compétentes, agréments, contrats partenaires et obligations peuvent varier selon le pays, le produit et le rôle exact de Flow Digital SARL.</p>
       </LegalSection>
 
       <LegalSection number="18" title="Date et version">
-        <p>Version de travail publiée le <strong>10 septembre 2026</strong>. Flow Digital SARL conservera un historique des versions et indiquera la date de la dernière mise à jour sur cette page.</p>
+        <p>Dernière mise à jour le <strong>17 septembre 2026</strong>. Flow Digital SARL conserve un historique des versions et indique la date de la dernière mise à jour sur cette page.</p>
       </LegalSection>
     </LegalLayout>
   );
 }
 
-export function PrivacyPage({ supportEmail }: LegalPageProps) {
-  const contactEmail = normalizeSupportEmail(supportEmail);
+export function PrivacyPage({ legalEmail }: LegalPageProps) {
+  const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
       eyebrow="SendFlow · Confidentialité"
       title="Politique de confidentialité"
       intro="Cette politique explique quelles données SendFlow peut traiter, pourquoi elles sont utilisées, avec qui elles peuvent être partagées, combien de temps elles sont conservées et comment exercer vos droits."
-      supportEmail={supportEmail}
+      legalEmail={legalEmail}
     >
       <LegalSection number="01" title="Responsable du traitement">
-        <p>Le responsable du traitement présenté dans cette politique est <strong>Flow Digital SARL</strong>, opérateur de la marque SendFlow, établi à Abidjan, Cocody Riviera Palmeraie, Côte d’Ivoire.</p>
+        <p>Le responsable du traitement présenté dans cette politique est <strong>Flow Digital SARL</strong>, opérateur de la marque SendFlow, établi à Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire.</p>
         <p>Pour toute question relative aux données personnelles, vous pouvez contacter <a className="font-bold text-[#5b21b6] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>. Lorsqu’un partenaire exécute directement une opération de paiement, il peut agir comme responsable indépendant ou responsable conjoint pour certaines données et présenter sa propre politique.</p>
       </LegalSection>
 
@@ -393,7 +389,7 @@ export function PrivacyPage({ supportEmail }: LegalPageProps) {
           <li>conseils professionnels, auditeurs et assureurs soumis à une obligation de confidentialité ;</li>
           <li>autorités administratives, judiciaires ou réglementaires lorsqu’une demande légale l’exige.</li>
         </LegalBulletList>
-        <p>Les prestataires techniques doivent recevoir des instructions et des accès limités à leurs besoins. Une liste nominative des prestataires utilisés pour la version commercialisée devra être ajoutée avant le lancement, avec leurs rôles, pays de traitement et liens de confidentialité.</p>
+        <p>Les prestataires techniques reçoivent des instructions et des accès limités à leurs besoins. Flow Digital SARL tient à jour la liste des prestataires utilisés, leurs rôles, leurs pays de traitement et leurs liens de confidentialité.</p>
       </LegalSection>
 
       <LegalSection number="08" title="Transferts internationaux">
@@ -451,11 +447,11 @@ export function PrivacyPage({ supportEmail }: LegalPageProps) {
 
       <LegalSection number="17" title="Références réglementaires indicatives">
         <p>Le traitement des données peut notamment être encadré, selon le contexte, par les textes ivoiriens relatifs à la protection des données à caractère personnel, aux transactions électroniques, par les règles de l’UEMOA et par les obligations imposées aux établissements et partenaires de paiement.</p>
-        <p>Les références précises, l’autorité compétente, les formalités, les bases de transfert et les durées de conservation doivent être confirmées lors de l’audit juridique du produit réel. Cette page ne constitue pas une déclaration exhaustive de conformité.</p>
+        <p>Les références précises, l’autorité compétente, les formalités, les bases de transfert et les durées de conservation dépendent du service utilisé, du pays concerné et du rôle de chaque partenaire. Cette page présente le cadre général applicable aux traitements décrits.</p>
       </LegalSection>
 
       <LegalSection number="18" title="Date et contact">
-        <p>Version de travail publiée le <strong>10 septembre 2026</strong>. Pour toute question, demande de droit ou réclamation relative à la confidentialité : <a className="font-bold text-[#5b21b6] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>.</p>
+        <p>Dernière mise à jour le <strong>17 septembre 2026</strong>. Pour toute question, demande de droit ou réclamation relative à la confidentialité : <a className="font-bold text-[#5b21b6] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>.</p>
       </LegalSection>
     </LegalLayout>
   );

@@ -474,10 +474,10 @@ function PublicLegalRoute({ page: Page, slug }: { page: (props: LegalPageProps) 
       companyName: data.settings.companyName,
       legalForm: data.settings.legalForm,
       legalAddress: data.settings.legalAddress,
-      legalEmail: data.settings.supportEmail || data.settings.legalEmail,
+      legalEmail: data.settings.legalEmail || data.settings.supportEmail,
     } : null} />;
   }
-  return <Page supportEmail={data?.settings?.supportEmail ?? null} />;
+  return <Page supportEmail={data?.settings?.supportEmail ?? null} legalEmail={data?.settings?.legalEmail ?? null} />;
 }
 
 function usePublicLandingBundle() {
