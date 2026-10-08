@@ -2,5 +2,8 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/newsletter/SendFlowNewsletter.tsx": () => import("../components/mockups/newsletter/SendFlowNewsletter.tsx"),
-  "./components/mockups/sendflow-cards/Current.tsx": () => import("../components/mockups/sendflow-cards/Current.tsx")
+  "./components/mockups/sendflow-cards/Current.tsx": () => import("../components/mockups/sendflow-cards/Current.tsx"),
+  "./components/mockups/sendflow-discover/Current.tsx": () => import("../components/mockups/sendflow-discover/Current.tsx"),
+  "./components/mockups/sendflow-discover/Editorial.tsx": () => import("../components/mockups/sendflow-discover/Editorial.tsx"),
+  "./components/mockups/sendflow-discover/ProtectedImage.tsx": () => import("../components/mockups/sendflow-discover/ProtectedImage.tsx")
 };

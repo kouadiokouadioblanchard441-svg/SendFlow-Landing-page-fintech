@@ -8,6 +8,7 @@ import {
   ChevronDown,
   CircleDot,
   Compass,
+  Download,
   Globe2,
   GraduationCap,
   HeartHandshake,
@@ -53,6 +54,7 @@ export type AboutPageProps = {
   profile: FounderProfile;
   content?: Array<{ contentKey: string; locale: string; value: string; isVisible: boolean }>;
   onBackHome: () => void;
+  onDownload: () => void;
   onToggleLocale?: () => void;
   contact?: ContactDetails;
 };
@@ -96,16 +98,16 @@ const editorialFallbacks: Record<string, Copy> = {
 };
 
 const colors = {
-  ivory: '#f7f3e9',
-  paper: '#fffdf7',
-  violet: '#6d35d8',
-  violetDark: '#4d269d',
-  yellow: '#e8cd4d',
-  navy: '#211d2c',
-  navySoft: '#514b5d',
-  mint: '#9adacb',
-  mintPale: '#e2f3ee',
-  line: '#ded7cc',
+  ivory: '#ffffff',
+  paper: '#ffffff',
+  violet: '#1769ff',
+  violetDark: '#1256d2',
+  yellow: '#e9e4fb',
+  navy: '#17243e',
+  navySoft: '#526078',
+  mint: '#6d35d8',
+  mintPale: '#eef4ff',
+  line: '#e3e9f2',
 } as const;
 
 const sectionKicker = 'mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em]';
@@ -124,10 +126,10 @@ function FounderPhoto({ profile }: { profile: FounderProfile }) {
   if (hasImageError) {
     return (
       <div
-        className="flex h-full w-full items-center justify-center bg-[#6d35d8] p-8"
+        className="flex h-full w-full items-center justify-center bg-[#1769ff] p-8"
         aria-label={profile.name}
       >
-        <div className="flex h-36 w-36 items-center justify-center rounded-full border-[10px] border-[#9adacb] bg-[#e8cd4d] text-5xl font-bold tracking-[-0.08em] text-[#211d2c] shadow-[0_18px_0_rgba(33,29,44,.15)] sm:h-48 sm:w-48 sm:text-6xl">
+        <div className="flex h-36 w-36 items-center justify-center rounded-full border-[10px] border-[#dce8ff] bg-[#eef4ff] text-5xl font-bold tracking-[-0.08em] text-[#17243e] shadow-[0_18px_0_rgba(23,36,62,.12)] sm:h-48 sm:w-48 sm:text-6xl">
           {initials || <UserRound size={62} strokeWidth={1.5} />}
         </div>
       </div>
@@ -147,7 +149,7 @@ function FounderPhoto({ profile }: { profile: FounderProfile }) {
 
 function Mark({ className = '' }: { className?: string }) {
   return (
-    <span className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#fffdf7] shadow-[0_5px_14px_rgba(33,29,44,.12)] ring-1 ring-[#1769ff]/25 ${className}`}>
+    <span className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_5px_14px_rgba(23,36,62,.12)] ring-1 ring-[#1769ff]/20 ${className}`}>
       <ProtectedImage src={sendflowMark} alt="" className="h-9 w-9 object-contain" />
     </span>
   );
@@ -166,7 +168,7 @@ function Feature({
 }) {
   return (
     <article className="group rounded-[26px] border p-6 transition-transform duration-300 hover:-translate-y-1" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-      <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-[#f7f3e9] px-3 py-2" style={{ borderColor: colors.line }}>
+      <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-[#f5f7fc] px-3 py-2" style={{ borderColor: colors.line }}>
         <ProtectedImage src={Icon} alt={iconAlt} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.04]" />
       </div>
       <h3 className="font-serif text-[28px] leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>
@@ -226,9 +228,9 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
   ];
 
   return (
-    <main className="noise min-h-[100dvh]" style={{ backgroundColor: colors.ivory, color: colors.navy }}>
-      <header className="sticky top-0 z-30 border-b backdrop-blur-md" style={{ borderColor: 'rgba(222,215,204,.8)', backgroundColor: 'rgba(247,243,233,.88)' }}>
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8 lg:px-12">
+    <main className="min-h-[100dvh]" style={{ backgroundColor: colors.ivory, color: colors.navy }}>
+      <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-md" style={{ borderColor: colors.line }}>
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-5 py-3 sm:gap-4 sm:px-8 lg:px-12">
           <button
             type="button"
             onClick={onBackHome}
@@ -241,38 +243,44 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
           <button
             type="button"
             onClick={onBackHome}
-            className="link-underline inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-70"
+             className="link-underline hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-70 md:inline-flex"
           >
             <ArrowLeft size={15} />
             {t({ fr: 'Retour à l’accueil', en: 'Back home' })}
+          </button>
+          <button
+            type="button"
+            onClick={onDownload}
+            className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-full bg-[#1769ff] px-3.5 py-2 text-[11px] font-bold text-white shadow-[0_6px_16px_rgba(23,105,255,.17)] transition-colors hover:bg-[#1256d2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] sm:px-4 sm:text-xs md:ml-0"
+          >
+            <Download size={15} aria-hidden="true" />
+            <span className="sm:hidden">{t({ fr: 'Télécharger', en: 'Download' })}</span>
+            <span className="hidden sm:inline">{t({ fr: 'Télécharger l’application', en: 'Download the app' })}</span>
           </button>
           {onToggleLocale && (
             <button
               type="button"
               onClick={onToggleLocale}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-[#fffdf7] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_12px_rgba(33,29,44,.05)] transition-colors hover:bg-white"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_12px_rgba(23,36,62,.05)] transition-colors hover:bg-[#f5f7fc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1769ff]"
               style={{ borderColor: colors.line, color: colors.navy }}
               aria-label={isFrench ? 'Passer en anglais' : 'Switch to French'}
             >
-              <span aria-hidden="true" className="text-base leading-none">
-                {isFrench ? '🇫🇷' : '🇬🇧'}
-              </span>
-              <span>{isFrench ? 'FR' : 'EN'}</span>
+              {isFrench ? 'FR' : 'EN'}
             </button>
           )}
         </div>
       </header>
 
       <section className="relative overflow-hidden border-b" style={{ borderColor: colors.line }}>
-        <div className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[34px] border-[#9adacb]/60 sm:h-[500px] sm:w-[500px]" />
-        <div className="pointer-events-none absolute -bottom-28 left-[42%] h-56 w-56 rounded-full bg-[#e8cd4d]/45 blur-3xl" />
+        <div className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[34px] border-[#1769ff]/15 sm:h-[500px] sm:w-[500px]" />
+        <div className="pointer-events-none absolute -bottom-28 left-[42%] h-56 w-56 rounded-full bg-[#6d35d8]/10 blur-3xl" />
         <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-5 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-20 lg:px-12 lg:pt-28">
           <div className="rise max-w-3xl">
             <div className={sectionKicker} style={{ color: colors.violet }}>
               <Sparkles size={14} />
               {t({ fr: 'L’histoire derrière SendFlow', en: 'The story behind SendFlow' })}
             </div>
-            <h1 className="max-w-4xl font-serif text-[clamp(3.8rem,10vw,8.5rem)] leading-[0.84] tracking-[-0.065em]" style={{ color: colors.navy }}>
+            <h1 className="max-w-4xl font-serif text-[clamp(2.35rem,5.3vw,4.5rem)] leading-[1.02] tracking-[-0.055em]" style={{ color: colors.navy }}>
               {t({ fr: 'L’argent circule mieux quand les gens se comprennent.', en: 'Money moves better when people understand each other.' })}
             </h1>
             <p className="mt-8 max-w-xl text-base leading-7 sm:text-lg" style={{ color: colors.navySoft }}>
@@ -302,16 +310,16 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
           </div>
 
           <div className="relative mx-auto flex min-h-[330px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]">
-            <div className="absolute h-[240px] w-[240px] rounded-full border border-[#6d35d8]/25 sm:h-[350px] sm:w-[350px]" />
-            <div className="absolute h-[180px] w-[180px] rounded-full bg-[#9adacb]/50 sm:h-[270px] sm:w-[270px]" />
-            <div className="float-art relative h-[260px] w-[250px] rotate-[-5deg] overflow-hidden rounded-[26px] border-4 border-[#fffdf7] bg-white shadow-[0_26px_50px_rgba(33,29,44,.18)] sm:h-[330px] sm:w-[315px]">
+            <div className="absolute h-[240px] w-[240px] rounded-full border border-[#1769ff]/20 sm:h-[350px] sm:w-[350px]" />
+            <div className="absolute h-[180px] w-[180px] rounded-full bg-[#6d35d8]/10 sm:h-[270px] sm:w-[270px]" />
+            <div className="float-art relative h-[260px] w-[250px] rotate-[-3deg] overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-[0_26px_50px_rgba(23,36,62,.14)] sm:h-[330px] sm:w-[315px]">
               <ProtectedImage
                 src={aboutHeroWoman}
                 alt={isFrench ? 'Femme tenant un téléphone avec le logo SendFlow' : 'Woman holding a phone with the SendFlow logo'}
                 className="h-full w-full object-cover object-[center_20%]"
               />
             </div>
-            <div className="absolute right-[6%] top-[16%] flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8cd4d] shadow-[0_12px_22px_rgba(33,29,44,.14)] sm:right-[12%] sm:top-[13%]">
+            <div className="absolute right-[6%] top-[16%] flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1769ff] text-white shadow-[0_12px_22px_rgba(23,36,62,.14)] sm:right-[12%] sm:top-[13%]">
               <ArrowRight size={21} />
             </div>
             <div className="absolute bottom-[13%] left-[5%] flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_12px_22px_rgba(33,29,44,.16)] sm:bottom-[18%] sm:left-[7%]">
