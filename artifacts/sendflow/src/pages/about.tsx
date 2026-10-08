@@ -100,14 +100,14 @@ const editorialFallbacks: Record<string, Copy> = {
 const colors = {
   ivory: '#ffffff',
   paper: '#ffffff',
-  violet: '#1769ff',
-  violetDark: '#1256d2',
-  yellow: '#e9e4fb',
+  violet: '#6d35d8',
+  violetDark: '#5822c3',
+  yellow: '#e8cd4d',
   navy: '#17243e',
   navySoft: '#526078',
-  mint: '#6d35d8',
-  mintPale: '#eef4ff',
-  line: '#e3e9f2',
+  mint: '#9adacb',
+  violetPale: '#f4f0ff',
+  line: '#e5ddf2',
 } as const;
 
 const sectionKicker = 'mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em]';
@@ -126,10 +126,10 @@ function FounderPhoto({ profile }: { profile: FounderProfile }) {
   if (hasImageError) {
     return (
       <div
-        className="flex h-full w-full items-center justify-center bg-[#1769ff] p-8"
+        className="flex h-full w-full items-center justify-center bg-[#6d35d8] p-8"
         aria-label={profile.name}
       >
-        <div className="flex h-36 w-36 items-center justify-center rounded-full border-[10px] border-[#dce8ff] bg-[#eef4ff] text-5xl font-bold tracking-[-0.08em] text-[#17243e] shadow-[0_18px_0_rgba(23,36,62,.12)] sm:h-48 sm:w-48 sm:text-6xl">
+        <div className="flex h-36 w-36 items-center justify-center rounded-full border-[10px] border-[#e6d8ff] bg-[#f4f0ff] text-5xl font-bold tracking-[-0.08em] text-[#17243e] shadow-[0_18px_0_rgba(23,36,62,.12)] sm:h-48 sm:w-48 sm:text-6xl">
           {initials || <UserRound size={62} strokeWidth={1.5} />}
         </div>
       </div>
@@ -149,7 +149,7 @@ function FounderPhoto({ profile }: { profile: FounderProfile }) {
 
 function Mark({ className = '' }: { className?: string }) {
   return (
-    <span className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_5px_14px_rgba(23,36,62,.12)] ring-1 ring-[#1769ff]/20 ${className}`}>
+    <span className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_5px_14px_rgba(23,36,62,.12)] ring-1 ring-[#6d35d8]/20 ${className}`}>
       <ProtectedImage src={sendflowMark} alt="" className="h-9 w-9 object-contain" />
     </span>
   );
@@ -168,7 +168,7 @@ function Feature({
 }) {
   return (
     <article className="group rounded-[26px] border p-6 transition-transform duration-300 hover:-translate-y-1" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-      <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-[#f5f7fc] px-3 py-2" style={{ borderColor: colors.line }}>
+      <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-[#f4f0ff] px-3 py-2" style={{ borderColor: colors.line }}>
         <ProtectedImage src={Icon} alt={iconAlt} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.04]" />
       </div>
       <h3 className="font-serif text-[28px] leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>
@@ -251,7 +251,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
           <button
             type="button"
             onClick={onDownload}
-            className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-full bg-[#1769ff] px-3.5 py-2 text-[11px] font-bold text-white shadow-[0_6px_16px_rgba(23,105,255,.17)] transition-colors hover:bg-[#1256d2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] sm:px-4 sm:text-xs md:ml-0"
+            className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-full bg-[#6d35d8] px-3.5 py-2 text-[11px] font-bold text-white shadow-[0_6px_16px_rgba(109,53,216,.22)] transition-colors hover:bg-[#5822c3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] sm:px-4 sm:text-xs md:ml-0"
           >
             <Download size={15} aria-hidden="true" />
             <span className="sm:hidden">{t({ fr: 'Télécharger', en: 'Download' })}</span>
@@ -261,7 +261,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
             <button
               type="button"
               onClick={onToggleLocale}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_12px_rgba(23,36,62,.05)] transition-colors hover:bg-[#f5f7fc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1769ff]"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_12px_rgba(23,36,62,.05)] transition-colors hover:bg-[#f4f0ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
               style={{ borderColor: colors.line, color: colors.navy }}
               aria-label={isFrench ? 'Passer en anglais' : 'Switch to French'}
             >
@@ -272,7 +272,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
       </header>
 
       <section className="relative overflow-hidden border-b" style={{ borderColor: colors.line }}>
-        <div className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[34px] border-[#1769ff]/15 sm:h-[500px] sm:w-[500px]" />
+        <div className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[34px] border-[#6d35d8]/20 sm:h-[500px] sm:w-[500px]" />
         <div className="pointer-events-none absolute -bottom-28 left-[42%] h-56 w-56 rounded-full bg-[#6d35d8]/10 blur-3xl" />
         <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-16 lg:px-12 lg:pt-20">
           <div className="rise max-w-3xl">
@@ -300,7 +300,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
               </a>
               <a
                 href="#mission"
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
+                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition-colors hover:bg-[#f4f0ff]"
                 style={{ borderColor: colors.line, color: colors.navy }}
               >
                 {t({ fr: 'Notre raison d’être', en: 'Our reason why' })}
@@ -310,7 +310,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
           </div>
 
           <div className="relative mx-auto flex min-h-[330px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]">
-            <div className="absolute h-[240px] w-[240px] rounded-full border border-[#1769ff]/20 sm:h-[350px] sm:w-[350px]" />
+            <div className="absolute h-[240px] w-[240px] rounded-full border border-[#6d35d8]/25 sm:h-[350px] sm:w-[350px]" />
             <div className="absolute h-[180px] w-[180px] rounded-full bg-[#6d35d8]/10 sm:h-[270px] sm:w-[270px]" />
             <div className="float-art relative h-[260px] w-[250px] rotate-[-3deg] overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-[0_26px_50px_rgba(23,36,62,.14)] sm:h-[330px] sm:w-[315px]">
               <ProtectedImage
@@ -319,7 +319,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
                 className="h-full w-full object-cover object-[center_20%]"
               />
             </div>
-            <div className="absolute right-[6%] top-[16%] flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1769ff] text-white shadow-[0_12px_22px_rgba(23,36,62,.14)] sm:right-[12%] sm:top-[13%]">
+            <div className="absolute right-[6%] top-[16%] flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6d35d8] text-white shadow-[0_12px_22px_rgba(109,53,216,.24)] sm:right-[12%] sm:top-[13%]">
               <ArrowRight size={21} />
             </div>
             <div className="absolute bottom-[13%] left-[5%] flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_12px_22px_rgba(33,29,44,.16)] sm:bottom-[18%] sm:left-[7%]">
@@ -437,7 +437,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
         </div>
       </section>
 
-      <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.mintPale }}>
+      <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.violetPale }}>
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1fr_.8fr] lg:items-center lg:px-12">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
@@ -506,7 +506,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
                   href={profile.linkedinUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f4f0ff]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <Linkedin size={16} />
@@ -518,7 +518,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
                   href={profile.websiteUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f4f0ff]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <Globe2 size={16} />
@@ -530,7 +530,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
                   href={profile.instagramUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f4f0ff]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <Instagram size={16} />
@@ -542,7 +542,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
                   href={profile.xUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f4f0ff]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <span className="text-sm font-black leading-none">X</span>
@@ -587,7 +587,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
       <section className="px-5 pb-12 sm:px-8 lg:px-12">
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[30px] px-6 py-14 sm:px-12 sm:py-20 lg:px-20" style={{ backgroundColor: colors.navy }}>
           <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[26px] border-[#6d35d8]/70" />
-          <div className="pointer-events-none absolute bottom-[-80px] right-[26%] h-44 w-44 rounded-full bg-[#dce8ff]/35 blur-2xl" />
+          <div className="pointer-events-none absolute bottom-[-80px] right-[26%] h-44 w-44 rounded-full bg-[#e6d8ff]/45 blur-2xl" />
           <div className="relative flex flex-col items-start justify-between gap-9 lg:flex-row lg:items-end">
             <div className="max-w-2xl">
               <div className={sectionKicker} style={{ color: colors.yellow }}>
@@ -601,7 +601,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
             <button
               type="button"
               onClick={onBackHome}
-              className="group inline-flex shrink-0 items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-white transition-transform hover:-translate-y-1 hover:bg-[#1256d2]"
+              className="group inline-flex shrink-0 items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-white transition-transform hover:-translate-y-1 hover:bg-[#5822c3]"
               style={{ backgroundColor: colors.violet }}
             >
               {t({ fr: 'Découvrir SendFlow', en: 'Discover SendFlow' })}
