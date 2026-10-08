@@ -109,7 +109,7 @@ const contentCopy = (
 });
 type PublicLandingBundle = {
   content: Array<{ contentKey: string; locale: string; value: string; isVisible: boolean }>;
-  sections: Array<{ slug: string; titleFr: string; titleEn: string; bodyFr: string | null; bodyEn: string | null; isVisible: boolean }>;
+  sections: Array<{ slug: string; kind: string; orderIndex: number; titleFr: string; titleEn: string; bodyFr: string | null; bodyEn: string | null; imageKey: string | null; isVisible: boolean }>;
   features: Array<{ slug: string; group: string; titleFr: string; titleEn: string; bodyFr: string; bodyEn: string; iconKey: string | null; isVisible: boolean }>;
   faqs: Array<{ questionFr: string; questionEn: string; answerFr: string; answerEn: string; isVisible: boolean }>;
   countries: Array<{ id: number; code: string; nameFr: string; nameEn: string; flag: string; tone: string; heroPositionX: number | null; heroPositionY: number | null; isVisible: boolean }>;
@@ -602,6 +602,8 @@ function AboutRoute() {
       locale={language}
       profile={profile}
       content={landingBundle?.content ?? []}
+      heroSlides={landingBundle?.sections.filter((section) => section.kind === 'about-hero-slide') ?? []}
+      media={landingBundle?.media ?? []}
       contact={{
         email: landingBundle?.settings?.aboutContactEmail,
         phone: landingBundle?.settings?.aboutContactPhone,

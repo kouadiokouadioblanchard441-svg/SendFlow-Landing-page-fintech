@@ -90,6 +90,65 @@ const siteEmailFields = [
 ] as const;
 const founderEmailFields = ["email"] as const;
 type ResourceName = keyof typeof resources;
+const ABOUT_CAROUSEL_KIND = "about-hero-slide";
+const ABOUT_CAROUSEL_IMAGE_KEYS = new Set([
+  "about-hero-woman",
+  "sendflow-about-professional-01",
+  "sendflow-about-professional-02",
+  "sendflow-about-professional-03",
+  "sendflow-about-professional-04",
+  "sendflow-about-professional-05",
+]);
+const ABOUT_CAROUSEL_DEFAULTS = [
+  {
+    slug: "about-hero-slide-01",
+    kind: ABOUT_CAROUSEL_KIND,
+    orderIndex: 1,
+    titleFr: "Portrait illustratif d’une professionnelle présentant un téléphone SendFlow",
+    titleEn: "Illustrative portrait of a professional woman presenting a SendFlow phone",
+    imageKey: "about-hero-woman",
+  },
+  {
+    slug: "about-hero-slide-02",
+    kind: ABOUT_CAROUSEL_KIND,
+    orderIndex: 2,
+    titleFr: "Portrait illustratif d’une professionnelle présentant un téléphone",
+    titleEn: "Illustrative portrait of a woman professional presenting a phone",
+    imageKey: "sendflow-about-professional-01",
+  },
+  {
+    slug: "about-hero-slide-03",
+    kind: ABOUT_CAROUSEL_KIND,
+    orderIndex: 3,
+    titleFr: "Portrait illustratif d’un professionnel présentant un téléphone",
+    titleEn: "Illustrative portrait of a man professional presenting a phone",
+    imageKey: "sendflow-about-professional-02",
+  },
+  {
+    slug: "about-hero-slide-04",
+    kind: ABOUT_CAROUSEL_KIND,
+    orderIndex: 4,
+    titleFr: "Portrait illustratif d’une professionnelle de la finance",
+    titleEn: "Illustrative portrait of a woman finance professional",
+    imageKey: "sendflow-about-professional-03",
+  },
+  {
+    slug: "about-hero-slide-05",
+    kind: ABOUT_CAROUSEL_KIND,
+    orderIndex: 5,
+    titleFr: "Portrait illustratif d’un professionnel de la technologie",
+    titleEn: "Illustrative portrait of a man technology professional",
+    imageKey: "sendflow-about-professional-04",
+  },
+  {
+    slug: "about-hero-slide-06",
+    kind: ABOUT_CAROUSEL_KIND,
+    orderIndex: 6,
+    titleFr: "Portrait illustratif d’une entrepreneuse présentant un téléphone",
+    titleEn: "Illustrative portrait of a woman entrepreneur presenting a phone",
+    imageKey: "sendflow-about-professional-05",
+  },
+] as const;
 
 function resourceConfig(name: string) {
   return Object.prototype.hasOwnProperty.call(resources, name)
@@ -103,6 +162,45 @@ function editablePayload(name: ResourceName, body: unknown): Record<string, unkn
   const allowed = resources[name].editable as readonly string[];
   if (Object.keys(source).some((key) => !allowed.includes(key))) return null;
   return Object.fromEntries(Object.entries(source).filter(([key, value]) => allowed.includes(key) && value !== undefined));
+}
+
+async function validateAboutCarouselSlide(
+  values: Record<string, unknown>,
+  current?: { kind?: string; imageKey?: string | null; titleFr?: string; titleEn?: string },
+): Promise<string | null> {
+  const currentIsCarouselSlide = current?.kind === ABOUT_CAROUSEL_KIND;
+  const requestedKind = values.kind;
+  if (currentIsCarouselSlide && requestedKind !== undefined && requestedKind !== ABOUT_CAROUSEL_KIND) {
+    return "Le type d’un portrait du carrousel ne peut pas être modifié.";
+  }
+  if (!currentIsCarouselSlide && requestedKind !== ABOUT_CAROUSEL_KIND) return null;
+
+  const imageKey = typeof values.imageKey === "string" ? values.imageKey.trim() : current?.imageKey?.trim();
+  const titleFr = typeof values.titleFr === "string" ? values.titleFr.trim() : current?.titleFr?.trim();
+  const titleEn = typeof values.titleEn === "string" ? values.titleEn.trim() : current?.titleEn?.trim();
+  if (!titleFr || !titleEn) return "Le texte alternatif du portrait est requis en français et en anglais.";
+  if (!imageKey) return "Choisissez une image valide pour ce portrait.";
+  if (ABOUT_CAROUSEL_IMAGE_KEYS.has(imageKey)) return null;
+
+  const [visibleImage] = await db.select({ slug: landingMedia.slug, mimeType: landingMedia.mimeType })
+    .from(landingMedia)
+    .where(and(eq(landingMedia.slug, imageKey), eq(landingMedia.isVisible, true)))
+    .limit(1);
+  return visibleImage?.mimeType.startsWith("image/")
+    ? null
+    : "L’image sélectionnée n’existe pas dans la médiathèque ou n’est pas visible.";
+}
+
+async function hasVisibleCarouselReference(mediaSlug: string): Promise<boolean> {
+  const [reference] = await db.select({ id: landingSections.id })
+    .from(landingSections)
+    .where(and(
+      eq(landingSections.kind, ABOUT_CAROUSEL_KIND),
+      eq(landingSections.imageKey, mediaSlug),
+      eq(landingSections.isVisible, true),
+    ))
+    .limit(1);
+  return Boolean(reference);
 }
 
 function trimContactFields(values: Record<string, unknown>, fields: readonly string[]): Record<string, unknown> {
@@ -561,6 +659,32 @@ router.get("/admin/landing", requireAdmin, async (_req, res): Promise<void> => {
   res.json(await getLandingBundle());
 });
 
+router.post("/admin/landing/about-carousel/initialize", requireAdmin, async (_req, res): Promise<void> => {
+  const defaultSlugs = ABOUT_CAROUSEL_DEFAULTS.map((slide) => slide.slug);
+  const existingRows = await db.select({ slug: landingSections.slug, kind: landingSections.kind })
+    .from(landingSections)
+    .where(inArray(landingSections.slug, defaultSlugs));
+  const existingSlides = existingRows.filter((row) => row.kind === ABOUT_CAROUSEL_KIND);
+  if (existingSlides.length > 0) {
+    res.json({ created: false, slideCount: existingSlides.length });
+    return;
+  }
+
+  const conflictingSlugs = existingRows.filter((row) => row.kind !== ABOUT_CAROUSEL_KIND);
+  if (conflictingSlugs.length > 0) {
+    res.status(409).json({ error: "Un identifiant du carrousel est déjà utilisé par une autre section." });
+    return;
+  }
+
+  await db.insert(landingSections)
+    .values(ABOUT_CAROUSEL_DEFAULTS.map((slide) => ({ ...slide, isVisible: true })))
+    .onConflictDoNothing({ target: landingSections.slug });
+  const initializedSlides = await db.select({ id: landingSections.id })
+    .from(landingSections)
+    .where(eq(landingSections.kind, ABOUT_CAROUSEL_KIND));
+  res.status(201).json({ created: true, slideCount: initializedSlides.length });
+});
+
 router.put("/admin/landing/founder", requireAdmin, async (req, res): Promise<void> => {
   const parsed = founderProfileSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -692,8 +816,62 @@ router.patch("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pro
     res.status(400).json({ error: "No editable fields supplied" });
     return;
   }
+  const [currentSection] = name === "sections"
+    ? await db.select().from(landingSections).where(eq(landingSections.id, id)).limit(1)
+    : [];
+  const [currentMedia] = name === "media"
+    ? await db.select().from(landingMedia).where(eq(landingMedia.id, id)).limit(1)
+    : [];
+  if ((name === "sections" && !currentSection) || (name === "media" && !currentMedia)) {
+    res.status(404).json({ error: "Resource not found" });
+    return;
+  }
+  if (name === "sections") {
+    const carouselError = await validateAboutCarouselSlide(values, currentSection);
+    if (carouselError) {
+      res.status(400).json({ error: carouselError });
+      return;
+    }
+  }
+  if (
+    name === "media" &&
+    values.isVisible === false &&
+    currentMedia &&
+    await hasVisibleCarouselReference(currentMedia.slug)
+  ) {
+    res.status(409).json({ error: "Cette image est utilisée par un portrait visible. Modifiez ou masquez d’abord le portrait." });
+    return;
+  }
   const table = config.table as any;
-  const [updated] = await db.update(table).set(values).where(eq(table.id, id)).returning();
+  let updated: any;
+  let lastVisibleSlideBlocked = false;
+  if (
+    name === "sections" &&
+    currentSection?.kind === ABOUT_CAROUSEL_KIND &&
+    currentSection.isVisible &&
+    values.isVisible === false
+  ) {
+    await db.transaction(async (tx) => {
+      const visibleSlides = await tx.select({ id: landingSections.id })
+        .from(landingSections)
+        .where(and(
+          eq(landingSections.kind, ABOUT_CAROUSEL_KIND),
+          eq(landingSections.isVisible, true),
+        ))
+        .for("update");
+      if (visibleSlides.length <= 1 && visibleSlides.some((slide) => slide.id === id)) {
+        lastVisibleSlideBlocked = true;
+        return;
+      }
+      [updated] = await tx.update(landingSections).set(values).where(eq(landingSections.id, id)).returning();
+    });
+  } else {
+    [updated] = await db.update(table).set(values).where(eq(table.id, id)).returning();
+  }
+  if (lastVisibleSlideBlocked) {
+    res.status(409).json({ error: "Le dernier portrait visible ne peut pas être masqué." });
+    return;
+  }
   if (!updated) {
     res.status(404).json({ error: "Resource not found" });
     return;
@@ -714,6 +892,13 @@ router.post("/admin/landing/:resource", requireAdmin, async (req, res): Promise<
     res.status(400).json({ error: "No editable fields supplied" });
     return;
   }
+  if (name === "sections") {
+    const carouselError = await validateAboutCarouselSlide(values);
+    if (carouselError) {
+      res.status(400).json({ error: carouselError });
+      return;
+    }
+  }
   const createdRows = (await db.insert(config.table as any).values(values).returning()) as any[];
   const created = createdRows[0];
   res.status(201).json(created);
@@ -731,9 +916,47 @@ router.delete("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pr
     res.status(400).json({ error: "Invalid resource id" });
     return;
   }
+  const [currentSection] = name === "sections"
+    ? await db.select().from(landingSections).where(eq(landingSections.id, id)).limit(1)
+    : [];
+  const [currentMedia] = name === "media"
+    ? await db.select().from(landingMedia).where(eq(landingMedia.id, id)).limit(1)
+    : [];
+  if ((name === "sections" && !currentSection) || (name === "media" && !currentMedia)) {
+    res.status(404).json({ error: "Resource not found" });
+    return;
+  }
+  if (name === "media" && currentMedia && await hasVisibleCarouselReference(currentMedia.slug)) {
+    res.status(409).json({ error: "Cette image est utilisée par un portrait visible. Modifiez ou masquez d’abord le portrait." });
+    return;
+  }
   const table = config.table as any;
-  const deletedRows = (await db.delete(table).where(eq(table.id, id)).returning()) as any[];
-  const deleted = deletedRows[0];
+  let deleted: any;
+  let lastVisibleSlideBlocked = false;
+  if (name === "sections" && currentSection?.kind === ABOUT_CAROUSEL_KIND && currentSection.isVisible) {
+    await db.transaction(async (tx) => {
+      const visibleSlides = await tx.select({ id: landingSections.id })
+        .from(landingSections)
+        .where(and(
+          eq(landingSections.kind, ABOUT_CAROUSEL_KIND),
+          eq(landingSections.isVisible, true),
+        ))
+        .for("update");
+      if (visibleSlides.length <= 1 && visibleSlides.some((slide) => slide.id === id)) {
+        lastVisibleSlideBlocked = true;
+        return;
+      }
+      const deletedRows = await tx.delete(landingSections).where(eq(landingSections.id, id)).returning();
+      deleted = deletedRows[0];
+    });
+  } else {
+    const deletedRows = (await db.delete(table).where(eq(table.id, id)).returning()) as any[];
+    deleted = deletedRows[0];
+  }
+  if (lastVisibleSlideBlocked) {
+    res.status(409).json({ error: "Le dernier portrait visible ne peut pas être supprimé." });
+    return;
+  }
   if (!deleted) {
     res.status(404).json({ error: "Resource not found" });
     return;

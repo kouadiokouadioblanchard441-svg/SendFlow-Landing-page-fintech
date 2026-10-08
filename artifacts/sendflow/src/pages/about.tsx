@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
   ArrowLeft,
@@ -14,6 +14,8 @@ import {
   HeartHandshake,
   Instagram,
   Linkedin,
+  Pause,
+  Play,
   Quote,
   Sparkles,
   Target,
@@ -23,8 +25,8 @@ import {
 import { SiGmail } from 'react-icons/si';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import founderPortrait from '@assets/file_00000000d41881f4b07497287b39201e_1789085205545.png';
-import aboutHeroWoman from '@assets/file_0000000078c88210a7a3043febb33e01_1789621535794.png';
 import aboutHeroHandshake from '@assets/file_00000000f8e081f489c8c5b8c185ca4e_1789621548418.png';
+import { ABOUT_HERO_ASSETS, ABOUT_HERO_ASSET_BY_KEY } from '@/lib/aboutCarouselAssets';
 import crossNetworkIcon from '../assets/sendflow-icon-cross-network.svg';
 import internationalTransferIcon from '../assets/sendflow-icon-international-transfer.svg';
 import visibleDetailsIcon from '../assets/sendflow-icon-visible-details.svg';
@@ -53,6 +55,15 @@ export type AboutPageProps = {
   locale: AboutLocale;
   profile: FounderProfile;
   content?: Array<{ contentKey: string; locale: string; value: string; isVisible: boolean }>;
+  heroSlides?: Array<{
+    slug: string;
+    orderIndex: number;
+    titleFr: string;
+    titleEn: string;
+    imageKey: string | null;
+    isVisible: boolean;
+  }>;
+  media?: Array<{ slug: string; publicUrl: string | null; isVisible: boolean }>;
   onBackHome: () => void;
   onDownload: () => void;
   onChangeLocale?: (locale: AboutLocale) => void;
@@ -203,7 +214,7 @@ function Feature({
   );
 }
 
-export function AboutPage({ locale, profile, content = [], onBackHome, onDownload, onChangeLocale, contact }: AboutPageProps) {
+export function AboutPage({ locale, profile, content = [], heroSlides, media = [], onBackHome, onDownload, onChangeLocale, contact }: AboutPageProps) {
   const isFrench = locale === 'fr';
   const contactEmail = contact?.email?.trim() || profile.email?.trim() || '';
   const contactPhone = contact?.phone?.trim() || '';
@@ -213,6 +224,94 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
     const key = Object.entries(editorialFallbacks).find(([, fallback]) => fallback.fr === value.fr && fallback.en === value.en)?.[0];
     const override = key ? content.find((item) => item.contentKey === key && item.locale === locale && item.isVisible) : undefined;
     return override?.value ?? copy(value, locale);
+  };
+  const resolvedHeroSlides = useMemo(() => {
+    const configuredSlides = heroSlides?.filter((slide) => slide.isVisible).slice().sort((a, b) => a.orderIndex - b.orderIndex);
+    const sourceSlides = configuredSlides?.length
+      ? configuredSlides
+      : ABOUT_HERO_ASSETS.map((asset, orderIndex) => ({
+        slug: asset.key,
+        orderIndex,
+        titleFr: asset.altFr,
+        titleEn: asset.altEn,
+        imageKey: asset.key,
+        isVisible: true,
+      }));
+
+    const resolved = sourceSlides.flatMap((slide) => {
+      const imageKey = slide.imageKey?.trim() ?? '';
+      const bundledAsset = ABOUT_HERO_ASSET_BY_KEY[imageKey];
+      const uploadedImage = media.find((item) => item.slug === imageKey && item.isVisible)?.publicUrl;
+      const src = bundledAsset?.src ?? uploadedImage;
+      if (!src) return [];
+      return [{
+        id: slide.slug || imageKey,
+        src,
+        alt: locale === 'fr'
+          ? slide.titleFr?.trim() || bundledAsset?.altFr || 'Portrait illustratif d’un professionnel SendFlow'
+          : slide.titleEn?.trim() || bundledAsset?.altEn || 'Illustrative portrait of a SendFlow professional',
+      }];
+    });
+
+    return resolved.length > 0
+      ? resolved
+      : [{
+        id: ABOUT_HERO_ASSETS[0].key,
+        src: ABOUT_HERO_ASSETS[0].src,
+        alt: locale === 'fr' ? ABOUT_HERO_ASSETS[0].altFr : ABOUT_HERO_ASSETS[0].altEn,
+      }];
+  }, [heroSlides, locale, media]);
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+  const [heroAutoRotateEnabled, setHeroAutoRotateEnabled] = useState(true);
+  const [heroHoverPaused, setHeroHoverPaused] = useState(false);
+  const [heroFocusPaused, setHeroFocusPaused] = useState(false);
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [pageVisible, setPageVisible] = useState(true);
+  const activeHeroSlide = resolvedHeroSlides[heroSlideIndex] ?? resolvedHeroSlides[0];
+
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => setPrefersReducedMotion(query.matches);
+    updatePreference();
+    query.addEventListener('change', updatePreference);
+    return () => query.removeEventListener('change', updatePreference);
+  }, []);
+
+  useEffect(() => {
+    const updateVisibility = () => setPageVisible(document.visibilityState === 'visible');
+    updateVisibility();
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => document.removeEventListener('visibilitychange', updateVisibility);
+  }, []);
+
+  useEffect(() => {
+    setHeroSlideIndex((current) => current % resolvedHeroSlides.length);
+    setHeroImageFailed(false);
+  }, [resolvedHeroSlides.length]);
+
+  useEffect(() => {
+    if (
+      resolvedHeroSlides.length < 2 ||
+      !heroAutoRotateEnabled ||
+      heroHoverPaused ||
+      heroFocusPaused ||
+      prefersReducedMotion ||
+      !pageVisible
+    ) return undefined;
+
+    const interval = window.setInterval(() => {
+      setHeroSlideIndex((current) => (current + 1) % resolvedHeroSlides.length);
+    }, 5_500);
+    return () => window.clearInterval(interval);
+  }, [heroAutoRotateEnabled, heroFocusPaused, heroHoverPaused, pageVisible, prefersReducedMotion, resolvedHeroSlides.length]);
+
+  useEffect(() => {
+    setHeroImageFailed(false);
+  }, [heroSlideIndex]);
+
+  const goToHeroSlide = (index: number) => {
+    setHeroSlideIndex((index + resolvedHeroSlides.length) % resolvedHeroSlides.length);
   };
 
   const storySteps = [
@@ -354,18 +453,87 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
             </div>
           </div>
 
-          <div className="relative mx-auto flex min-h-[330px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]">
+          <div
+            role="group"
+            aria-roledescription={isFrench ? 'carrousel' : 'carousel'}
+            aria-label={isFrench ? 'Portraits illustratifs SendFlow' : 'Illustrative SendFlow portraits'}
+            onMouseEnter={() => setHeroHoverPaused(true)}
+            onMouseLeave={() => setHeroHoverPaused(false)}
+            onFocusCapture={() => setHeroFocusPaused(true)}
+            onBlurCapture={(event) => {
+              if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+                setHeroFocusPaused(false);
+              }
+            }}
+            className="relative mx-auto flex min-h-[350px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]"
+            data-testid="about-hero-carousel"
+          >
             <div className="absolute h-[240px] w-[240px] rounded-full border border-[#6d35d8]/25 sm:h-[350px] sm:w-[350px]" />
             <div className="float-art relative h-[260px] w-[250px] rotate-[-3deg] overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-[0_26px_50px_rgba(23,36,62,.14)] sm:h-[330px] sm:w-[315px]">
               <ProtectedImage
-                src={aboutHeroWoman}
-                alt={isFrench ? 'Femme tenant un téléphone avec le logo SendFlow' : 'Woman holding a phone with the SendFlow logo'}
-                className="h-full w-full object-cover object-[center_20%]"
+                key={activeHeroSlide.id}
+                src={heroImageFailed ? ABOUT_HERO_ASSETS[0].src : activeHeroSlide.src}
+                alt={activeHeroSlide.alt}
+                className="h-full w-full object-cover object-[center_20%] transition-opacity duration-500"
+                onError={() => setHeroImageFailed(true)}
+                data-testid="about-hero-carousel-image"
               />
             </div>
-            <div className="absolute right-[6%] top-[16%] flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6d35d8] text-white shadow-[0_12px_22px_rgba(109,53,216,.24)] sm:right-[12%] sm:top-[13%]">
-              <ArrowRight size={21} />
-            </div>
+            {resolvedHeroSlides.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => goToHeroSlide(heroSlideIndex - 1)}
+                  className="absolute left-[2%] top-[43%] z-10 flex h-11 w-11 items-center justify-center rounded-2xl border border-white bg-white/95 text-[#6d35d8] shadow-[0_12px_22px_rgba(23,36,62,.14)] transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] sm:left-[5%]"
+                  aria-label={isFrench ? 'Portrait précédent' : 'Previous portrait'}
+                  data-testid="about-hero-carousel-previous"
+                >
+                  <ArrowLeft size={19} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goToHeroSlide(heroSlideIndex + 1)}
+                  className="absolute right-[5%] top-[16%] z-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6d35d8] text-white shadow-[0_12px_22px_rgba(109,53,216,.24)] transition-transform hover:-translate-y-0.5 hover:bg-[#5822c3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] sm:right-[12%] sm:top-[13%]"
+                  aria-label={isFrench ? 'Portrait suivant' : 'Next portrait'}
+                  data-testid="about-hero-carousel-next"
+                >
+                  <ArrowRight size={21} />
+                </button>
+                <div className="absolute bottom-1 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-[#e5ddf2] bg-white/95 px-2.5 py-1.5 shadow-[0_8px_18px_rgba(23,36,62,.1)]">
+                  <div role="group" aria-label={isFrench ? 'Choisir un portrait' : 'Choose a portrait'} className="flex items-center gap-1.5">
+                    {resolvedHeroSlides.map((slide, index) => (
+                      <button
+                        key={slide.id}
+                        type="button"
+                        onClick={() => goToHeroSlide(index)}
+                        className={`h-2 rounded-full transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] ${heroSlideIndex === index ? 'w-5 bg-[#6d35d8]' : 'w-2 bg-[#cfc4e4] hover:bg-[#6d35d8]'}`}
+                        aria-label={isFrench ? `Afficher le portrait ${index + 1}` : `Show portrait ${index + 1}`}
+                        aria-current={heroSlideIndex === index ? 'true' : undefined}
+                        data-testid={`about-hero-carousel-dot-${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                  <span className="mx-0.5 h-4 w-px bg-[#e5ddf2]" aria-hidden="true" />
+                  <button
+                    type="button"
+                    onClick={() => setHeroAutoRotateEnabled((enabled) => !enabled)}
+                    disabled={prefersReducedMotion}
+                    className="flex h-6 w-6 items-center justify-center rounded-full text-[#6d35d8] transition-colors hover:bg-[#f4f0ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#6d35d8] disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={
+                      prefersReducedMotion
+                        ? (isFrench ? 'Défilement automatique désactivé par le réglage de mouvement réduit' : 'Automatic rotation disabled by reduced motion preference')
+                        : heroAutoRotateEnabled
+                          ? (isFrench ? 'Mettre le défilement automatique en pause' : 'Pause automatic rotation')
+                          : (isFrench ? 'Reprendre le défilement automatique' : 'Resume automatic rotation')
+                    }
+                    aria-pressed={heroAutoRotateEnabled && !prefersReducedMotion}
+                    data-testid="about-hero-carousel-toggle"
+                  >
+                    {heroAutoRotateEnabled && !prefersReducedMotion ? <Pause size={13} /> : <Play size={13} />}
+                  </button>
+                </div>
+              </>
+            )}
             <div className="absolute bottom-[13%] left-[5%] flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_12px_22px_rgba(33,29,44,.16)] sm:bottom-[18%] sm:left-[7%]">
               <ProtectedImage
                 src={aboutHeroHandshake}

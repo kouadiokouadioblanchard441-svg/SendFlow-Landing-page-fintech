@@ -30,6 +30,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react';
+import { ABOUT_HERO_ASSETS, ABOUT_HERO_ASSET_BY_KEY } from '@/lib/aboutCarouselAssets';
 
 type Primitive = string | number | boolean | null | undefined;
 type RecordItem = { id?: number; [key: string]: Primitive };
@@ -91,14 +92,15 @@ type CampaignDraft = {
   previewText: string;
   bodyHtml: string;
 };
-type ResourceKey = Exclude<keyof Bundle, 'countryOperators' | 'founder' | 'settings'>;
+type ResourceKey = Exclude<keyof Bundle, 'countryOperators' | 'founder' | 'settings'> | 'aboutCarousel';
+type StoredResourceKey = Exclude<ResourceKey, 'aboutCarousel'>;
 type InputKind = 'text' | 'textarea' | 'number' | 'checkbox' | 'select';
 type FieldConfig = {
   key: string;
   label: string;
   kind?: InputKind;
   placeholder?: string;
-  optionSource?: 'locale' | 'contentType' | 'page' | 'operator' | 'media';
+  optionSource?: 'locale' | 'contentType' | 'page' | 'operator' | 'media' | 'carouselMedia';
 };
 type ResourceConfig = {
   label: string;
@@ -173,6 +175,26 @@ const resourceConfigs: Record<ResourceKey, ResourceConfig> = {
       { key: 'slug', label: 'Section', emphasis: true },
       { key: 'titleFr', label: 'Titre français' },
       { key: 'titleEn', label: 'Titre anglais' },
+      { key: 'isVisible', label: 'État' },
+    ],
+  },
+  aboutCarousel: {
+    label: 'Carrousel Découvrir',
+    singular: 'portrait',
+    apiResource: 'sections',
+    description: 'Gérez les portraits de Découvrir : image, textes alternatifs, ordre et visibilité. Les images importées dans « Médias » sont aussi sélectionnables ici.',
+    fields: [
+      { key: 'slug', label: 'Identifiant', placeholder: 'about-hero-slide-07' },
+      { key: 'orderIndex', label: 'Ordre de passage', kind: 'number' },
+      { key: 'titleFr', label: 'Texte alternatif · FR', kind: 'textarea' },
+      { key: 'titleEn', label: 'Texte alternatif · EN', kind: 'textarea' },
+      { key: 'imageKey', label: 'Image du portrait', kind: 'select', optionSource: 'carouselMedia' },
+      { key: 'isVisible', label: 'Visible sur le site', kind: 'checkbox' },
+    ],
+    columns: [
+      { key: 'orderIndex', label: '#' },
+      { key: 'imageKey', label: 'Portrait', emphasis: true },
+      { key: 'titleFr', label: 'Texte alternatif' },
       { key: 'isVisible', label: 'État' },
     ],
   },
@@ -331,6 +353,7 @@ const resourceConfigs: Record<ResourceKey, ResourceConfig> = {
 const navigation: { key: ResourceKey; icon: typeof FileText; compact?: boolean }[] = [
   { key: 'content', icon: Languages },
   { key: 'sections', icon: LayoutDashboard },
+  { key: 'aboutCarousel', icon: Image },
   { key: 'features', icon: SlidersHorizontal },
   { key: 'faqs', icon: CircleHelp },
   { key: 'media', icon: Image },
@@ -417,6 +440,19 @@ function CountryFlag({ value }: { value: Primitive }) {
 }
 
 function ResourceCell({ resource, column, item, bundle }: { resource: ResourceKey; column: { key: string }; item: RecordItem; bundle: Bundle }) {
+  if (resource === 'aboutCarousel' && column.key === 'imageKey') {
+    const key = String(item.imageKey ?? '');
+    const asset = ABOUT_HERO_ASSET_BY_KEY[key];
+    const media = mediaForKey(bundle, item.imageKey);
+    return (
+      <span className="sendflow-admin-cell-with-thumb">
+        {asset
+          ? <span className="sendflow-admin-media-thumb" title={asset.label}><img src={asset.src} alt="" /></span>
+          : <MediaThumb media={media} label={String(media?.slug ?? 'Portrait')} />}
+        <span>{asset?.label ?? String(media?.slug ?? (key || '—'))}</span>
+      </span>
+    );
+  }
   if (resource === 'media' && column.key === 'slug') {
     return <span className="sendflow-admin-cell-with-thumb"><MediaThumb media={item} label={String(item.slug ?? 'Média')} /><span>{displayValue(item[column.key], resource, column.key, bundle)}</span></span>;
   }
@@ -455,6 +491,18 @@ function defaultValues(config: ResourceConfig, bundle: Bundle): Record<string, P
   });
   if (config.apiResource === 'legalSections' && bundle.legalPages[0]?.id) values.pageId = bundle.legalPages[0].id;
   if (config.apiResource === 'badges' && bundle.operators[0]?.id) values.operatorId = bundle.operators[0].id;
+  if (config.fields.some((field) => field.optionSource === 'carouselMedia')) {
+    const slides = bundle.sections.filter((section) => section.kind === 'about-hero-slide');
+    const usedSlugs = new Set(slides.map((slide) => String(slide.slug ?? '')));
+    let nextNumber = 1;
+    while (usedSlugs.has(`about-hero-slide-${String(nextNumber).padStart(2, '0')}`)) nextNumber += 1;
+    const defaultAsset = ABOUT_HERO_ASSETS[(nextNumber - 1) % ABOUT_HERO_ASSETS.length];
+    values.slug = `about-hero-slide-${String(nextNumber).padStart(2, '0')}`;
+    values.orderIndex = Math.max(0, ...slides.map((slide) => Number(slide.orderIndex) || 0)) + 1;
+    values.titleFr = defaultAsset.altFr;
+    values.titleEn = defaultAsset.altEn;
+    values.imageKey = defaultAsset.key;
+  }
   return values;
 }
 
@@ -505,6 +553,13 @@ function FormField({
           ? bundle.operators.map((operator) => ({ value: String(operator.id), label: String(operator.name) }))
           : field.optionSource === 'media'
             ? bundle.media.map((media) => ({ value: String(media.slug ?? media.id), label: `${String(media.slug ?? media.id)} · ${String(media.kind ?? 'image')}` }))
+            : field.optionSource === 'carouselMedia'
+              ? [
+                ...ABOUT_HERO_ASSETS.map((asset) => ({ value: asset.key, label: `${asset.label} · intégré` })),
+                ...bundle.media
+                  .filter((media) => media.isVisible !== false && String(media.mimeType ?? '').startsWith('image/') && !ABOUT_HERO_ASSET_BY_KEY[String(media.slug ?? '')])
+                  .map((media) => ({ value: String(media.slug ?? media.id), label: `${String(media.slug ?? media.id)} · média` })),
+              ]
           : bundle.legalPages.map((page) => ({ value: String(page.id), label: `${page.titleFr} · ${page.slug}` }));
     return (
       <label className="sendflow-admin-field" htmlFor={inputId}>
@@ -1109,7 +1164,11 @@ export default function AdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiRequest<Bundle>('/api/admin/landing');
+      let data = await apiRequest<Bundle>('/api/admin/landing');
+      if (!data.sections?.some((section) => section.kind === 'about-hero-slide')) {
+        await apiRequest('/api/admin/landing/about-carousel/initialize', { method: 'POST' });
+        data = await apiRequest<Bundle>('/api/admin/landing');
+      }
       setBundle({ ...emptyBundle(), ...data });
       setSelectedCountry((current) => current ?? data.countries?.[0]?.id);
     } catch (caught) {
@@ -1129,7 +1188,11 @@ export default function AdminPage() {
   const config = resourceConfigs[activeResource];
   const visibleItems = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const rows = bundle[activeResource] ?? [];
+    const storedResource: StoredResourceKey = activeResource === 'aboutCarousel' ? 'sections' : activeResource;
+    const allRows = bundle[storedResource] ?? [];
+    const rows = activeResource === 'aboutCarousel'
+      ? allRows.filter((row) => row.kind === 'about-hero-slide')
+      : allRows;
     if (!query) return rows;
     return rows.filter((row) => Object.values(row).some((value) => String(value ?? '').toLowerCase().includes(query)));
   }, [activeResource, bundle, search]);
@@ -1155,7 +1218,8 @@ export default function AdminPage() {
     window.setTimeout(() => document.getElementById('site-settings-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   };
 
-  const updateLocal = (resource: ResourceKey, next: RecordItem[]) => setBundle((current) => ({ ...current, [resource]: next }));
+  const storedResource = (resource: ResourceKey): StoredResourceKey => resource === 'aboutCarousel' ? 'sections' : resource;
+  const updateLocal = (resource: ResourceKey, next: RecordItem[]) => setBundle((current) => ({ ...current, [storedResource(resource)]: next }));
 
   const saveResource = async (values: Record<string, Primitive>) => {
     if (!editor) return;
@@ -1166,8 +1230,9 @@ export default function AdminPage() {
     setSaving(true);
     try {
       const path = `/api/admin/landing/${resourceConfigs[editor.resource].apiResource}${editor.item?.id ? `/${editor.item.id}` : ''}`;
-      const data = await apiRequest<RecordItem>(path, { method: editor.item?.id ? 'PATCH' : 'POST', body: JSON.stringify(values) });
-      const rows = bundle[editor.resource];
+      const payload = editor.resource === 'aboutCarousel' ? { ...values, kind: 'about-hero-slide' } : values;
+      const data = await apiRequest<RecordItem>(path, { method: editor.item?.id ? 'PATCH' : 'POST', body: JSON.stringify(payload) });
+      const rows = bundle[storedResource(editor.resource)];
       updateLocal(editor.resource, editor.item?.id ? rows.map((row) => row.id === data.id ? data : row) : [...rows, data]);
       setEditor(null);
       setNotice({ tone: 'success', text: `${resourceConfigs[editor.resource].singular[0].toUpperCase()}${resourceConfigs[editor.resource].singular.slice(1)} enregistré(e).` });
@@ -1200,7 +1265,7 @@ export default function AdminPage() {
     setDeleting(item.id);
     try {
       await apiRequest<void>(`/api/admin/landing/${resourceConfigs[resource].apiResource}/${item.id}`, { method: 'DELETE' });
-      updateLocal(resource, bundle[resource].filter((row) => row.id !== item.id));
+      updateLocal(resource, bundle[storedResource(resource)].filter((row) => row.id !== item.id));
       setNotice({ tone: 'success', text: 'Élément supprimé.' });
     } catch (caught) {
       setNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible de supprimer cet élément.' });
