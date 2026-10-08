@@ -467,7 +467,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
           <p className="max-w-xs text-sm leading-6" style={{ color: colors.navySoft }}>{profile.shortBio}</p>
         </div>
 
-        <div className="grid overflow-hidden rounded-[30px] border lg:grid-cols-[.82fr_1.18fr]" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
+        <div className="sf-about-founder-card grid overflow-hidden rounded-[30px] border lg:grid-cols-[.82fr_1.18fr]" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
           <div className="relative h-[280px] sm:h-[360px] lg:h-[390px] lg:self-start">
             <FounderPhoto profile={profile} />
             <div className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-sm" style={{ backgroundColor: colors.yellow, color: colors.navy }}>

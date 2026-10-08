@@ -4,3 +4,4 @@
 - [Free image cleanup](free-image-cleanup.md) — Generated PNGs may include a baked checkerboard; local ImageMagick cleanup can restore usable alpha when automated removal is unavailable.
 - [Partner logo sourcing](partner-logo-sourcing.md) — Never substitute one operator’s asset for another; use an explicit wordmark until an approved official logo is available.
 - [Plesk deployment boundaries](plesk-deployment-boundaries.md) — External hosting needs direct provider APIs and portable media storage; Replit connectors and sidecars are not available there.
+- [Public financial-card visuals](public-financial-card-visuals.md) — Keep SendFlow's public cards prominent and professional; visual-only work must preserve content and behavior.

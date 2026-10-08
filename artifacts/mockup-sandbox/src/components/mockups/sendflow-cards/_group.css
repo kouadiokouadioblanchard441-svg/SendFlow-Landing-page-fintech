@@ -155,3 +155,81 @@ body,
   .sf-features-card { min-height: 356px; padding: 36px 36px 42px; }
   .sf-features-card h2 { margin-top: 36px; }
 }
+
+.sf-features-page .sf-features-card {
+  border: 2px solid #bfd0e3;
+  border-left: 6px solid #2868be;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fff 0%, #f9fbfe 100%);
+  box-shadow: 0 2px 0 #e1eaf3, 0 16px 36px rgba(28, 57, 91, .11);
+}
+
+.sf-features-page .sf-features-card-icon {
+  border: 1px solid #cbd9e9;
+  background: #edf4fc;
+}
+
+.sf-features-page .sf-features-card-route {
+  gap: 10px;
+  border: 1px solid #cfdaea;
+  border-radius: 13px;
+  background: #f3f7fd;
+  padding: 10px 12px;
+}
+
+.sf-features-page .sf-features-route-brand small {
+  color: #56657a;
+  font-size: 10px;
+}
+
+.sf-features-page .sf-features-route-logo {
+  border: 1px solid #e0e7f0;
+}
+
+.sf-features-page .sf-features-card h2 {
+  color: #13233b;
+  font-size: 24px;
+}
+
+.sf-features-page .sf-features-card p {
+  color: #435169;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.sf-features-page .sf-features-card-tag {
+  top: 36px;
+  right: 30px;
+  border: 1px solid #c8d9ec;
+  border-radius: 8px;
+  background: #edf4fc;
+  padding: 6px 8px;
+  color: #205ca8;
+}
+
+@media (max-width: 420px) {
+  .sf-features-page .sf-features-card {
+    padding: 26px 20px 30px;
+  }
+
+  .sf-features-page .sf-features-card-route {
+    gap: 8px;
+    padding-inline: 8px;
+  }
+
+  .sf-features-page .sf-features-route-brand {
+    column-gap: 4px;
+  }
+
+  .sf-features-page .sf-features-route-logo {
+    width: 64px;
+  }
+
+  .sf-features-page .sf-features-route-logo.sf-features-tmoney-logo {
+    width: 70px;
+  }
+
+  .sf-features-page .sf-features-route-arrow {
+    width: 17px;
+  }
+}
