@@ -18,7 +18,7 @@ SendFlow's web project serves public marketing, landing, download, and legal pag
 - **Public to admin** — public landing/newsletter endpoints are separate from CMS, subscriber, and campaign operations, which require the admin session.
 - **Express to PostgreSQL** — server routes read and modify content, subscriber records, campaign state, and admin sessions.
 - **Express to third parties** — Clerk authentication proxy and Resend API calls use server-side configuration and credentials.
-- **Application to object storage** — media uploads and public media reads cross a storage boundary. The current Replit-local storage dependency is not a Plesk-compatible production storage design.
+- **Application to object storage** — media uploads and public media reads cross a storage boundary. The current development-environment storage dependency is not a Plesk-compatible production storage design.
 - **Development to Plesk production** — build-time `VITE_*` values become public frontend configuration; runtime server credentials must only be configured on the server.
 
 ## Scan Anchors

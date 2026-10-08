@@ -89,7 +89,7 @@ Les variables `VITE_*` sont intégrées au frontend lors de `pnpm run build`. El
 
 ### Clerk et hébergement externe
 
-L'instance actuelle est gérée par Replit. Le test local du build ne valide pas la connexion Clerk sur le futur domaine Plesk. Ne pas présumer que les clés de développement et la configuration de domaine/proxy seront utilisables telles quelles hors Replit. Avant la mise en service, vérifier des clés de production et une configuration Clerk autorisée pour ce domaine, puis tester connexion et inscription en HTTPS. Aucune clé existante n'a été modifiée pendant la vérification.
+L'instance actuelle tourne dans l'environnement de développement du projet. Le test local du build ne valide pas la connexion Clerk sur le futur domaine Plesk. Ne pas présumer que les clés de développement et la configuration de domaine/proxy seront utilisables telles quelles sur un hébergement externe. Avant la mise en service, vérifier des clés de production et une configuration Clerk autorisée pour ce domaine, puis tester connexion et inscription en HTTPS. Aucune clé existante n'a été modifiée pendant la vérification.
 
 ## Resend
 
@@ -126,7 +126,7 @@ L’application efface immédiatement le fragment, puis vérifie le jeton avec u
 
 - `API_PORT=8080`, `WEB_PORT=26095`, `API_ORIGIN=http://127.0.0.1:8080` : développement uniquement.
 - `REFRESH_LEGAL_CONTENT=true` : option du script éditorial ponctuel, pas du serveur.
-- `PUBLIC_OBJECT_SEARCH_PATHS` : chemins du stockage Replit; ignoré si `PLESK_MEDIA_DIR` est défini.
+- `PUBLIC_OBJECT_SEARCH_PATHS` : chemins du stockage d'objets de l'environnement de développement; ignoré si `PLESK_MEDIA_DIR` est défini.
 - `SESSION_SECRET` et `DATABASE_URL` : non utilisés par le code actuel. La connexion utilise uniquement `NEON_DATABASE_URL`.
 
 Le fichier `.env.example` contient toutes ces variables sans leurs valeurs sensibles. Si la même base Neon est conservée, ne pas recréer la base ni relancer les seeds. Si une nouvelle base est choisie, son schéma et ses données doivent être provisionnés avant de lancer le site.
@@ -162,4 +162,4 @@ Les médias déjà présents dans la base ne sont pas automatiquement transfér�
 - Audit des dépendances : zéro vulnérabilité critique ou élevée. Les scans SAST et HoundDog n’ont remonté aucun résultat critique ou élevé.
 - Avertissement non bloquant : le principal fichier JavaScript frontend dépasse le seuil de taille Vite de 500 kB.
 
-Cette vérification a été faite dans l’environnement de travail, pas sur un serveur Plesk accessible. Le domaine réel, les clés et domaines Clerk de production, la connexion au panel authentifié et l’envoi Resend restent à valider sur l’hébergement. Les 35 médias de la base ne sont pas transférés automatiquement vers `PLESK_MEDIA_DIR`; il faut copier les fichiers sources en conservant leurs chemins. L’aperçu Replit utilise des clés Clerk de développement et ne valide pas la connexion Clerk de production. Aucun e-mail n’a été envoyé et aucune donnée administrateur n’a été modifiée.
+Cette vérification a été faite dans l’environnement de travail, pas sur un serveur Plesk accessible. Le domaine réel, les clés et domaines Clerk de production, la connexion au panel authentifié et l’envoi Resend restent à valider sur l’hébergement. Les 35 médias de la base ne sont pas transférés automatiquement vers `PLESK_MEDIA_DIR`; il faut copier les fichiers sources en conservant leurs chemins. L’aperçu de développement utilise des clés Clerk de développement et ne valide pas la connexion Clerk de production. Aucun e-mail n’a été envoyé et aucune donnée administrateur n’a été modifiée.
