@@ -190,7 +190,7 @@ function Feature({
 }) {
   return (
     <article className="group rounded-[26px] border p-6 transition-transform duration-300 hover:-translate-y-1" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-      <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-[#f4f0ff] px-3 py-2" style={{ borderColor: colors.line }}>
+      <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-white px-3 py-2" style={{ borderColor: colors.line }}>
         <ProtectedImage src={Icon} alt={iconAlt} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.04]" />
       </div>
       <h3 className="font-serif text-[28px] leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>
@@ -319,7 +319,6 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
 
       <section className="relative overflow-hidden border-b" style={{ borderColor: colors.line }}>
         <div className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[34px] border-[#6d35d8]/20 sm:h-[500px] sm:w-[500px]" />
-        <div className="pointer-events-none absolute -bottom-28 left-[42%] h-56 w-56 rounded-full bg-[#6d35d8]/10 blur-3xl" />
         <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-16 lg:px-12 lg:pt-20">
           <div className="rise max-w-3xl">
             <div className={sectionKicker} style={{ color: colors.violet }}>
@@ -357,7 +356,6 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
 
           <div className="relative mx-auto flex min-h-[330px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]">
             <div className="absolute h-[240px] w-[240px] rounded-full border border-[#6d35d8]/25 sm:h-[350px] sm:w-[350px]" />
-            <div className="absolute h-[180px] w-[180px] rounded-full bg-[#6d35d8]/10 sm:h-[270px] sm:w-[270px]" />
             <div className="float-art relative h-[260px] w-[250px] rotate-[-3deg] overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-[0_26px_50px_rgba(23,36,62,.14)] sm:h-[330px] sm:w-[315px]">
               <ProtectedImage
                 src={aboutHeroWoman}
@@ -483,7 +481,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
         </div>
       </section>
 
-      <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.violetPale }}>
+      <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1fr_.8fr] lg:items-center lg:px-12">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
@@ -631,23 +629,22 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
       </section>
 
       <section className="px-5 pb-12 sm:px-8 lg:px-12">
-        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[30px] px-6 py-14 sm:px-12 sm:py-20 lg:px-20" style={{ backgroundColor: colors.navy }}>
-          <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[26px] border-[#6d35d8]/70" />
-          <div className="pointer-events-none absolute bottom-[-80px] right-[26%] h-44 w-44 rounded-full bg-[#e6d8ff]/45 blur-2xl" />
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[30px] border px-6 py-14 shadow-[0_18px_50px_rgba(23,36,62,.06)] sm:px-12 sm:py-20 lg:px-20" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
+          <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[26px] border-[#6d35d8]/20" />
           <div className="relative flex flex-col items-start justify-between gap-9 lg:flex-row lg:items-end">
             <div className="max-w-2xl">
-              <div className={sectionKicker} style={{ color: colors.yellow }}>
+              <div className={sectionKicker} style={{ color: colors.violet }}>
                 <BriefcaseBusiness size={14} />
                 {t({ fr: 'La suite s’écrit ensemble', en: 'The next chapter is shared' })}
               </div>
-              <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em] text-white">
+              <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
                 {t({ fr: 'Prêt à faire circuler les possibles ?', en: 'Ready to keep possibilities moving?' })}
               </h2>
             </div>
             <button
               type="button"
               onClick={onBackHome}
-              className="group inline-flex shrink-0 items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-white transition-transform hover:-translate-y-1 hover:bg-[#5822c3]"
+              className="group inline-flex shrink-0 items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-white transition-transform hover:-translate-y-1 hover:bg-[#5822c3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
               style={{ backgroundColor: colors.violet }}
             >
               {t({ fr: 'Découvrir SendFlow', en: 'Discover SendFlow' })}
