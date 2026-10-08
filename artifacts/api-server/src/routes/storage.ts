@@ -1,8 +1,11 @@
 import { Readable } from 'stream';
+import path from 'node:path';
 import { Router, type IRouter, type Request, type Response } from 'express';
 import {
   getPublicObjectSearchPaths,
   getSignedObjectUrl,
+  isPleskMediaStorageEnabled,
+  openPleskPublicObject,
   parseStoragePath,
 } from '../lib/publicObjectStorage';
 import { createRateLimiter } from '../middlewares/security';
@@ -38,6 +41,37 @@ router.get(
         const { bucketName, objectName } = parseStoragePath(
           `${searchPath}/${filePath}`,
         );
+        if (isPleskMediaStorageEnabled()) {
+          const localObject = await openPleskPublicObject({ bucketName, objectName });
+          if (!localObject) continue;
+
+          const extension = path.extname(objectName).toLowerCase();
+          const contentTypes: Record<string, string> = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+            ".svg": "image/svg+xml",
+          };
+          const contentType = contentTypes[extension] ?? "application/octet-stream";
+          res.setHeader("Content-Type", contentType);
+          res.setHeader("Content-Length", localObject.size);
+          res.setHeader("Last-Modified", localObject.lastModified.toUTCString());
+          res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          if (contentType === "image/svg+xml") {
+            res.setHeader("Content-Security-Policy", "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox");
+          }
+          localObject.handle.createReadStream()
+            .on("error", (error) => {
+              req.log.warn({ errorType: error.name }, "Error streaming local public object");
+              if (res.headersSent) res.destroy(error);
+              else res.status(500).end();
+            })
+            .pipe(res);
+          return;
+        }
+
         const response = await fetch(
           await getSignedObjectUrl({
             bucketName,

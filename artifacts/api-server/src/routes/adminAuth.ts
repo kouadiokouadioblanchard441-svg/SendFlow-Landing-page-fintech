@@ -40,7 +40,7 @@ router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void>
   if (rejectUntrustedOrigin(req, res)) return;
   const parsed = adminLoginSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Panel URL, email and password are invalid" });
+    res.status(400).json({ error: "Panel access, email and password are invalid" });
     return;
   }
   const { email, password, panelToken, panelEmail } = parsed.data;
@@ -54,7 +54,7 @@ router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void>
     hashAdminPanelToken(panelEmail) !== user.panelEmailHash ||
     !(await verifyAdminPassword(password, user.passwordHash))
   ) {
-    res.status(401).json({ error: "Invalid panel URL, email or password" });
+    res.status(401).json({ error: "Invalid panel access, email or password" });
     return;
   }
 
@@ -70,8 +70,9 @@ router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void>
   res.json({ user: { id: user.id, email: user.email } });
 });
 
-router.get("/admin/auth/panel/:token/:email", panelLookupRateLimit, async (req, res): Promise<void> => {
-  const parsed = panelLookupSchema.safeParse({ token: req.params.token, email: req.params.email });
+router.post("/admin/auth/panel/verify", panelLookupRateLimit, async (req, res): Promise<void> => {
+  if (rejectUntrustedOrigin(req, res)) return;
+  const parsed = panelLookupSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(404).json({ error: "Panel not found" });
     return;

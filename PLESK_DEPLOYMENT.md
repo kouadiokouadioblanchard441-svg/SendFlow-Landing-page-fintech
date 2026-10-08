@@ -72,6 +72,7 @@ Variables API :
 - `BASE_PATH=/`
 - `CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
+- `PLESK_MEDIA_DIR` : chemin absolu, inscriptible par le processus Node et situé hors de `dist/public`. Stockage persistant des médias sur Plesk.
 - `LOG_LEVEL=info` (facultatif)
 - `CORS_ORIGINS` (facultatif) : origines HTTPS supplémentaires, séparées par des virgules. L'origine `PUBLIC_SITE_URL` est déjà autorisée.
 - `WEB_DIST_DIR` (facultatif) : chemin absolu alternatif du frontend. Par défaut : `dist/public` sous la racine du projet.
@@ -111,13 +112,21 @@ La base de production utilise `NEON_DATABASE_URL`. Les scripts de provisionnemen
 
 Ne jamais ajouter les valeurs réelles dans le dépôt.
 
-Ces variables ne sont pas lues lors du démarrage normal : l'authentification du panel utilise les données enregistrées en base. Ne pas relancer les scripts de création ou de changement du panel si l'administrateur existe déjà : cela peut changer son accès. La route privée reste `/panel/:token/:email`.
+Ces variables ne sont pas lues lors du démarrage normal : l'authentification du panel utilise les données enregistrées en base. Ne pas relancer les scripts de création ou de changement du panel si l'administrateur existe déjà : cela peut changer son accès.
+
+Les nouveaux liens privés transmettent le jeton dans le fragment du navigateur, qui n'est pas envoyé dans la requête HTTP :
+
+```text
+https://votre-domaine.com/panel#token=JETON&email=EMAIL
+```
+
+L’application efface immédiatement le fragment, puis vérifie le jeton avec une requête POST. Les anciens liens `/panel/:token/:email` sont acceptés uniquement pour compatibilité et nettoyés par l’application, mais le serveur d’accès Plesk peut déjà avoir inscrit leur chemin dans ses journaux. Ne plus diffuser les anciens liens; remplacez-les et faites tourner le jeton avant la mise en service si un ancien lien a été utilisé.
 
 ### Variables hors production
 
 - `API_PORT=8080`, `WEB_PORT=26095`, `API_ORIGIN=http://127.0.0.1:8080` : développement uniquement.
 - `REFRESH_LEGAL_CONTENT=true` : option du script éditorial ponctuel, pas du serveur.
-- `PUBLIC_OBJECT_SEARCH_PATHS` : chemins du stockage Replit, pas une solution de stockage Plesk.
+- `PUBLIC_OBJECT_SEARCH_PATHS` : chemins du stockage Replit; ignoré si `PLESK_MEDIA_DIR` est défini.
 - `SESSION_SECRET` et `DATABASE_URL` : non utilisés par le code actuel. La connexion utilise uniquement `NEON_DATABASE_URL`.
 
 Le fichier `.env.example` contient toutes ces variables sans leurs valeurs sensibles. Si la même base Neon est conservée, ne pas recréer la base ni relancer les seeds. Si une nouvelle base est choisie, son schéma et ses données doivent être provisionnés avant de lancer le site.
@@ -134,19 +143,23 @@ La réponse attendue est :
 {"status":"ok"}
 ```
 
-## Limite actuelle des médias
+## Médias sur Plesk
 
-Les routes d’upload et de lecture de médias utilisent encore un service de stockage local (`127.0.0.1:1106`). Les visuels importés dans le frontend sont présents dans `dist/public/assets`, mais les uploads médias nécessitent encore une migration vers un stockage compatible Plesk, S3 ou R2. Renseigner `PUBLIC_OBJECT_SEARCH_PATHS` ne remplace pas ce service.
+Avec `PLESK_MEDIA_DIR`, les uploads sont écrits sur le disque du serveur, sous le préfixe `public/`, puis servis par l’API. Le processus Node doit pouvoir créer et lire ce dossier. Il doit être persistant entre redémarrages et ne doit pas être placé sous `dist/public`.
 
-## Résultat de la vérification du 1er octobre 2026
+Les médias déjà présents dans la base ne sont pas automatiquement transférés. Avant ouverture, copiez chaque objet existant sous `PLESK_MEDIA_DIR/public/` en conservant son chemin relatif utilisé par `/api/storage/public-objects/<chemin>`. Les images importées dans le code frontend sont, elles, embarquées dans `dist/public/assets`.
 
-- TypeScript, frontend, backend et assemblage Plesk : succès.
-- Démarrage réel du bundle sous `NODE_ENV=production` : succès.
-- `/api/healthz` : 200, `{"status":"ok"}`.
-- `/`, `/download`, `/fonctionnalites`, fichiers JS/CSS : 200.
-- `/api/landing` : 200, lecture de la base Neon réussie.
+## Résultat de la vérification du 8 octobre 2026
+
+- `pnpm run build` : succès. Le build exécute maintenant les tests, les vérifications TypeScript, le frontend, l’API et l’assemblage destiné à Plesk.
+- Tests automatisés : 22 réussis, aucun échec.
+- Démarrage de `dist/index.cjs` sous `NODE_ENV=production` avec un dossier média local temporaire : succès.
+- `/api/healthz` et `/` : 200.
+- `/api/landing` : 200, base Neon accessible, 35 médias retournés et aucune ligne masquée dans la réponse publique.
 - `/api/admin/landing` sans authentification : 401.
-- Route API inexistante : 404, sans renvoyer le HTML du frontend.
-- Avertissements non bloquants : sourcemap d'un composant UI et taille du bundle frontend.
+- Ancienne vérification panel par GET : 404. Vérification POST avec une origine étrangère : 403.
+- L’ancien chemin contenant les identifiants reçoit `Referrer-Policy: no-referrer` et `Cache-Control: no-store`; le jeton de test n’apparaît pas dans les journaux applicatifs.
+- Audit des dépendances : zéro vulnérabilité critique ou élevée. Les scans SAST et HoundDog n’ont remonté aucun résultat critique ou élevé.
+- Avertissement non bloquant : le principal fichier JavaScript frontend dépasse le seuil de taille Vite de 500 kB.
 
-Cette vérification a été faite dans l'environnement de travail, pas sur un serveur Plesk accessible. Restent à vérifier sur le vrai hébergement : reverse proxy/port, domaine HTTPS, connexion Clerk, panel authentifié et envoi Resend. Aucun e-mail de test n'a été envoyé, et aucune donnée administrateur n'a été modifiée.
+Cette vérification a été faite dans l’environnement de travail, pas sur un serveur Plesk accessible. Le domaine réel, les clés et domaines Clerk de production, la connexion au panel authentifié et l’envoi Resend restent à valider sur l’hébergement. Les 35 médias de la base ne sont pas transférés automatiquement vers `PLESK_MEDIA_DIR`; il faut copier les fichiers sources en conservant leurs chemins. L’aperçu Replit utilise des clés Clerk de développement et ne valide pas la connexion Clerk de production. Aucun e-mail n’a été envoyé et aucune donnée administrateur n’a été modifiée.

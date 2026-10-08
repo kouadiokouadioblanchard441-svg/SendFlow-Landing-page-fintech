@@ -5,8 +5,9 @@
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "dev": "node ./scripts/dev.mjs",
-    "build": "pnpm run typecheck && pnpm --filter @workspace/sendflow run build && pnpm --filter @workspace/api-server run build && node ./scripts/prepare-plesk-build.mjs",
+    "build": "pnpm run test && pnpm run typecheck && pnpm --filter @workspace/sendflow run build && pnpm --filter @workspace/api-server run build && node ./scripts/prepare-plesk-build.mjs",
     "start": "node ./dist/index.cjs",
+    "test": "pnpm --filter @workspace/api-server run test:request-validation && pnpm --filter @workspace/api-server run test:landing-visibility && pnpm --filter @workspace/api-server run test:public-storage && pnpm --filter @workspace/api-server run test:clerk-proxy && pnpm --filter @workspace/api-server run test:resend && pnpm --filter @workspace/sendflow run test:panel-access && pnpm --filter @workspace/sendflow run test:seo",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },

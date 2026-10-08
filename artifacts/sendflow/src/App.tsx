@@ -8,6 +8,7 @@ import { shadcn } from '@clerk/themes';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
+import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import NotFound from '@/pages/not-found';
 import AdminPage from '@/pages/admin';
 import AboutPage, { type FounderProfile } from '@/pages/about';
@@ -58,6 +59,14 @@ const queryClient = new QueryClient();
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+function consumePanelCredentials(): PanelCredentials | null {
+  const result = takePanelCredentialsFromUrl(new URL(window.location.href));
+  if (result.sanitizedUrl !== window.location.href) {
+    window.history.replaceState(window.history.state, '', result.sanitizedUrl);
+  }
+  return result.credentials;
+}
+let initialPanelCredentials = consumePanelCredentials();
 
 type Language = 'fr' | 'en';
 type Copy = { fr: string; en: string };
@@ -451,7 +460,7 @@ function App() {
               <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
               <Route path="/admin" component={LegacyAdminRedirect} />
               <Route path="/admin/*" component={LegacyAdminRedirect} />
-              <Route path="/panel/:token/:email" component={PanelRoute} />
+              <Route path="/panel" component={PanelRoute} />
               <Route component={NotFoundRoute} />
             </Switch>
             <Toaster />
@@ -635,10 +644,10 @@ function PanelUrlRequired() {
       <div className="sendflow-admin-auth-card">
         <div className="mb-4 flex items-center gap-2 px-1 text-sm font-bold text-[#6d35d8]">
           <LockKeyhole className="text-[#1769ff]" size={19} />
-          URL privée requise
+          Accès privé requis
         </div>
         <p className="text-sm leading-6 text-[#667386]">
-          Utilisez l’URL privée fournie pour accéder au panel administrateur.
+          Ouvrez le lien d’administration sécurisé qui vous a été remis.
         </p>
       </div>
     </div>
@@ -653,13 +662,16 @@ function PanelRoute() {
     description: 'Espace privé SendFlow.',
     robots: 'noindex,nofollow',
   });
-  const [, params] = useRoute<{ token: string; email: string }>('/panel/:token/:email');
-  const token = params?.token ?? '';
-  const email = params?.email ?? '';
+  const token = initialPanelCredentials?.token ?? '';
+  const email = initialPanelCredentials?.email ?? '';
   const panelAccess = useQuery<{ user: { id: number; email: string } }>({
-    queryKey: ['admin-panel-access', token, email],
+    queryKey: ['admin-panel-access'],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/auth/panel/${encodeURIComponent(token)}/${encodeURIComponent(email)}`);
+      const response = await fetch('/api/admin/auth/panel/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, email }),
+      });
       if (!response.ok) throw new Error('Panel not found');
       return response.json();
     },
@@ -667,6 +679,7 @@ function PanelRoute() {
     retry: false,
   });
 
+  if (!token || !email) return <AdminRoute panelToken="" adminEmail="" panelEmail="" />;
   if (panelAccess.isPending) {
     return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f6f8fb] text-sm text-[#667386]">Vérification de l’URL privée…</div>;
   }
@@ -686,6 +699,7 @@ function AdminRoute({ panelToken, adminEmail, panelEmail }: { panelToken: string
   });
   if (adminSession.isPending) return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f6f8fb] text-sm text-[#667386]">Chargement de la session…</div>;
   if (adminSession.isError) {
+    if (!panelToken || !panelEmail) return <PanelUrlRequired />;
     return (
       <div className="sendflow-admin-auth">
         <div className="sendflow-admin-auth-card">
@@ -722,8 +736,10 @@ function AdminLoginForm({ panelToken, adminEmail, panelEmail }: { panelToken: st
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? 'Email ou mot de passe incorrect.');
       }
+      initialPanelCredentials = null;
+      queryClient.removeQueries({ queryKey: ['admin-panel-access'] });
       await queryClient.invalidateQueries({ queryKey: ['admin-session'] });
-       window.location.assign(`${basePath}/panel/${encodeURIComponent(panelToken)}/${encodeURIComponent(panelEmail)}`);
+      window.location.assign(`${basePath}/panel`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Email ou mot de passe incorrect.');
     } finally {

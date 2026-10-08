@@ -9,6 +9,7 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:seo": "node --test scripts/seo-documents.test.ts",
+    "test:panel-access": "node --test scripts/panel-access.test.ts",
     "seo:verify": "node scripts/verify-public-seo.ts"
   },
   "devDependencies": {

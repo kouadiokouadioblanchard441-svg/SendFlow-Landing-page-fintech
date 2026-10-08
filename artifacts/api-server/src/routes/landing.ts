@@ -24,8 +24,11 @@ import { sendResendBatch } from "../lib/resend";
 import {
   getPublicObjectSearchPaths,
   getSignedObjectUrl,
+  isPleskMediaStorageEnabled,
   parseStoragePath,
+  storePleskPublicObject,
 } from "../lib/publicObjectStorage";
+import { filterPublicLandingBundle } from "../lib/landingVisibility";
 import { createRateLimiter } from "../middlewares/security";
 import {
   countryOperatorAssignmentSchema,
@@ -476,7 +479,7 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
 });
 
 router.get("/landing", async (_req, res): Promise<void> => {
-  res.json(await getLandingBundle());
+  res.json(filterPublicLandingBundle(await getLandingBundle()));
 });
 
 router.get("/admin/landing", requireAdmin, async (_req, res): Promise<void> => {
@@ -567,17 +570,21 @@ router.post("/admin/landing/media/upload", requireAdmin, mediaUploadRateLimit, m
     const extension = headers.data.mimeType === "image/jpeg" ? "jpg" : headers.data.mimeType.slice("image/".length);
     const relativePath = `landing/admin/${randomUUID()}.${extension}`;
     const objectName = `${publicObjectRoot.replace(/\/+$/, "")}/${relativePath}`;
-    const uploadUrl = await getSignedObjectUrl({ bucketName, objectName, method: "PUT" });
-    const uploaded = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: { "Content-Type": headers.data.mimeType },
-      body: image,
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!uploaded.ok) {
-      req.log.warn({ statusCode: uploaded.status }, "Admin media upload failed in object storage");
-      res.status(503).json({ error: "Le stockage des images n’a pas accepté le fichier." });
-      return;
+    if (isPleskMediaStorageEnabled()) {
+      await storePleskPublicObject({ bucketName, objectName, contents: image });
+    } else {
+      const uploadUrl = await getSignedObjectUrl({ bucketName, objectName, method: "PUT" });
+      const uploaded = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": headers.data.mimeType },
+        body: image,
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!uploaded.ok) {
+        req.log.warn({ statusCode: uploaded.status }, "Admin media upload failed in object storage");
+        res.status(503).json({ error: "Le stockage des images n’a pas accepté le fichier." });
+        return;
+      }
     }
     res.status(201).json({
       kind: "image",

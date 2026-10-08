@@ -12,9 +12,11 @@ import { isAllowedOrigin } from "./middlewares/security";
 
 const app: Express = express();
 app.disable("x-powered-by");
-app.use((_req, res, next) => {
+app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  const isLegacyPrivatePanelUrl = /(^|\/)panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
+  res.setHeader("Referrer-Policy", isLegacyPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
+  if (isLegacyPrivatePanelUrl) res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   if (process.env.NODE_ENV === "production") {
@@ -29,12 +31,13 @@ app.use(
     serializers: {
       req(req) {
         const path = req.url?.split("?")[0] ?? "";
+        const privatePagePath = path.replace(/(\/panel)\/[^/]+\/[^/]+\/?$/i, "$1/[redacted]");
         return {
           id: req.id,
           method: req.method,
           url: path.startsWith("/api/admin/auth/panel/")
             ? "/api/admin/auth/panel/[redacted]"
-            : path,
+            : privatePagePath,
         };
       },
       res(res) {
