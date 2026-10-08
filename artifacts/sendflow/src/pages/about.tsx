@@ -55,7 +55,7 @@ export type AboutPageProps = {
   content?: Array<{ contentKey: string; locale: string; value: string; isVisible: boolean }>;
   onBackHome: () => void;
   onDownload: () => void;
-  onToggleLocale?: () => void;
+  onChangeLocale?: (locale: AboutLocale) => void;
   contact?: ContactDetails;
 };
 
@@ -111,6 +111,28 @@ const colors = {
 } as const;
 
 const sectionKicker = 'mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em]';
+
+function LocaleFlag({ locale }: { locale: AboutLocale }) {
+  if (locale === 'fr') {
+    return (
+      <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false" className="h-4 w-6 overflow-hidden rounded-[2px] shadow-sm">
+        <rect width="8" height="16" fill="#002395" />
+        <rect x="8" width="8" height="16" fill="#ffffff" />
+        <rect x="16" width="8" height="16" fill="#ed2939" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false" className="h-4 w-6 overflow-hidden rounded-[2px] shadow-sm">
+      <rect width="24" height="16" fill="#012169" />
+      <path d="M-2 -1 26 17 M26 -1 -2 17" stroke="#ffffff" strokeWidth="4" />
+      <path d="M-2 -1 26 17 M26 -1 -2 17" stroke="#c8102e" strokeWidth="1.6" />
+      <path d="M12 0v16M0 8h24" stroke="#ffffff" strokeWidth="5" />
+      <path d="M12 0v16M0 8h24" stroke="#c8102e" strokeWidth="2.6" />
+    </svg>
+  );
+}
 
 function FounderPhoto({ profile }: { profile: FounderProfile }) {
   const [hasImageError, setHasImageError] = useState(false);
@@ -181,7 +203,7 @@ function Feature({
   );
 }
 
-export function AboutPage({ locale, profile, content = [], onBackHome, onDownload, onToggleLocale, contact }: AboutPageProps) {
+export function AboutPage({ locale, profile, content = [], onBackHome, onDownload, onChangeLocale, contact }: AboutPageProps) {
   const isFrench = locale === 'fr';
   const contactEmail = contact?.email?.trim() || profile.email?.trim() || '';
   const contactPhone = contact?.phone?.trim() || '';
@@ -257,16 +279,40 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
             <span className="sm:hidden">{t({ fr: 'Télécharger', en: 'Download' })}</span>
             <span className="hidden sm:inline">{t({ fr: 'Télécharger l’application', en: 'Download the app' })}</span>
           </button>
-          {onToggleLocale && (
-            <button
-              type="button"
-              onClick={onToggleLocale}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-[0_4px_12px_rgba(23,36,62,.05)] transition-colors hover:bg-[#f4f0ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
-              style={{ borderColor: colors.line, color: colors.navy }}
-              aria-label={isFrench ? 'Passer en anglais' : 'Switch to French'}
+          {onChangeLocale && (
+            <div
+              role="group"
+              aria-label={isFrench ? 'Choisir la langue' : 'Choose language'}
+              className="inline-flex shrink-0 items-center gap-0.5 rounded-full border bg-white p-0.5 shadow-[0_4px_12px_rgba(23,36,62,.05)]"
+              style={{ borderColor: colors.line }}
             >
-              {isFrench ? 'FR' : 'EN'}
-            </button>
+              <button
+                type="button"
+                onClick={() => onChangeLocale('fr')}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-[#f4f0ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#6d35d8]"
+                style={{ backgroundColor: isFrench ? colors.violetPale : 'transparent' }}
+                aria-label="Français"
+                aria-pressed={isFrench}
+                lang="fr"
+                title="Français"
+                data-testid="about-language-fr"
+              >
+                <LocaleFlag locale="fr" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeLocale('en')}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-[#f4f0ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#6d35d8]"
+                style={{ backgroundColor: isFrench ? 'transparent' : colors.violetPale }}
+                aria-label="English"
+                aria-pressed={!isFrench}
+                lang="en"
+                title="English"
+                data-testid="about-language-en"
+              >
+                <LocaleFlag locale="en" />
+              </button>
+            </div>
           )}
         </div>
       </header>

@@ -609,7 +609,7 @@ function AboutRoute() {
       }}
       onBackHome={() => navigate('/')}
       onDownload={() => navigate('/download')}
-      onToggleLocale={() => setLanguage((current) => current === 'fr' ? 'en' : 'fr')}
+      onChangeLocale={(nextLocale) => setLanguage(nextLocale)}
     />
   );
 }
