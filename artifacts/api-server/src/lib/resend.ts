@@ -40,5 +40,5 @@ async function resendRequest<T extends ResendResponse>(
 }
 
 export async function sendResendBatch(messages: ResendEmail[]): Promise<ResendResponse> {
-  return resendRequest<ResendResponse>("/emails/batch", { messages });
+  return resendRequest<ResendResponse>("/emails/batch", messages);
 }

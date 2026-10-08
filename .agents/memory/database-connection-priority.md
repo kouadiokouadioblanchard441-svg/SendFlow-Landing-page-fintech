@@ -1,16 +1,10 @@
 ---
-name: Database connection priority
-description: This project uses the Neon connection variable exclusively for schema, seed scripts, and the running API.
+name: Database targeting
+description: Generic SQL helpers can target a different database from the application.
 ---
 
-The project database layer, schema tooling, seed scripts, and running API require `NEON_DATABASE_URL`; they must not fall back to a generic database variable.
+Do not assume a generic SQL helper and the application use the same database. A successful write alone does not prove the application can see that data.
 
-**Why:** A generic development SQL helper can point at a different database when both variables exist, making a successfully applied Neon table appear missing.
+**Why:** A generic development SQL helper previously targeted a different database, making a successfully created table appear missing to the application.
 
-**How to apply:** Use the project’s db package scripts or app connection for development data initialization, and verify the resulting row through `/api/landing`; generic SQL helpers may point to another database.
-
-For one-off SQL maintenance from the repository root, use the `pg` dependency resolved by the database workspace package or run through its package script; the root module resolver may not expose `pg` by package name under pnpm.
-
-**Why:** The database package owns the dependency graph, while ad-hoc root scripts can fail before connecting even though the running API and package scripts work.
-
-**How to apply:** Prefer a package-scoped script for future data updates and keep the connection string inside the process environment without printing it.
+**How to apply:** Confirm which database an operation targets before writing, then verify the result through the application's own data access path.

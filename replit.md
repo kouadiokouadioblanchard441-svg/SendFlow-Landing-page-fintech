@@ -10,6 +10,16 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `NEON_DATABASE_URL` for the external Neon database, with `DATABASE_URL` retained as a fallback
+- Exécuter les opérations SQL ponctuelles depuis le package `@workspace/db` : sous pnpm, sa dépendance `pg` n’est pas nécessairement accessible au résolveur de modules du dépôt racine. Ne jamais afficher la chaîne de connexion.
+
+### SEO de SendFlow
+
+- Après la première publication, obtenir le domaine de production auprès du service de publication, puis définir `VITE_PUBLIC_SITE_URL` avec cette origine HTTPS vérifiée (sans chemin).
+- La compilation génère les URLs absolues dans le HTML, le sitemap et robots.txt. Les fichiers sources restent des modèles sans domaine.
+- Sans cette variable, la première compilation reste possible, mais affiche un avertissement SEO : la configuration publique n’est pas terminée.
+- Après avoir renseigné la variable, republier : Vite intègre les variables `VITE_*` à la compilation, pas au démarrage du site.
+- `pnpm --filter @workspace/sendflow run test:seo` vérifie la génération.
+- `pnpm --filter @workspace/sendflow run seo:verify -- https://DOMAINE-PUBLIE` contrôle le HTML d’accueil et les fichiers SEO sur le domaine publié. Contrôler aussi les canoniques des pages dans un navigateur avant l’envoi dans Search Console.
 
 ## Stack
 

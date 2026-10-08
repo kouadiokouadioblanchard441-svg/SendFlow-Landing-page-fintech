@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { normalizeSiteOrigin } from './site-origin';
 
 export type SeoLocale = 'fr' | 'en';
 
@@ -35,7 +36,7 @@ export type SeoConfig = {
 const schemaId = 'sendflow-seo-schema';
 
 function getSiteOrigin() {
-  const configured = (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined)?.trim().replace(/\/+$/, '');
+  const configured = normalizeSiteOrigin(import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined);
   return configured || window.location.origin;
 }
 

@@ -1,7 +1,8 @@
 import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+import { publicSeoPlugin } from './scripts/seo-plugin';
 
 const rawPort = process.env.PORT ?? '3000';
 const port = Number(rawPort);
@@ -51,13 +52,13 @@ const blockLegacyAdminPath = () => ({
     });
   },
 });
-
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: basePath,
   plugins: [
     react(),
     tailwindcss({ optimize: false }),
     blockLegacyAdminPath(),
+    publicSeoPlugin(loadEnv(mode, import.meta.dirname, 'VITE_').VITE_PUBLIC_SITE_URL),
   ],
   resolve: {
     alias: {
@@ -96,4 +97,4 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
   },
-});
+}));

@@ -1,6 +1,6 @@
 - [Long JSX edits](long-jsx-edits.md) — Prefer inserting multiline sections around stable anchors over replacing very long one-line JSX blocks.
 - [App Storage constraints](app-storage-constraints.md) — Provisioning may require workspace credits before public asset migration can run.
-- [Database connection priority](database-connection-priority.md) — The app resolves Neon before the generic database variable; verify writes through the API.
+- [Database targeting](database-connection-priority.md) — Generic SQL helpers can target a different database; confirm writes through the application.
 - [Free image cleanup](free-image-cleanup.md) — Generated PNGs may include a baked checkerboard; local ImageMagick cleanup can restore usable alpha when automated removal is unavailable.
 - [Partner logo sourcing](partner-logo-sourcing.md) — Never substitute one operator’s asset for another; use an explicit wordmark until an approved official logo is available.
 - [Plesk deployment boundaries](plesk-deployment-boundaries.md) — External hosting needs direct provider APIs and portable media storage; Replit connectors and sidecars are not available there.
