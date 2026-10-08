@@ -23,10 +23,17 @@ export async function verifyAdminPassword(password: string, storedHash: string):
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-function readCookie(req: Request, name: string): string | null {
+export function readAdminSessionToken(req: Request): string | null {
   const cookies = req.headers.cookie?.split(";") ?? [];
-  const entry = cookies.find((cookie) => cookie.trim().startsWith(`${name}=`));
-  return entry ? decodeURIComponent(entry.trim().slice(name.length + 1)) : null;
+  const prefix = `${ADMIN_SESSION_COOKIE}=`;
+  const entry = cookies.find((cookie) => cookie.trim().startsWith(prefix));
+  if (!entry) return null;
+  try {
+    const token = decodeURIComponent(entry.trim().slice(prefix.length));
+    return /^[A-Za-z0-9_-]{43}$/.test(token) ? token : null;
+  } catch {
+    return null;
+  }
 }
 
 export function hashSessionToken(token: string): string {
@@ -48,7 +55,7 @@ export function clearAdminSessionCookie(res: Response): void {
 }
 
 export async function getAdminUser(req: Request) {
-  const token = readCookie(req, ADMIN_SESSION_COOKIE);
+  const token = readAdminSessionToken(req);
   if (!token) return null;
   const now = new Date();
   const [session] = await db

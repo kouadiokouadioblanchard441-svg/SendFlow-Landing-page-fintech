@@ -548,7 +548,7 @@ function EditorDialog({
   uploading: boolean;
   onClose: () => void;
   onSave: (values: Record<string, Primitive>) => void;
-  onUploadMedia: (file: File) => Promise<{ storagePath: string; publicUrl: string }>;
+  onUploadMedia: (file: File) => Promise<{ kind: string; sourcePath: string; mimeType: string; storagePath: string; publicUrl: string }>;
 }) {
   const [values, setValues] = useState<Record<string, Primitive>>(() => {
     const initial = defaultValues(config, bundle);
@@ -567,11 +567,11 @@ function EditorDialog({
       setValues((current) => ({
         ...current,
         slug: current.slug || file.name.toLowerCase().replace(/\.[^.]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-        kind: current.kind || 'image',
-        sourcePath: current.sourcePath || file.name,
+        kind: uploaded.kind,
+        sourcePath: uploaded.sourcePath,
         storagePath: uploaded.storagePath,
         publicUrl: uploaded.publicUrl,
-        mimeType: file.type,
+        mimeType: uploaded.mimeType,
       }));
     } catch (caught) {
       setUploadError(caught instanceof Error ? caught.message : 'Impossible d’importer ce visuel.');
@@ -594,12 +594,12 @@ function EditorDialog({
           <div className="sendflow-admin-upload-box">
             <div>
               <strong>Importer depuis la galerie</strong>
-              <small>Choisis directement une image sur ton appareil. PNG, JPG, WEBP ou SVG · 10 Mo maximum.</small>
+              <small>Choisis directement une image sur ton appareil. PNG, JPG ou WEBP · 10 Mo maximum.</small>
             </div>
             <label className="sendflow-admin-button sendflow-admin-button-quiet sendflow-admin-upload-label">
               {uploading ? <LoaderCircle className="sendflow-admin-spin" size={16} /> : <UploadCloud size={16} />}
               {uploading ? 'Import en cours…' : 'Choisir une image'}
-              <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleMediaUpload(file); event.currentTarget.value = ''; }} />
+              <input type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleMediaUpload(file); event.currentTarget.value = ''; }} />
             </label>
             {uploadError && <p className="sendflow-admin-upload-error">{uploadError}</p>}
             {(values.publicUrl || item?.publicUrl) && <div className="sendflow-admin-upload-preview"><MediaThumb media={{ ...item, ...values } as RecordItem} label="Aperçu du média" large /><span>Image prête à être enregistrée dans SendFlow.</span></div>}
@@ -1179,13 +1179,15 @@ export default function AdminPage() {
   const uploadMediaFile = async (file: File) => {
     setUploadingMedia(true);
     try {
-      const upload = await apiRequest<{ uploadURL: string; storagePath: string; publicUrl: string }>('/api/admin/landing/media/upload-url', {
+      const response = await fetch('/api/admin/landing/media/upload', {
         method: 'POST',
-        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+        credentials: 'include',
+        headers: { 'Content-Type': file.type, 'X-File-Name': file.name },
+        body: file,
       });
-      const response = await fetch(upload.uploadURL, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-      if (!response.ok) throw new AdminHttpError(response.status, 'Le fichier n’a pas pu être envoyé vers App Storage.');
-      return { storagePath: upload.storagePath, publicUrl: upload.publicUrl };
+      const upload = await response.json().catch(() => null);
+      if (!response.ok) throw new AdminHttpError(response.status, upload?.error || 'Le fichier n’a pas pu être validé et envoyé.');
+      return upload as { kind: string; sourcePath: string; mimeType: string; storagePath: string; publicUrl: string };
     } finally {
       setUploadingMedia(false);
     }
@@ -1222,7 +1224,8 @@ export default function AdminPage() {
   const saveFounder = async (values: Record<string, Primitive>) => {
     setFounderSaving(true);
     try {
-      const saved = await apiRequest<RecordItem>('/api/admin/landing/founder', { method: 'PUT', body: JSON.stringify(values) });
+      const payload = Object.fromEntries(Object.entries(values).filter(([key]) => !['id', 'createdAt', 'updatedAt'].includes(key)));
+      const saved = await apiRequest<RecordItem>('/api/admin/landing/founder', { method: 'PUT', body: JSON.stringify(payload) });
       setBundle((current) => ({ ...current, founder: saved }));
       setNotice({ tone: 'success', text: 'Le profil du fondateur est à jour.' });
     } catch (caught) {
@@ -1235,7 +1238,8 @@ export default function AdminPage() {
   const saveSiteSettings = async (values: Record<string, Primitive>) => {
     setSettingsSaving(true);
     try {
-      const saved = await apiRequest<RecordItem>('/api/admin/landing/settings', { method: 'PUT', body: JSON.stringify(values) });
+      const payload = Object.fromEntries(Object.entries(values).filter(([key]) => !['id', 'createdAt', 'updatedAt'].includes(key)));
+      const saved = await apiRequest<RecordItem>('/api/admin/landing/settings', { method: 'PUT', body: JSON.stringify(payload) });
       setBundle((current) => ({ ...current, settings: saved }));
       setNotice({ tone: 'success', text: 'Les coordonnées du site sont à jour.' });
     } catch (caught) {

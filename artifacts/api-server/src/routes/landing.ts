@@ -1,5 +1,5 @@
-import { Router, type IRouter } from "express";
-import { and, asc, desc, eq } from "drizzle-orm";
+import express, { Router, type IRouter } from "express";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import {
@@ -27,12 +27,33 @@ import {
   parseStoragePath,
 } from "../lib/publicObjectStorage";
 import { createRateLimiter } from "../middlewares/security";
+import {
+  countryOperatorAssignmentSchema,
+  founderProfileSchema,
+  imageBytesMatchMimeType,
+  mediaUploadHeadersSchema,
+  newsletterCampaignSchema,
+  newsletterSubscriberStatusSchema,
+  newsletterSubscribeSchema,
+  parseLandingResourcePayload,
+  parsePositivePathId,
+  siteSettingsSchema,
+} from "../lib/requestValidation";
 
 const router: IRouter = Router();
 const newsletterSubscribeRateLimit = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: "Trop de demandes d’inscription. Réessaie plus tard.",
+});
+const mediaUploadRateLimit = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  message: "Trop de téléversements. Réessaie plus tard.",
+});
+const mediaUploadBody = express.raw({
+  type: ["image/png", "image/jpeg", "image/webp"],
+  limit: "10mb",
 });
 
 const resources = {
@@ -47,24 +68,6 @@ const resources = {
   legalPages: { table: legalPages, editable: ["slug", "titleFr", "titleEn", "introFr", "introEn", "isVisible"] },
   legalSections: { table: legalSections, editable: ["pageId", "sectionNumber", "titleFr", "titleEn", "bodyFr", "bodyEn", "orderIndex"] },
 } as const;
-
-const founderEditableFields = [
-  "name", "roleFr", "roleEn", "shortBioFr", "shortBioEn", "storyFr", "storyEn",
-  "visionFr", "visionEn", "educationFr", "educationEn", "missionFr", "missionEn",
-  "photoKey", "linkedinUrl", "websiteUrl", "instagramUrl", "xUrl", "email", "isVisible",
-] as const;
-
-const siteSettingsEditableFields = [
-  "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl",
-  "homeContactEmail", "homeContactPhone", "homeContactWhatsapp",
-  "featuresContactEmail", "featuresContactPhone", "featuresContactWhatsapp",
-  "securityContactEmail", "securityContactPhone", "securityContactWhatsapp",
-  "downloadContactEmail", "downloadContactPhone", "downloadContactWhatsapp",
-  "aboutContactEmail", "aboutContactPhone", "aboutContactWhatsapp",
-  "legalContactEmail", "legalContactPhone", "legalContactWhatsapp",
-  "companyName", "legalForm", "legalAddress", "legalEmail", "footerAddressFlag", "footerAddressCountry", "footerAddress",
-  "regulatorNameFr", "regulatorNameEn", "regulatorLogoKey", "googlePlayUrl", "appStoreUrl", "appGalleryUrl", "apkUrl",
-] as const;
 
 const founderContactFields = ["linkedinUrl", "websiteUrl", "instagramUrl", "xUrl", "email"] as const;
 const siteContactFields = [
@@ -91,9 +94,11 @@ function resourceConfig(name: string) {
     : undefined;
 }
 
-function editablePayload(name: ResourceName, body: unknown): Record<string, unknown> {
-  const source = body && typeof body === "object" ? body as Record<string, unknown> : {};
+function editablePayload(name: ResourceName, body: unknown): Record<string, unknown> | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const source = body as Record<string, unknown>;
   const allowed = resources[name].editable as readonly string[];
+  if (Object.keys(source).some((key) => !allowed.includes(key))) return null;
   return Object.fromEntries(Object.entries(source).filter(([key, value]) => allowed.includes(key) && value !== undefined));
 }
 
@@ -175,21 +180,14 @@ async function getLandingBundle() {
   return { media, content, sections, features, faqs, countries, operators, countryOperators, globeBadges, legalPages: pages, legalSections: pageSections, founder: founderProfiles[0] ?? null, settings: siteSettings[0] ?? null };
 }
 
-function normalizeNewsletterEmail(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const email = value.trim().toLowerCase();
-  if (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
-  return email;
-}
-
-function newsletterPayload(body: unknown): { subject: string; previewText: string | null; bodyHtml: string } | { error: string } {
-  const source = body && typeof body === "object" ? body as Record<string, unknown> : {};
-  const subject = typeof source.subject === "string" ? source.subject.trim() : "";
-  const previewText = typeof source.previewText === "string" ? source.previewText.trim() : "";
-  const bodyHtml = typeof source.bodyHtml === "string" ? source.bodyHtml.trim() : "";
-  if (!subject || subject.length > 180) return { error: "L’objet est requis et doit contenir 180 caractères maximum." };
-  if (!bodyHtml || bodyHtml.length > 500_000) return { error: "Le contenu de la campagne est requis et doit contenir 500 Ko maximum." };
-  return { subject, previewText: previewText ? previewText.slice(0, 240) : null, bodyHtml };
+function newsletterPayload(body: unknown): { subject: string; previewText: string | null; bodyHtml: string } | null {
+  const parsed = newsletterCampaignSchema.safeParse(body);
+  if (!parsed.success) return null;
+  return {
+    subject: parsed.data.subject,
+    previewText: parsed.data.previewText || null,
+    bodyHtml: parsed.data.bodyHtml,
+  };
 }
 
 function escapeHtml(value: string): string {
@@ -252,11 +250,12 @@ async function getNewsletterAdminBundle() {
 }
 
 router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, res): Promise<void> => {
-  const email = normalizeNewsletterEmail(req.body?.email);
-  if (!email) {
+  const parsed = newsletterSubscribeSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ error: "Saisis une adresse email valide." });
     return;
   }
+  const email = parsed.data.email;
   const token = randomUUID();
   await db.insert(newsletterSubscribers).values({
     email,
@@ -281,7 +280,7 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
 
 router.get("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => {
   const token = typeof req.params.token === "string" ? req.params.token.trim() : "";
-  if (!token) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
     res.status(400).type("html").send("<h1>Lien de désabonnement invalide.</h1>");
     return;
   }
@@ -301,12 +300,13 @@ router.get("/admin/newsletter", requireAdmin, async (_req, res): Promise<void> =
 });
 
 router.patch("/admin/newsletter/subscribers/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  const status = req.body?.status;
-  if (!Number.isInteger(id) || (status !== "subscribed" && status !== "unsubscribed")) {
+  const id = parsePositivePathId(req.params.id);
+  const parsed = newsletterSubscriberStatusSchema.safeParse(req.body);
+  if (!id || !parsed.success) {
     res.status(400).json({ error: "Statut d’abonné invalide." });
     return;
   }
+  const status = parsed.data.status;
   const [updated] = await db.update(newsletterSubscribers).set({
     status,
     subscribedAt: status === "subscribed" ? new Date() : undefined,
@@ -330,8 +330,8 @@ router.patch("/admin/newsletter/subscribers/:id", requireAdmin, async (req, res)
 });
 
 router.delete("/admin/newsletter/subscribers/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = parsePositivePathId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Identifiant d’abonné invalide." });
     return;
   }
@@ -345,8 +345,8 @@ router.delete("/admin/newsletter/subscribers/:id", requireAdmin, async (req, res
 
 router.post("/admin/newsletter/campaigns", requireAdmin, async (req, res): Promise<void> => {
   const payload = newsletterPayload(req.body);
-  if ("error" in payload) {
-    res.status(400).json({ error: payload.error });
+  if (!payload) {
+    res.status(400).json({ error: "Les champs de campagne sont invalides ou dépassent les limites autorisées." });
     return;
   }
   const [created] = await db.insert(newsletterCampaigns).values(payload).returning();
@@ -354,8 +354,8 @@ router.post("/admin/newsletter/campaigns", requireAdmin, async (req, res): Promi
 });
 
 router.patch("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = parsePositivePathId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Identifiant de campagne invalide." });
     return;
   }
@@ -369,8 +369,8 @@ router.patch("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): 
     return;
   }
   const payload = newsletterPayload(req.body);
-  if ("error" in payload) {
-    res.status(400).json({ error: payload.error });
+  if (!payload) {
+    res.status(400).json({ error: "Les champs de campagne sont invalides ou dépassent les limites autorisées." });
     return;
   }
   const [updated] = await db.update(newsletterCampaigns).set({
@@ -383,8 +383,8 @@ router.patch("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): 
 });
 
 router.delete("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = parsePositivePathId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Identifiant de campagne invalide." });
     return;
   }
@@ -402,8 +402,8 @@ router.delete("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res):
 });
 
 router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = parsePositivePathId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Identifiant de campagne invalide." });
     return;
   }
@@ -484,13 +484,12 @@ router.get("/admin/landing", requireAdmin, async (_req, res): Promise<void> => {
 });
 
 router.put("/admin/landing/founder", requireAdmin, async (req, res): Promise<void> => {
-  const source = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
-  const values = trimContactFields(
-    Object.fromEntries(
-      Object.entries(source).filter(([key, value]) => founderEditableFields.includes(key as (typeof founderEditableFields)[number]) && value !== undefined),
-    ),
-    founderContactFields,
-  );
+  const parsed = founderProfileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Les champs du profil fondateur sont invalides." });
+    return;
+  }
+  const values = trimContactFields(parsed.data as Record<string, unknown>, founderContactFields);
   try {
     normalizePublicLinks(values, founderContactFields.filter((field) => field !== "email"));
     normalizeOptionalEmail(values, "email", "L’email du fondateur");
@@ -510,13 +509,12 @@ router.put("/admin/landing/founder", requireAdmin, async (req, res): Promise<voi
 });
 
 router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<void> => {
-  const source = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
-  const values = trimContactFields(
-    Object.fromEntries(
-      Object.entries(source).filter(([key, value]) => siteSettingsEditableFields.includes(key as (typeof siteSettingsEditableFields)[number]) && value !== undefined),
-    ),
-    [...siteContactFields, ...siteLinkFields],
-  );
+  const parsed = siteSettingsSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Les paramètres du site sont invalides." });
+    return;
+  }
+  const values = trimContactFields(parsed.data as Record<string, unknown>, [...siteContactFields, ...siteLinkFields]);
   try {
     normalizePublicLinks(values, siteLinkFields, ["apkUrl"]);
     const emailLabels: Record<string, string> = {
@@ -547,29 +545,49 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
   res.json(saved);
 });
 
-router.post("/admin/landing/media/upload-url", requireAdmin, async (req, res): Promise<void> => {
-  const name = req.params.resource as string;
-  const contentType = typeof req.body?.contentType === "string" ? req.body.contentType.trim().toLowerCase() : "";
-  const size = Number(req.body?.size);
-  if (!name || !contentType.startsWith("image/") || !Number.isFinite(size) || size <= 0 || size > 10 * 1024 * 1024) {
+router.post("/admin/landing/media/upload", requireAdmin, mediaUploadRateLimit, mediaUploadBody, async (req, res): Promise<void> => {
+  const contentType = (req.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  const headers = mediaUploadHeadersSchema.safeParse({
+    name: req.get("x-file-name"),
+    mimeType: contentType,
+  });
+  const image = Buffer.isBuffer(req.body) ? req.body : null;
+  if (!headers.success || !image || image.length === 0 || image.length > 10 * 1024 * 1024) {
     res.status(400).json({ error: "Un fichier image valide de 10 Mo maximum est requis." });
+    return;
+  }
+  if (!imageBytesMatchMimeType(headers.data.mimeType, image)) {
+    res.status(400).json({ error: "Le contenu du fichier ne correspond pas à son type d’image déclaré." });
     return;
   }
 
   try {
     const publicRoot = getPublicObjectSearchPaths()[0];
     const { bucketName, objectName: publicObjectRoot } = parseStoragePath(publicRoot);
-    const safeName = name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "image";
-    const relativePath = `landing/admin/${randomUUID()}-${safeName}`;
+    const extension = headers.data.mimeType === "image/jpeg" ? "jpg" : headers.data.mimeType.slice("image/".length);
+    const relativePath = `landing/admin/${randomUUID()}.${extension}`;
     const objectName = `${publicObjectRoot.replace(/\/+$/, "")}/${relativePath}`;
-    const uploadURL = await getSignedObjectUrl({ bucketName, objectName, method: "PUT" });
-    res.json({
-      uploadURL,
+    const uploadUrl = await getSignedObjectUrl({ bucketName, objectName, method: "PUT" });
+    const uploaded = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": headers.data.mimeType },
+      body: image,
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!uploaded.ok) {
+      req.log.warn({ statusCode: uploaded.status }, "Admin media upload failed in object storage");
+      res.status(503).json({ error: "Le stockage des images n’a pas accepté le fichier." });
+      return;
+    }
+    res.status(201).json({
+      kind: "image",
+      sourcePath: headers.data.name,
+      mimeType: headers.data.mimeType,
       storagePath: `${publicRoot.replace(/\/+$/, "")}/${relativePath}`,
       publicUrl: `/api/storage/public-objects/${relativePath}`,
     });
-  } catch (error) {
-    req.log.error({ err: error }, "Unable to prepare admin media upload");
+  } catch {
+    req.log.warn("Unable to complete admin media upload");
     res.status(503).json({ error: "Le stockage des images est indisponible pour le moment. Réessaie lorsque le service sera disponible." });
   }
 });
@@ -581,13 +599,14 @@ router.patch("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pro
     res.status(404).json({ error: "Unknown landing resource" });
     return;
   }
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = parsePositivePathId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Invalid resource id" });
     return;
   }
-  const values = editablePayload(name as ResourceName, req.body);
-  if (Object.keys(values).length === 0) {
+  const editable = editablePayload(name as ResourceName, req.body);
+  const values = editable && parseLandingResourcePayload(name, editable, "patch");
+  if (!values) {
     res.status(400).json({ error: "No editable fields supplied" });
     return;
   }
@@ -607,8 +626,9 @@ router.post("/admin/landing/:resource", requireAdmin, async (req, res): Promise<
     res.status(404).json({ error: "Unknown landing resource" });
     return;
   }
-  const values = editablePayload(name as ResourceName, req.body);
-  if (Object.keys(values).length === 0) {
+  const editable = editablePayload(name as ResourceName, req.body);
+  const values = editable && parseLandingResourcePayload(name, editable, "create");
+  if (!values) {
     res.status(400).json({ error: "No editable fields supplied" });
     return;
   }
@@ -624,8 +644,8 @@ router.delete("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pr
     res.status(404).json({ error: "Unknown landing resource" });
     return;
   }
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id)) {
+  const id = parsePositivePathId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Invalid resource id" });
     return;
   }
@@ -640,13 +660,26 @@ router.delete("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pr
 });
 
 router.put("/admin/landing/countries/:countryId/operators", requireAdmin, async (req, res): Promise<void> => {
-  const countryId = Number(req.params.countryId);
-  const operatorIds = Array.isArray(req.body?.operatorIds)
-    ? req.body.operatorIds.map(Number).filter(Number.isInteger)
-    : [];
-  if (!Number.isInteger(countryId)) {
+  const countryId = parsePositivePathId(req.params.countryId);
+  const parsed = countryOperatorAssignmentSchema.safeParse(req.body);
+  if (!countryId || !parsed.success) {
     res.status(400).json({ error: "Invalid country id" });
     return;
+  }
+  const operatorIds = parsed.data.operatorIds;
+  const [country] = await db.select({ id: landingCountries.id }).from(landingCountries)
+    .where(eq(landingCountries.id, countryId)).limit(1);
+  if (!country) {
+    res.status(404).json({ error: "Country not found" });
+    return;
+  }
+  if (operatorIds.length) {
+    const existingOperators = await db.select({ id: landingOperators.id }).from(landingOperators)
+      .where(inArray(landingOperators.id, operatorIds));
+    if (existingOperators.length !== operatorIds.length) {
+      res.status(400).json({ error: "One or more operators do not exist" });
+      return;
+    }
   }
   await db.transaction(async (tx) => {
     await tx.delete(landingCountryOperators).where(eq(landingCountryOperators.countryId, countryId));

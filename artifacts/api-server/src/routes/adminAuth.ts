@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { and, eq, lt } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { adminSessions, adminUsers, db } from "@workspace/db";
@@ -7,11 +7,13 @@ import {
   getAdminUser,
   hashAdminPanelToken,
   hashAdminPassword,
+  readAdminSessionToken,
   hashSessionToken,
   setAdminSessionCookie,
   verifyAdminPassword,
 } from "../middlewares/adminAuth";
-import { createRateLimiter } from "../middlewares/security";
+import { createRateLimiter, isAllowedOrigin } from "../middlewares/security";
+import { adminLoginSchema, panelLookupSchema } from "../lib/requestValidation";
 
 const router: IRouter = Router();
 const SESSION_DAYS = 7;
@@ -25,15 +27,23 @@ const panelLookupRateLimit = createRateLimiter({
   max: 30,
 });
 
+function rejectUntrustedOrigin(req: Request, res: Response): boolean {
+  const origin = req.get("origin");
+  if (origin && !isAllowedOrigin(origin)) {
+    res.status(403).json({ error: "Origin not allowed" });
+    return true;
+  }
+  return false;
+}
+
 router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void> => {
-  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
-  const password = typeof req.body?.password === "string" ? req.body.password : "";
-  const panelToken = typeof req.body?.panelToken === "string" ? req.body.panelToken : "";
-  const panelEmail = typeof req.body?.panelEmail === "string" ? req.body.panelEmail.trim().toLowerCase() : "";
-  if (!email || !password || !panelToken || !panelEmail) {
-    res.status(400).json({ error: "Panel URL, email and password are required" });
+  if (rejectUntrustedOrigin(req, res)) return;
+  const parsed = adminLoginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Panel URL, email and password are invalid" });
     return;
   }
+  const { email, password, panelToken, panelEmail } = parsed.data;
 
   const [user] = await db.select().from(adminUsers).where(and(eq(adminUsers.email, email), eq(adminUsers.isActive, true))).limit(1);
   if (
@@ -61,12 +71,12 @@ router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void>
 });
 
 router.get("/admin/auth/panel/:token/:email", panelLookupRateLimit, async (req, res): Promise<void> => {
-  const token = typeof req.params.token === "string" ? req.params.token : "";
-  const panelEmail = typeof req.params.email === "string" ? decodeURIComponent(req.params.email).trim() : "";
-  if (!token || !panelEmail) {
+  const parsed = panelLookupSchema.safeParse({ token: req.params.token, email: req.params.email });
+  if (!parsed.success) {
     res.status(404).json({ error: "Panel not found" });
     return;
   }
+  const { token, email: panelEmail } = parsed.data;
 
   const [user] = await db
     .select({ id: adminUsers.id, email: adminUsers.email })
@@ -95,10 +105,11 @@ router.get("/admin/auth/me", async (req, res): Promise<void> => {
 });
 
 router.post("/admin/auth/logout", async (req, res): Promise<void> => {
+  if (rejectUntrustedOrigin(req, res)) return;
   const user = await getAdminUser(req);
   if (user) {
-    const token = req.headers.cookie?.match(/(?:^|;\s*)sendflow_admin_session=([^;]+)/)?.[1];
-    if (token) await db.delete(adminSessions).where(eq(adminSessions.tokenHash, hashSessionToken(decodeURIComponent(token))));
+    const token = readAdminSessionToken(req);
+    if (token) await db.delete(adminSessions).where(eq(adminSessions.tokenHash, hashSessionToken(token)));
   }
   clearAdminSessionCookie(res);
   res.sendStatus(204);

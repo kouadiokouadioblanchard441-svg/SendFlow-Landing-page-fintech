@@ -5,3 +5,4 @@
 - [Partner logo sourcing](partner-logo-sourcing.md) — Never substitute one operator’s asset for another; use an explicit wordmark until an approved official logo is available.
 - [Plesk deployment boundaries](plesk-deployment-boundaries.md) — External hosting needs direct provider APIs and portable media storage; Replit connectors and sidecars are not available there.
 - [Landing page appearance](landing-appearance-approval.md) — Keep the SendFlow landing design unchanged unless the user explicitly requests visual edits.
+- [Server-side input validation](server-input-validation.md) — Treat every browser-provided value as untrusted and validate it at the API boundary before storage or use.
