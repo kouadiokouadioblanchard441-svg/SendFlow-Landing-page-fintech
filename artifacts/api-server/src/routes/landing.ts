@@ -281,9 +281,50 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
   res.status(201).json({ ok: true });
 });
 
+function parseNewsletterUnsubscribeToken(value: unknown): string | null {
+  const token = typeof value === "string" ? value.trim() : "";
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)
+    ? token
+    : null;
+}
+
 router.get("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => {
-  const token = typeof req.params.token === "string" ? req.params.token.trim() : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
+  const token = parseNewsletterUnsubscribeToken(req.params.token);
+  if (!token) {
+    res.status(400).type("html").send("<h1>Lien de désabonnement invalide.</h1>");
+    return;
+  }
+  const [subscriber] = await db.select({ id: newsletterSubscribers.id })
+    .from(newsletterSubscribers)
+    .where(eq(newsletterSubscribers.unsubscribeToken, token))
+    .limit(1);
+  if (!subscriber) {
+    res.status(404).type("html").send("<h1>Lien de désabonnement invalide ou déjà expiré.</h1>");
+    return;
+  }
+  res
+    .set({
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "X-Robots-Tag": "noindex, nofollow",
+    })
+    .type("html")
+    .send(`<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Confirmer le désabonnement · SendFlow</title></head>
+<body style="font-family:Arial,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#192231">
+  <h1>Confirmer le désabonnement</h1>
+  <p>Confirmez votre choix pour ne plus recevoir les campagnes SendFlow.</p>
+  <form method="post" action="/api/newsletter/unsubscribe/${encodeURIComponent(token)}">
+    <button type="submit">Confirmer mon désabonnement</button>
+  </form>
+</body>
+</html>`);
+});
+
+router.post("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => {
+  const token = parseNewsletterUnsubscribeToken(req.params.token);
+  if (!token) {
     res.status(400).type("html").send("<h1>Lien de désabonnement invalide.</h1>");
     return;
   }
@@ -295,7 +336,21 @@ router.get("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => 
     res.status(404).type("html").send("<h1>Lien de désabonnement invalide ou déjà expiré.</h1>");
     return;
   }
-  res.type("html").send("<!doctype html><html lang=\"fr\"><meta charset=\"utf-8\"><title>Désabonnement confirmé · SendFlow</title><body style=\"font-family:Arial,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#192231\"><h1>Désabonnement confirmé</h1><p>Cette adresse ne recevra plus les campagnes SendFlow.</p></body></html>");
+  res
+    .set({
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "X-Robots-Tag": "noindex, nofollow",
+    })
+    .type("html")
+    .send(`<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Désabonnement confirmé · SendFlow</title></head>
+<body style="font-family:Arial,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#192231">
+  <h1>Désabonnement confirmé</h1>
+  <p>Cette adresse ne recevra plus les campagnes SendFlow.</p>
+</body>
+</html>`);
 });
 
 router.get("/admin/newsletter", requireAdmin, async (_req, res): Promise<void> => {
@@ -367,8 +422,8 @@ router.patch("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): 
     res.status(404).json({ error: "Campagne introuvable." });
     return;
   }
-  if (existing.status === "sent" || existing.status === "sending") {
-    res.status(409).json({ error: "Cette campagne ne peut plus être modifiée." });
+  if (existing.status !== "draft") {
+    res.status(409).json({ error: "Seul un brouillon peut être modifié. Après un échec, vérifiez les envois avant de créer une nouvelle campagne." });
     return;
   }
   const payload = newsletterPayload(req.body);
@@ -381,7 +436,11 @@ router.patch("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res): 
     status: "draft",
     lastError: null,
     updatedAt: new Date(),
-  }).where(eq(newsletterCampaigns.id, id)).returning();
+  }).where(and(eq(newsletterCampaigns.id, id), eq(newsletterCampaigns.status, "draft"))).returning();
+  if (!updated) {
+    res.status(409).json({ error: "La campagne a changé d’état. Rechargez la liste avant de réessayer." });
+    return;
+  }
   res.json(updated);
 });
 
@@ -396,11 +455,17 @@ router.delete("/admin/newsletter/campaigns/:id", requireAdmin, async (req, res):
     res.status(404).json({ error: "Campagne introuvable." });
     return;
   }
-  if (existing.status === "sent" || existing.status === "sending") {
-    res.status(409).json({ error: "Cette campagne ne peut plus être supprimée." });
+  if (existing.status !== "draft") {
+    res.status(409).json({ error: "Seul un brouillon peut être supprimé." });
     return;
   }
-  await db.delete(newsletterCampaigns).where(eq(newsletterCampaigns.id, id));
+  const [deleted] = await db.delete(newsletterCampaigns)
+    .where(and(eq(newsletterCampaigns.id, id), eq(newsletterCampaigns.status, "draft")))
+    .returning({ id: newsletterCampaigns.id });
+  if (!deleted) {
+    res.status(409).json({ error: "La campagne a changé d’état et n’a pas été supprimée." });
+    return;
+  }
   res.sendStatus(204);
 });
 
@@ -415,8 +480,8 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
     res.status(404).json({ error: "Campagne introuvable." });
     return;
   }
-  if (campaign.status === "sent" || campaign.status === "sending") {
-    res.status(409).json({ error: "Cette campagne a déjà été envoyée ou est en cours d’envoi." });
+  if (campaign.status !== "draft") {
+    res.status(409).json({ error: "Seul un brouillon peut être envoyé. Après un échec, vérifiez dans Resend si des messages sont déjà partis avant de créer une nouvelle campagne." });
     return;
   }
   const subscribers = await db.select({
@@ -428,15 +493,22 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
     return;
   }
 
-  await db.update(newsletterCampaigns).set({
+  const [claimed] = await db.update(newsletterCampaigns).set({
     status: "sending",
     recipientCount: subscribers.length,
     sentCount: 0,
     failedCount: 0,
     lastError: null,
     updatedAt: new Date(),
-  }).where(eq(newsletterCampaigns.id, id));
+  }).where(and(eq(newsletterCampaigns.id, id), eq(newsletterCampaigns.status, "draft"))).returning({
+    id: newsletterCampaigns.id,
+  });
+  if (!claimed) {
+    res.status(409).json({ error: "Cette campagne a déjà été prise en charge. Rechargez la liste avant toute nouvelle action." });
+    return;
+  }
 
+  let sentCount = 0;
   try {
     const from = process.env.RESEND_FROM_EMAIL?.trim();
     if (!from) throw new Error("RESEND_FROM_EMAIL doit être configurée avec une adresse vérifiée dans Resend.");
@@ -444,7 +516,6 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
     const logoUrl = publicSiteAssetUrl(origin, "sendflow-wordmark.png");
     const batches = [];
     for (let index = 0; index < subscribers.length; index += 100) batches.push(subscribers.slice(index, index + 100));
-    let sentCount = 0;
     for (const batch of batches) {
       await sendResendBatch(batch.map((subscriber) => {
         const unsubscribeUrl = `${origin}/api/newsletter/unsubscribe/${encodeURIComponent(subscriber.unsubscribeToken)}`;
@@ -470,11 +541,15 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
     req.log.error({ err: error, campaignId: id }, "Newsletter campaign send failed");
     const [failed] = await db.update(newsletterCampaigns).set({
       status: "failed",
-      failedCount: subscribers.length,
+      sentCount,
+      failedCount: Math.max(subscribers.length - sentCount, 0),
       lastError: message.slice(0, 1000),
       updatedAt: new Date(),
     }).where(eq(newsletterCampaigns.id, id)).returning();
-    res.status(502).json({ error: message, campaign: failed });
+    res.status(502).json({
+      error: `L’envoi a échoué. Certains messages ont peut-être déjà été distribués. Ne relancez pas cette campagne; vérifiez les envois dans Resend avant d’en créer une nouvelle. (${message})`,
+      campaign: failed,
+    });
   }
 });
 

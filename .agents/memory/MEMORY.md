@@ -6,3 +6,4 @@
 - [Plesk deployment boundaries](plesk-deployment-boundaries.md) — External hosting needs direct provider APIs and portable media storage; Replit connectors and sidecars are not available there.
 - [Landing page appearance](landing-appearance-approval.md) — Keep the SendFlow landing design unchanged unless the user explicitly requests visual edits.
 - [Server-side input validation](server-input-validation.md) — Treat every browser-provided value as untrusted and validate it at the API boundary before storage or use.
+- [Newsletter campaign retries](newsletter-campaign-retries.md) — Keep failed sends read-only until per-recipient delivery tracking can prevent accidental duplicate campaigns.

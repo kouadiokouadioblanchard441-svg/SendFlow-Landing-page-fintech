@@ -366,10 +366,12 @@ class AdminHttpError extends Error {
 }
 
 async function apiRequest<T>(url: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const response = await fetch(url, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
     ...init,
+    credentials: init?.credentials ?? 'include',
+    headers,
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -1057,11 +1059,11 @@ function NewsletterManager({
             <div className="sendflow-admin-newsletter-list">
               {data.campaigns.map((campaign) => (
                 <div className="sendflow-admin-newsletter-campaign" key={campaign.id}>
-                  <div className="sendflow-admin-newsletter-campaign-copy"><strong>{campaign.subject}</strong><small>{campaign.status === 'sent' ? `Envoyée le ${formatNewsletterDate(campaign.sentAt)}` : campaign.status === 'failed' ? `Échec · ${campaign.lastError ?? 'erreur Resend'}` : campaign.status === 'sending' ? 'Envoi en cours…' : `Brouillon · créé le ${formatNewsletterDate(campaign.createdAt)}`}</small></div>
+                  <div className="sendflow-admin-newsletter-campaign-copy"><strong>{campaign.subject}</strong><small>{campaign.status === 'sent' ? `Envoyée le ${formatNewsletterDate(campaign.sentAt)}` : campaign.status === 'failed' ? `Échec · ${campaign.lastError ?? 'erreur Resend'} — vérifiez Resend avant toute nouvelle campagne` : campaign.status === 'sending' ? 'Envoi en cours…' : `Brouillon · créé le ${formatNewsletterDate(campaign.createdAt)}`}</small></div>
                   <div className="sendflow-admin-newsletter-campaign-actions">
-                    {campaign.status !== 'sent' && campaign.status !== 'sending' && <button className="sendflow-admin-icon-button" onClick={() => setEditor({ id: campaign.id, subject: campaign.subject, previewText: campaign.previewText ?? '', bodyHtml: campaign.bodyHtml })} aria-label={`Modifier ${campaign.subject}`}><Pencil size={15} /></button>}
-                    {campaign.status !== 'sent' && <button className="sendflow-admin-button sendflow-admin-button-primary sendflow-admin-button-small" onClick={() => void sendCampaign(campaign)} disabled={sending === campaign.id || campaign.status === 'sending'}>{sending === campaign.id ? <LoaderCircle className="sendflow-admin-spin" size={14} /> : <Send size={14} />} Envoyer</button>}
-                    {campaign.status !== 'sent' && campaign.status !== 'sending' && <button className="sendflow-admin-icon-button danger" onClick={() => void deleteCampaign(campaign)} aria-label={`Supprimer ${campaign.subject}`}><Trash2 size={15} /></button>}
+                    {campaign.status === 'draft' && <button className="sendflow-admin-icon-button" onClick={() => setEditor({ id: campaign.id, subject: campaign.subject, previewText: campaign.previewText ?? '', bodyHtml: campaign.bodyHtml })} aria-label={`Modifier ${campaign.subject}`}><Pencil size={15} /></button>}
+                    {campaign.status === 'draft' && <button className="sendflow-admin-button sendflow-admin-button-primary sendflow-admin-button-small" onClick={() => void sendCampaign(campaign)} disabled={sending === campaign.id}>{sending === campaign.id ? <LoaderCircle className="sendflow-admin-spin" size={14} /> : <Send size={14} />} Envoyer</button>}
+                    {campaign.status === 'draft' && <button className="sendflow-admin-icon-button danger" onClick={() => void deleteCampaign(campaign)} aria-label={`Supprimer ${campaign.subject}`}><Trash2 size={15} /></button>}
                   </div>
                 </div>
               ))}
