@@ -241,6 +241,16 @@ button[data-testid="button-submit-email"] {
   color: #ffffff !important;
 }
 
+/* Restore SendFlow's actual violet only on the About page; keep the landing palette unchanged. */
+.about-page [class*="bg-[#6d35d8]"] { background-color: #6d35d8 !important; }
+.about-page [class*="text-[#6d35d8]"] { color: #6d35d8 !important; }
+.about-page [class*="border-[#6d35d8]"] { border-color: #6d35d8 !important; }
+.about-page [class*="decoration-[#6d35d8]"] { text-decoration-color: #6d35d8 !important; }
+.about-page [class*="bg-[#6d35d8]/10"] { background-color: rgba(109,53,216,.1) !important; }
+.about-page [class*="border-[#6d35d8]/20"] { border-color: rgba(109,53,216,.2) !important; }
+.about-page [class*="border-[#6d35d8]/25"] { border-color: rgba(109,53,216,.25) !important; }
+.about-page [class*="border-[#6d35d8]/70"] { border-color: rgba(109,53,216,.7) !important; }
+
 .hero-globe-spin {
   animation: hero-globe-spin 22s linear infinite;
   transform-origin: center;

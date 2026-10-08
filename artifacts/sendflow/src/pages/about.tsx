@@ -228,7 +228,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onDownloa
   ];
 
   return (
-    <main className="min-h-[100dvh]" style={{ backgroundColor: colors.ivory, color: colors.navy }}>
+    <main className="about-page min-h-[100dvh]" style={{ backgroundColor: colors.ivory, color: colors.navy }}>
       <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-md" style={{ borderColor: colors.line }}>
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-5 py-3 sm:gap-4 sm:px-8 lg:px-12">
           <button
