@@ -181,7 +181,7 @@ function Feature({
   );
 }
 
-export function AboutPage({ locale, profile, content = [], onBackHome, onToggleLocale, contact }: AboutPageProps) {
+export function AboutPage({ locale, profile, content = [], onBackHome, onDownload, onToggleLocale, contact }: AboutPageProps) {
   const isFrench = locale === 'fr';
   const contactEmail = contact?.email?.trim() || profile.email?.trim() || '';
   const contactPhone = contact?.phone?.trim() || '';
@@ -274,7 +274,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
       <section className="relative overflow-hidden border-b" style={{ borderColor: colors.line }}>
         <div className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[34px] border-[#1769ff]/15 sm:h-[500px] sm:w-[500px]" />
         <div className="pointer-events-none absolute -bottom-28 left-[42%] h-56 w-56 rounded-full bg-[#6d35d8]/10 blur-3xl" />
-        <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-5 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-20 lg:px-12 lg:pt-28">
+        <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-16 lg:px-12 lg:pt-20">
           <div className="rise max-w-3xl">
             <div className={sectionKicker} style={{ color: colors.violet }}>
               <Sparkles size={14} />
@@ -300,7 +300,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
               </a>
               <a
                 href="#mission"
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition-colors hover:bg-[#fffdf7]"
+                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
                 style={{ borderColor: colors.line, color: colors.navy }}
               >
                 {t({ fr: 'Notre raison d’être', en: 'Our reason why' })}
@@ -334,13 +334,13 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
       </section>
 
       <section id="mission" className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12">
-        <div className="grid gap-12 lg:grid-cols-[.75fr_1.25fr] lg:gap-24">
+        <div className="grid gap-10 lg:grid-cols-[.75fr_1.25fr] lg:gap-20">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
               <Target size={14} />
               {t({ fr: 'Une conviction concrète', en: 'A practical conviction' })}
             </div>
-            <h2 className="max-w-md font-serif text-5xl leading-[0.93] tracking-[-0.06em] sm:text-6xl" style={{ color: colors.navy }}>
+            <h2 className="max-w-md font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
               {t({ fr: 'Rendre la simplicité accessible à tous.', en: 'Make simplicity accessible to everyone.' })}
             </h2>
           </div>
@@ -364,13 +364,13 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
       </section>
 
       <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-        <div className="mx-auto grid w-full max-w-7xl gap-14 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[.8fr_1.2fr] lg:gap-28 lg:px-12">
+        <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[.8fr_1.2fr] lg:gap-24 lg:px-12">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
               <Compass size={14} />
               {t({ fr: 'Le chemin', en: 'The path' })}
             </div>
-            <h2 className="max-w-sm font-serif text-5xl leading-[0.92] tracking-[-0.06em] sm:text-6xl" style={{ color: colors.navy }}>
+            <h2 className="max-w-sm font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
               {t({ fr: 'Une idée qui a pris racine dans le réel.', en: 'An idea rooted in real life.' })}
             </h2>
             <p className="mt-6 max-w-sm text-sm leading-6" style={{ color: colors.navySoft }}>
@@ -397,12 +397,12 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12">
-        <div className="mb-10 max-w-2xl">
+        <div className="mb-8 max-w-2xl">
           <div className={sectionKicker} style={{ color: colors.violet }}>
             <Zap size={14} />
             {t({ fr: 'Ce que SendFlow rend possible', en: 'What SendFlow makes possible' })}
           </div>
-          <h2 className="font-serif text-5xl leading-[0.9] tracking-[-0.06em] sm:text-6xl" style={{ color: colors.navy }}>
+          <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
             {t({ fr: 'Moins de friction. Plus de mouvement.', en: 'Less friction. More movement.' })}
           </h2>
         </div>
@@ -438,13 +438,13 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
       </section>
 
       <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.mintPale }}>
-        <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[1fr_.8fr] lg:items-center lg:px-12">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1fr_.8fr] lg:items-center lg:px-12">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
               <Check size={14} />
               {t({ fr: 'Le bénéfice au quotidien', en: 'The everyday benefit' })}
             </div>
-            <h2 className="max-w-xl font-serif text-5xl leading-[0.9] tracking-[-0.06em] sm:text-6xl" style={{ color: colors.navy }}>
+            <h2 className="max-w-xl font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
               {t({ fr: 'Une technologie qui s’efface quand elle fait bien son travail.', en: 'Technology that disappears when it does its job well.' })}
             </h2>
           </div>
@@ -462,13 +462,13 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
       </section>
 
       <section id="founder" className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12">
-        <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
               <UserRound size={14} />
               {t({ fr: 'À l’origine du mouvement', en: 'At the origin of the movement' })}
             </div>
-            <h2 className="font-serif text-5xl leading-[0.9] tracking-[-0.06em] sm:text-6xl" style={{ color: colors.navy }}>
+            <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
               {t({ fr: 'Le visage derrière le produit.', en: 'The person behind the product.' })}
             </h2>
           </div>
@@ -506,7 +506,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
                   href={profile.linkedinUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f7f3e9]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <Linkedin size={16} />
@@ -518,7 +518,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
                   href={profile.websiteUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f7f3e9]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <Globe2 size={16} />
@@ -530,7 +530,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
                   href={profile.instagramUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f7f3e9]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <Instagram size={16} />
@@ -542,7 +542,7 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
                   href={profile.xUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f7f3e9]"
+                  className="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-[#f5f7fc]"
                   style={{ borderColor: colors.line, color: colors.navy }}
                 >
                   <span className="text-sm font-black leading-none">X</span>
@@ -587,21 +587,21 @@ export function AboutPage({ locale, profile, content = [], onBackHome, onToggleL
       <section className="px-5 pb-12 sm:px-8 lg:px-12">
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[30px] px-6 py-14 sm:px-12 sm:py-20 lg:px-20" style={{ backgroundColor: colors.navy }}>
           <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[26px] border-[#6d35d8]/70" />
-          <div className="pointer-events-none absolute bottom-[-80px] right-[26%] h-44 w-44 rounded-full bg-[#9adacb]/35 blur-2xl" />
+          <div className="pointer-events-none absolute bottom-[-80px] right-[26%] h-44 w-44 rounded-full bg-[#dce8ff]/35 blur-2xl" />
           <div className="relative flex flex-col items-start justify-between gap-9 lg:flex-row lg:items-end">
             <div className="max-w-2xl">
               <div className={sectionKicker} style={{ color: colors.yellow }}>
                 <BriefcaseBusiness size={14} />
                 {t({ fr: 'La suite s’écrit ensemble', en: 'The next chapter is shared' })}
               </div>
-              <h2 className="font-serif text-5xl leading-[0.9] tracking-[-0.06em] text-[#fffdf7] sm:text-7xl">
+              <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em] text-white">
                 {t({ fr: 'Prêt à faire circuler les possibles ?', en: 'Ready to keep possibilities moving?' })}
               </h2>
             </div>
             <button
               type="button"
               onClick={onBackHome}
-              className="group inline-flex shrink-0 items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-[#fffdf7] transition-colors transition-transform hover:-translate-y-1 hover:bg-[#4d269d]"
+              className="group inline-flex shrink-0 items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-white transition-transform hover:-translate-y-1 hover:bg-[#1256d2]"
               style={{ backgroundColor: colors.violet }}
             >
               {t({ fr: 'Découvrir SendFlow', en: 'Discover SendFlow' })}

@@ -608,6 +608,7 @@ function AboutRoute() {
         whatsapp: landingBundle?.settings?.aboutContactWhatsapp,
       }}
       onBackHome={() => navigate('/')}
+      onDownload={() => navigate('/download')}
       onToggleLocale={() => setLanguage((current) => current === 'fr' ? 'en' : 'fr')}
     />
   );
