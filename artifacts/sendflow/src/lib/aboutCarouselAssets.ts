@@ -1,4 +1,4 @@
-import aboutHeroWoman from '@assets/file_0000000078c88210a7a3043febb33e01_1789621535794.png';
+import aboutHeroWoman from '@assets/generated_images/sendflow-about-hero-page.png';
 import professional01 from '@assets/generated_images/sendflow-about-professional-01-screen.png';
 import professional02 from '@assets/generated_images/sendflow-about-professional-02-screen.png';
 import professional03 from '@assets/generated_images/sendflow-about-professional-03-screen.png';
