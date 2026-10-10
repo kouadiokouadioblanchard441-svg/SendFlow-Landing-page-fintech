@@ -22,5 +22,8 @@ These logo files are bundled locally so the page does not depend on third-party 
 | Mattel | User-provided `mattel-user-provided.png`; original provenance and licence not independently verified. |
 | 9mobile | User-provided `9mobile-user-provided.png`; original provenance and licence not independently verified. |
 | Expresso | User-provided `expresso-user-provided.png`; original provenance and licence not independently verified. |
+| AT | User-provided `at-user-provided.png`; original provenance and licence not independently verified. |
+| CVMóvel | User-provided `cvmovel-user-provided.png`; original provenance and licence not independently verified. |
+| Unitel T+ | User-provided `unitel-t-plus-user-provided.png`; original provenance and licence not independently verified. |
 
 Other CSS wordmarks remain in place unless an exact logo can be confirmed on an accessible official operator site. No logo from one operator is substituted for another.

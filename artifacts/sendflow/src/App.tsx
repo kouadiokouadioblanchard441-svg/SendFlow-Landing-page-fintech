@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
 import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
+import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
 import NotFound from '@/pages/not-found';
 import AdminPage from '@/pages/admin';
 import AboutPage, { type FounderProfile } from '@/pages/about';
@@ -64,6 +65,9 @@ import zamaniOperatorLogo from './assets/operator-logos/zamani-user-provided.png
 import mattelOperatorLogo from './assets/operator-logos/mattel-user-provided.png';
 import nineMobileOperatorLogo from './assets/operator-logos/9mobile-user-provided.png';
 import expressoOperatorLogo from './assets/operator-logos/expresso-user-provided.png';
+import atOperatorLogo from './assets/operator-logos/at-user-provided.png';
+import cvMovelOperatorLogo from './assets/operator-logos/cvmovel-user-provided.png';
+import unitelTPlusOperatorLogo from './assets/operator-logos/unitel-t-plus-user-provided.png';
 import crossNetworkIcon from './assets/sendflow-icon-cross-network.svg';
 import internationalIcon from './assets/sendflow-icon-international-transfer.svg';
 import trackingIcon from './assets/sendflow-icon-transaction-tracking.svg';
@@ -295,16 +299,6 @@ const countries = fallbackCountries.map((country) => ({
   heroPositionX: fallbackHeroFlagPositions[country.code]?.x ?? null,
   heroPositionY: fallbackHeroFlagPositions[country.code]?.y ?? null,
 }));
-type LandingCountryView = {
-  name: string;
-  code: string;
-  networks: string[];
-  flag: string;
-  tone: string;
-  heroPositionX: number | null;
-  heroPositionY: number | null;
-};
-
 type OperatorLogo = { mark: string; background: string; foreground: string; image?: string; imageBackground?: string; wide?: boolean };
 
 const operatorLogoMarks: Record<string, OperatorLogo> = {
@@ -316,6 +310,9 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   Togocom: { mark: 'T', background: '#e22d39', foreground: '#ffffff', image: mixxOperatorLogo },
   'T-Money': { mark: 'T-Money', background: '#1553a5', foreground: '#ffffff', image: mixxOperatorLogo },
   Camtel: { mark: 'C', background: '#0b5fa5', foreground: '#ffffff', image: camtelOperatorLogo },
+  AT: { mark: 'AT', background: '#ffffff', foreground: '#17131f', image: atOperatorLogo, wide: true },
+  CVMóvel: { mark: 'CV', background: '#5bb9bb', foreground: '#ffffff', image: cvMovelOperatorLogo },
+  'Unitel T+': { mark: 'T+', background: '#182b68', foreground: '#ffffff', image: unitelTPlusOperatorLogo, wide: true },
   Nexttel: { mark: 'N', background: '#e52936', foreground: '#ffffff' },
   Telecel: { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelOperatorLogo },
   'Telecel Faso': { mark: 'T', background: '#ed1c24', foreground: '#ffffff', image: telecelOperatorLogo },
@@ -843,22 +840,7 @@ function LandingPage() {
   };
 
   const activeCountries = useMemo<LandingCountryView[]>(() => {
-    if (!landingBundle?.countries?.length) return countries;
-    return landingBundle.countries
-      .filter((country) => country.isVisible)
-      .map((country) => ({
-        name: language === 'fr' ? country.nameFr : country.nameEn,
-        code: country.code,
-        flag: country.flag,
-        tone: country.tone,
-        heroPositionX: country.heroPositionX,
-        heroPositionY: country.heroPositionY,
-        networks: landingBundle.countryOperators
-          .filter((relation) => relation.countryId === country.id)
-          .sort((a, b) => a.orderIndex - b.orderIndex)
-          .map((relation) => landingBundle.operators.find((operator) => operator.id === relation.operatorId && operator.isVisible)?.name)
-          .filter((name): name is string => Boolean(name)),
-      }));
+    return getActiveLandingCountries(landingBundle, language, countries);
   }, [landingBundle, language]);
 
   const activeFaqs = useMemo(() => (
@@ -965,7 +947,8 @@ function LandingPage() {
     if (nextCountry && nextCountry.code !== selectedCountry.code) setSelectedCountry(nextCountry);
   }, [activeCountries, selectedCountry.code]);
 
-  const displayNetworks = useMemo(() => selectedCountry.networks, [selectedCountry]);
+  const activeSelectedCountry = activeCountries.find((country) => country.code === selectedCountry.code) ?? activeCountries[0] ?? null;
+  const displayNetworks = activeSelectedCountry?.networks ?? [];
 
   const goTo = (id: string) => {
     setMobileOpen(false);
@@ -983,7 +966,7 @@ function LandingPage() {
   };
 
   const downloadBrief = () => {
-    const brief = `SendFlow\n\nUne vision plus calme des mouvements d’argent en Afrique.\n\nParcours exploré : ${selectedCountry.name}\nOpérateurs : ${selectedCountry.networks.join(', ')}\n\nsendflow.studio`;
+    const brief = `SendFlow\n\nUne vision plus calme des mouvements d’argent en Afrique.\n\n${activeSelectedCountry ? `Parcours exploré : ${activeSelectedCountry.name}\nOpérateurs : ${activeSelectedCountry.networks.join(', ')}` : 'Aucun pays n’est actuellement affiché.'}\n\nsendflow.studio`;
     const blob = new Blob([brief], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -1160,23 +1143,23 @@ function LandingPage() {
              </div>
              <div id="international" className="reveal mt-12 grid gap-4 lg:grid-cols-[.82fr_1.18fr]">
               <div className="rounded-[28px] bg-[#e8cd4d] p-6 sm:p-8"><div className="flex items-center justify-between"><span className="text-[11px] font-bold uppercase tracking-[.14em]">{isFrench ? 'Couverture SendFlow' : 'SendFlow coverage'}</span><span className="rounded-full bg-[#211d2c]/10 px-3 py-1 text-[10px] font-bold">{activeCountries.length} pays</span></div><div className="mt-10 text-[clamp(3.5rem,8vw,6.5rem)] font-extrabold leading-[.8] tracking-[-.09em]">{activeCountries.length}<span className="font-serif font-normal text-[#6d35d8]">.</span></div><p className="mt-6 max-w-[280px] text-[15px] font-semibold leading-6 text-[#211d2c]/85">{isFrench ? 'Des connexions pensées pour accompagner vos transferts.' : 'Connections designed to support your transfers.'}</p><div className="mt-10 flex flex-wrap gap-2">{activeCountries.map((country) => <button key={country.code} onClick={() => setSelectedCountry(country)} className={`rounded-full border px-3 py-2 text-[11px] font-bold transition-all ${selectedCountry.code === country.code ? 'border-[#211d2c] bg-[#211d2c] text-[#fbf8ef]' : 'border-[#211d2c]/20 hover:border-[#211d2c]'}`} data-testid={`button-country-${country.code}`}><span className="mr-1">{country.flag}</span>{country.code}</button>)}</div></div>
-                <div className="rounded-[20px] border-2 border-[#cbdced] bg-white p-6 shadow-[0_22px_55px_rgba(43,75,115,.14)] sm:p-8">
+                 {activeSelectedCountry ? <div className="rounded-[20px] border-2 border-[#cbdced] bg-white p-6 shadow-[0_22px_55px_rgba(43,75,115,.14)] sm:p-8">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#8d8792]">{isFrench ? 'Opérateurs disponibles' : 'Available operators'}</p>
-                     <h3 className="mt-2 text-3xl font-extrabold tracking-[-.06em]">{selectedCountry.name}</h3>
+                      <h3 className="mt-2 text-3xl font-extrabold tracking-[-.06em]">{activeSelectedCountry.name}</h3>
                   </div>
                    <span
                      className="flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-none text-[10px] font-bold leading-none"
-                     style={{ backgroundColor: selectedCountry.tone }}
-                     aria-label={`${selectedCountry.name} (${selectedCountry.code})`}
+                      style={{ backgroundColor: activeSelectedCountry.tone }}
+                      aria-label={`${activeSelectedCountry.name} (${activeSelectedCountry.code})`}
                    >
-                     <span className="text-[20px] leading-none" aria-hidden="true">{selectedCountry.flag}</span>
-                     <span>{selectedCountry.code}</span>
+                      <span className="text-[20px] leading-none" aria-hidden="true">{activeSelectedCountry.flag}</span>
+                      <span>{activeSelectedCountry.code}</span>
                    </span>
                 </div>
                   <div className="mt-10 rounded-[18px] border border-[#e2e6ef] bg-[#f4f3f9] p-5 sm:p-6"><div className="grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-4">{displayNetworks.map((network) => <OperatorRow key={network} network={network} operator={landingBundle?.operators.find((item) => item.name === network && item.isVisible)} media={landingBundle?.media ?? []} />)}</div></div>
-              </div>
+               </div> : <div className="flex min-h-[220px] items-center justify-center rounded-[20px] border-2 border-[#cbdced] bg-white p-6 text-center text-sm font-semibold text-[#3d4654] shadow-[0_22px_55px_rgba(43,75,115,.14)]">{isFrench ? 'Aucun pays n’est actuellement publié.' : 'No countries are currently published.'}</div>}
             </div>
           </div>
         </section>
@@ -1187,7 +1170,7 @@ function LandingPage() {
                <ProtectedImage src={securitySectionArt} alt={isFrench ? 'Protection et sécurité des transferts' : 'Transfer protection and security'} className="absolute bottom-0 left-[1%] z-10 h-[220px] w-[220px] object-contain object-center sm:left-[2%] sm:h-[360px] sm:w-[360px]" />
                <div className="absolute bottom-0 right-[5%] z-20 h-[300px] w-[300px] sm:right-[3%] sm:h-[460px] sm:w-[460px]">
                   <ProtectedImage src={securityGuardianArt} alt={isFrench ? 'Gardien 3D de la sécurité SendFlow' : '3D SendFlow security guardian'} className="h-full w-full object-contain object-center" />
-               </div>
+                </div>
                <div className="absolute left-1/2 top-[-2%] z-30 flex w-max max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-3 rounded-full border-2 border-[#6d35d8]/25 bg-white px-4 py-2.5 shadow-[0_12px_28px_rgba(80,40,170,.2)] sm:top-[-1%] sm:gap-4 sm:px-6 sm:py-3.5">
                   <ProtectedImage src={sendflowMark} alt="" className="h-10 w-10 object-contain sm:h-14 sm:w-14" />
                   <ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-8 w-auto object-contain sm:h-12" />

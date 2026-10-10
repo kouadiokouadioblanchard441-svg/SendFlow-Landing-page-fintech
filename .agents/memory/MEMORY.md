@@ -7,3 +7,4 @@
 - [Landing page appearance](landing-appearance-approval.md) — Keep the SendFlow landing design unchanged unless the user explicitly requests visual edits.
 - [Server-side input validation](server-input-validation.md) — Treat every browser-provided value as untrusted and validate it at the API boundary before storage or use.
 - [Newsletter campaign retries](newsletter-campaign-retries.md) — Keep failed sends read-only until per-recipient delivery tracking can prevent accidental duplicate campaigns.
+- [Empty CMS collections](empty-cms-collections.md) — A loaded empty public collection is authoritative; never resurrect defaults just because its length is zero.
