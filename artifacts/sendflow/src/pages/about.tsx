@@ -25,6 +25,7 @@ import internationalTransferIcon from '../assets/sendflow-icon-international-tra
 import visibleDetailsIcon from '../assets/sendflow-icon-visible-details.svg';
 import { ProtectedImage } from '@/components/protected-image';
 import { getTelHref, getWhatsAppHref, type ContactDetails } from '@/lib/contact';
+import { aboutLongform, type AboutLongformSection } from '@/pages/about-longform';
 
 export type AboutLocale = 'fr' | 'en';
 
@@ -223,6 +224,16 @@ function AboutSectionHeading({
           loading="lazy"
         />
       )}
+    </div>
+  );
+}
+
+function AboutLongform({ section, locale }: { section: AboutLongformSection; locale: AboutLocale }) {
+  return (
+    <div className="about-document-longform">
+      {aboutLongform[section][locale].map((paragraph, index) => (
+        <p className="about-document-copy" key={`${section}-${locale}-${index}`}>{paragraph}</p>
+      ))}
     </div>
   );
 }
@@ -549,6 +560,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             <p className="about-document-copy">{profile.vision}</p>
           </article>
         </div>
+        <AboutLongform section="mission" locale={locale} />
       </section>
 
       <section className="about-document-section">
@@ -573,6 +585,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             </article>
           ))}
         </div>
+        <AboutLongform section="journey" locale={locale} />
       </section>
 
       <section className="about-document-section">
@@ -608,6 +621,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             })}
           />
         </div>
+        <AboutLongform section="possibilities" locale={locale} />
       </section>
 
       <section className="about-document-section">
@@ -627,6 +641,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
               </li>
             ))}
         </ul>
+        <AboutLongform section="everyday" locale={locale} />
       </section>
 
       <section id="founder" className="about-document-section">
@@ -737,6 +752,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             </div>
           </div>
         </div>
+        <AboutLongform section="founder" locale={locale} />
       </section>
 
       <footer className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 pb-8 pt-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12" style={{ color: colors.navySoft }}>
