@@ -925,14 +925,14 @@ function LandingPage() {
   useSeo({
     path: '/',
     locale: language,
-    title: isFrench ? 'SendFlow | Transfert d’argent et application mobile' : 'SendFlow | Money transfers and mobile app',
+    title: isFrench ? 'Transfert Mobile Money en Afrique | SendFlow' : 'Mobile Money transfers in Africa | SendFlow',
     description: isFrench
       ? hasStoreLink
-        ? 'Découvrez SendFlow et téléchargez l’application pour simplifier vos transferts entre réseaux de paiement.'
-        : 'Découvrez SendFlow, une application conçue pour simplifier les transferts d’argent entre réseaux de paiement.'
+        ? 'Découvrez SendFlow et téléchargez l’application pour préparer, vérifier et suivre des transferts entre réseaux Mobile Money disponibles en Afrique.'
+        : 'Découvrez SendFlow pour préparer, vérifier et suivre des transferts entre réseaux Mobile Money en Afrique, selon la disponibilité des pays et opérateurs.'
       : hasStoreLink
-        ? 'Discover SendFlow and download the app to simplify transfers across payment networks.'
-        : 'Discover SendFlow, an app designed to simplify money transfers across payment networks.',
+        ? 'Discover SendFlow and download the app to prepare, review and track transfers across supported Mobile Money networks in Africa.'
+        : 'Discover SendFlow to prepare, review and track transfers across Mobile Money networks in Africa, where countries and operators are supported.',
     breadcrumbs: [{ name: isFrench ? 'Accueil' : 'Home', path: '/' }],
     faqItems: activeFaqs.map((faq) => ({ question: faq.q[language], answer: faq.a[language] })),
     application: {
