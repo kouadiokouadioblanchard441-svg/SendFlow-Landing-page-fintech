@@ -259,13 +259,55 @@ button[data-testid="button-submit-email"] {
 .about-page blockquote {
   font-weight: 600;
 }
+.about-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: grid;
+  height: 54px;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  padding: 0 12px;
+  background: #fff;
+  color: #17131f;
+}
+.about-appbar button {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f6f6f7;
+}
+.about-appbar span {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.about-site-header {
+  position: sticky;
+  top: 54px;
+  z-index: 30;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 5px 16px rgba(20,20,30,.055);
+}
+.about-document-hero {
+  width: min(100%, 880px);
+  margin-inline: auto;
+  padding: 34px 20px 22px;
+  background: #fff;
+}
 .about-document-page-title {
   text-transform: uppercase;
 }
 .about-document-section {
   width: min(100%, 880px);
   margin-inline: auto;
-  padding: 56px 20px;
+  padding: 34px 20px;
   background: #ffffff;
 }
 .about-document-heading {
@@ -350,7 +392,44 @@ button[data-testid="button-submit-email"] {
   line-height: 1.65;
 }
 .about-document-founder {
-  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 22px;
+}
+.about-document-founder-photo {
+  width: 150px;
+  height: 180px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #faf9fc;
+}
+.about-document-founder-copy {
+  width: 100%;
+  max-width: 760px;
+  padding-top: 18px;
+}
+.about-document-feature-list {
+  display: grid;
+  gap: 20px;
+  margin-top: 24px;
+}
+.about-document-feature h3 {
+  margin: 0 0 7px;
+  color: #17131f;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.about-document-feature h3 span,
+.about-document-benefits li > span {
+  margin-right: .45em;
+  color: #6d35d8;
+  font-size: 1.25em;
+  font-weight: 900;
+}
+.about-document-feature p {
+  margin: 0;
 }
 .about-page section p:not(.about-document-number):not(.about-document-eyebrow) {
   text-align: justify;
@@ -374,7 +453,8 @@ button[data-testid="button-submit-email"] {
 .about-page [class*="border-[#6d35d8]/70"] { border-color: rgba(109,53,216,.7) !important; }
 
 @media (min-width: 640px) {
-  .about-document-section { padding: 72px 32px; }
+  .about-document-hero { padding: 46px 32px 28px; }
+  .about-document-section { padding: 42px 32px; }
   .about-document-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 42px; }
 }
 

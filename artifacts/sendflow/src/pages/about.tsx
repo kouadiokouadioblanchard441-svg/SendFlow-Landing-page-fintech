@@ -3,9 +3,6 @@ import type { CSSProperties } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
-  BriefcaseBusiness,
-  Check,
-  ChevronDown,
   Download,
   Globe2,
   GraduationCap,
@@ -14,6 +11,7 @@ import {
   Pause,
   Play,
   Quote,
+  RefreshCw,
   Sparkles,
   UserRound,
 } from 'lucide-react';
@@ -183,25 +181,19 @@ function Mark({ className = '' }: { className?: string }) {
 }
 
 function Feature({
-  icon: Icon,
-  iconAlt,
   title,
   description,
 }: {
-  icon: string;
-  iconAlt: string;
   title: string;
   description: string;
 }) {
   return (
-    <article className="group rounded-[26px] border p-6 transition-transform duration-300 hover:-translate-y-1" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-      <div className="mb-8 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border bg-white px-3 py-2" style={{ borderColor: colors.line }}>
-        <ProtectedImage src={Icon} alt={iconAlt} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.04]" />
-      </div>
-      <h3 className="font-serif text-[28px] leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>
+    <article className="about-document-feature">
+      <h3>
+        <span aria-hidden="true">•</span>
         {title}
       </h3>
-      <p className="about-document-copy mt-4 text-sm leading-6" style={{ color: colors.navySoft }}>
+      <p className="about-document-copy">
         {description}
       </p>
     </article>
@@ -371,7 +363,16 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
 
   return (
     <main className="about-page min-h-[100dvh]" style={{ backgroundColor: colors.ivory, color: colors.navy }}>
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md">
+      <div className="about-appbar">
+        <button type="button" onClick={onBackHome} aria-label={t({ fr: 'Retour', en: 'Back' })}>
+          <ArrowLeft size={20} />
+        </button>
+        <span>{t({ fr: 'Découvrir SendFlow', en: 'Discover SendFlow' })}</span>
+        <button type="button" onClick={() => window.location.reload()} aria-label={t({ fr: 'Actualiser la page', en: 'Refresh page' })}>
+          <RefreshCw size={19} />
+        </button>
+      </div>
+      <header className="about-site-header">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-5 py-3 sm:gap-4 sm:px-8 lg:px-12">
           <button
             type="button"
@@ -381,14 +382,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
           >
             <Mark />
             <span className="text-sm font-bold tracking-[-0.03em]">SendFlow</span>
-          </button>
-          <button
-            type="button"
-            onClick={onBackHome}
-            className="link-underline order-2 hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-70 md:inline-flex"
-          >
-            <ArrowLeft size={15} />
-            {t({ fr: 'Retour à l’accueil', en: 'Back home' })}
           </button>
           <button
             type="button"
@@ -437,41 +430,21 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         </div>
       </header>
 
-      <section className="relative overflow-hidden">
-        <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-16 lg:px-12 lg:pt-20">
-          <div className="rise max-w-3xl">
+      <section className="about-document-hero">
+        <div className="rise mx-auto w-full max-w-[880px]">
             <div className={sectionKicker} style={{ color: colors.violet }}>
               <Sparkles size={14} />
-              {t({ fr: 'L’histoire derrière SendFlow', en: 'The story behind SendFlow' })}
+              {t({ fr: 'Présentation de SendFlow', en: 'Introducing SendFlow' })}
             </div>
             <h1 className="about-document-page-title max-w-4xl font-serif text-[clamp(2.15rem,4.8vw,3.1rem)] leading-[1.08] tracking-[-0.045em]" style={{ color: colors.navy }}>
-              {t({ fr: 'L’argent circule mieux quand les gens se comprennent.', en: 'Money moves better when people understand each other.' })}
+              {t({ fr: 'Découvrir SendFlow', en: 'Discover SendFlow' })}
             </h1>
-            <p className="mt-8 max-w-xl text-base leading-7 sm:text-lg" style={{ color: colors.navySoft }}>
+            <p className="about-document-copy about-document-lead mt-5" style={{ color: colors.navySoft }}>
               {t({
                 fr: 'SendFlow est né d’une intuition simple : la technologie financière ne devrait pas ajouter de distance. Elle devrait rendre les liens plus directs, les choix plus lisibles et les transferts plus humains.',
                 en: 'SendFlow was born from a simple intuition: financial technology should not add distance. It should make connections more direct, choices clearer, and transfers more human.',
               })}
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <a
-                href="#founder"
-                className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition-transform hover:-translate-y-0.5"
-                style={{ backgroundColor: colors.violet, color: colors.paper }}
-              >
-                {t({ fr: 'Rencontrer le fondateur', en: 'Meet the founder' })}
-                <ArrowRight size={16} />
-              </a>
-              <a
-                href="#mission"
-                className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition-colors hover:bg-[#f4f0ff]"
-                style={{ borderColor: colors.line, color: colors.navy }}
-              >
-                {t({ fr: 'Notre raison d’être', en: 'Our reason why' })}
-                <ChevronDown size={16} />
-              </a>
-            </div>
-          </div>
 
           <div
             role="group"
@@ -485,10 +458,10 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
                 setHeroFocusPaused(false);
               }
             }}
-            className="relative mx-auto flex min-h-[350px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]"
+            className="about-document-carousel relative mx-auto flex min-h-[300px] w-full max-w-[390px] items-center justify-center"
             data-testid="about-hero-carousel"
           >
-            <div className="float-art relative h-[260px] w-[250px] rotate-[-3deg] overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-[0_26px_50px_rgba(23,36,62,.14)] sm:h-[330px] sm:w-[315px]">
+            <div className="float-art relative h-[235px] w-[225px] overflow-hidden rounded-[14px] bg-white shadow-[0_12px_32px_rgba(23,36,62,.09)] sm:h-[275px] sm:w-[260px]">
               <ProtectedImage
                 key={activeHeroSlide.id}
                 src={heroImageFailed ? ABOUT_HERO_ASSETS[0].src : activeHeroSlide.src}
@@ -552,13 +525,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
                 </div>
               </>
             )}
-            <div className="absolute bottom-[13%] left-[5%] flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_12px_22px_rgba(33,29,44,.16)] sm:bottom-[18%] sm:left-[7%]">
-              <ProtectedImage
-                src={aboutHeroHandshake}
-                alt={isFrench ? 'Illustration de poignée de main' : 'Handshake illustration'}
-                className="h-full w-full object-cover"
-              />
-            </div>
           </div>
         </div>
       </section>
@@ -619,10 +585,8 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         <p className="about-document-copy about-document-lead">
           {t({ fr: 'Moins de friction. Plus de mouvement.', en: 'Less friction. More movement.' })}
         </p>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="about-document-feature-list">
           <Feature
-            icon={crossNetworkIcon}
-            iconAlt={t({ fr: 'Icône SendFlow représentant des réseaux connectés', en: 'SendFlow icon representing connected networks' })}
             title={t({ fr: 'Un seul point de départ', en: 'One starting point' })}
             description={t({
               fr: 'Choisissez un pays, un réseau et un bénéficiaire depuis un parcours pensé pour être compris du premier coup.',
@@ -630,8 +594,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             })}
           />
           <Feature
-            icon={visibleDetailsIcon}
-            iconAlt={t({ fr: 'Icône SendFlow représentant des informations visibles et vérifiées', en: 'SendFlow icon representing visible and verified information' })}
             title={t({ fr: 'Une confiance lisible', en: 'Trust you can read' })}
             description={t({
               fr: 'Les informations essentielles restent visibles : qui reçoit, combien, quand et où en est le transfert.',
@@ -639,8 +601,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             })}
           />
           <Feature
-            icon={internationalTransferIcon}
-            iconAlt={t({ fr: 'Icône SendFlow représentant un transfert international', en: 'SendFlow icon representing an international transfer' })}
             title={t({ fr: 'Des frontières moins lourdes', en: 'Lighter borders' })}
             description={t({
               fr: 'SendFlow rapproche les réseaux locaux pour que la distance géographique ne dicte plus la distance humaine.',
@@ -662,11 +622,8 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         </p>
         <ul className="about-document-benefits">
             {benefits.map((benefit) => (
-              <li key={benefit} className="flex items-start gap-3 pb-4 text-sm font-medium leading-6" style={{ color: colors.navy }}>
-                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: colors.violet, color: colors.paper }}>
-                  <Check size={12} strokeWidth={3} />
-                </span>
-                {benefit}
+              <li key={benefit} className="about-document-copy">
+                <span aria-hidden="true">•</span> {benefit}
               </li>
             ))}
         </ul>
@@ -679,17 +636,11 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         />
         <p className="about-document-copy about-document-lead">{profile.shortBio}</p>
 
-        <div className="about-document-founder grid overflow-hidden rounded-[30px] border lg:grid-cols-[.82fr_1.18fr]" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-          <div className="relative h-[280px] sm:h-[360px] lg:h-[390px] lg:self-start">
+        <div className="about-document-founder">
+          <div className="about-document-founder-photo">
             <FounderPhoto profile={profile} />
-            <div className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-sm" style={{ backgroundColor: colors.yellow, color: colors.navy }}>
-              <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
-                <ProtectedImage src={sendflowMark} alt="" className="h-full w-full object-contain" />
-              </span>
-              SendFlow
-            </div>
           </div>
-          <div className="flex flex-col justify-between p-7 sm:p-10 lg:p-14">
+          <div className="about-document-founder-copy">
             <div>
               <Quote size={28} style={{ color: colors.violet }} />
               <blockquote className="about-document-copy mt-6 max-w-2xl font-serif text-lg leading-[1.68] tracking-normal" style={{ color: colors.navy }}>
@@ -784,31 +735,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
                 </a>
               )}
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 pb-12 sm:px-8 lg:px-12">
-        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[30px] border px-6 py-14 shadow-[0_18px_50px_rgba(23,36,62,.06)] sm:px-12 sm:py-20 lg:px-20" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-          <div className="relative flex flex-col items-start justify-between gap-9 lg:flex-row lg:items-end">
-            <div className="max-w-2xl">
-              <div className={sectionKicker} style={{ color: colors.violet }}>
-                <BriefcaseBusiness size={14} />
-                {t({ fr: 'La suite s’écrit ensemble', en: 'The next chapter is shared' })}
-              </div>
-              <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
-                {t({ fr: 'Prêt à faire circuler les possibles ?', en: 'Ready to keep possibilities moving?' })}
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={onBackHome}
-              className="group inline-flex shrink-0 items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-white transition-transform hover:-translate-y-1 hover:bg-[#5822c3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
-              style={{ backgroundColor: colors.violet }}
-            >
-              {t({ fr: 'Découvrir SendFlow', en: 'Discover SendFlow' })}
-              <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
-            </button>
           </div>
         </div>
       </section>
