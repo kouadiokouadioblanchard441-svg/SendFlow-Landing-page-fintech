@@ -58,6 +58,8 @@ import chinguitelOperatorLogo from './assets/operator-logos/chinguitel-official.
 import mauritelOperatorLogo from './assets/operator-logos/mauritel-official.svg';
 import gloOperatorLogo from './assets/operator-logos/glo-official.png';
 import telkomKenyaOperatorLogo from './assets/operator-logos/telkom-kenya-official.png';
+import safaricomOperatorLogo from './assets/operator-logos/safaricom-user-provided.png';
+import cellcomOperatorLogo from './assets/operator-logos/cellcom-user-provided.png';
 import crossNetworkIcon from './assets/sendflow-icon-cross-network.svg';
 import internationalIcon from './assets/sendflow-icon-international-transfer.svg';
 import trackingIcon from './assets/sendflow-icon-transaction-tracking.svg';
@@ -299,7 +301,7 @@ type LandingCountryView = {
   heroPositionY: number | null;
 };
 
-type OperatorLogo = { mark: string; background: string; foreground: string; image?: string; imageBackground?: string };
+type OperatorLogo = { mark: string; background: string; foreground: string; image?: string; imageBackground?: string; wide?: boolean };
 
 const operatorLogoMarks: Record<string, OperatorLogo> = {
   Orange: { mark: '', background: '#ff7900', foreground: '#ffffff', image: orangeOperatorLogo },
@@ -319,7 +321,7 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   Africell: { mark: 'a', background: '#e40046', foreground: '#ffffff', image: africellOperatorLogo, imageBackground: '#211d2c' },
   QCell: { mark: 'Q', background: '#008c44', foreground: '#ffffff', image: qcellOperatorLogo },
   Comium: { mark: 'C', background: '#f58220', foreground: '#ffffff', image: comiumOperatorLogo },
-  Cellcom: { mark: 'C', background: '#f58220', foreground: '#ffffff' },
+  Cellcom: { mark: 'C', background: '#0055a4', foreground: '#ffffff', image: cellcomOperatorLogo },
   'Lonestar Cell MTN': { mark: 'MTN', background: '#ffca05', foreground: '#17131f', image: momoMtnOperatorLogo },
   Mauritel: { mark: 'M', background: '#008dba', foreground: '#ffffff', image: mauritelOperatorLogo },
   Mattel: { mark: 'M', background: '#e2001a', foreground: '#ffffff' },
@@ -327,7 +329,7 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   'Zamani Telecom': { mark: 'Z', background: '#ef7d00', foreground: '#ffffff' },
   Glo: { mark: 'G', background: '#78be20', foreground: '#ffffff', image: gloOperatorLogo },
   '9mobile': { mark: '9', background: '#78be20', foreground: '#ffffff' },
-  Safaricom: { mark: 'S', background: '#00a651', foreground: '#ffffff' },
+  Safaricom: { mark: 'S', background: '#00a651', foreground: '#ffffff', image: safaricomOperatorLogo, wide: true },
   Telkom: { mark: 'T', background: '#0072bc', foreground: '#ffffff', image: telkomKenyaOperatorLogo, imageBackground: '#211d2c' },
   MoMo: { mark: 'MoMo', background: '#1b65a7', foreground: '#ffffff', image: momoMtnOperatorLogo },
   Free: { mark: 'Free', background: '#111827', foreground: '#ffffff', image: freeOperatorLogo },
@@ -353,8 +355,8 @@ function OperatorRow({
   };
   return (
     <div className="flex items-center justify-center">
-      <span role="img" aria-label={`${network} logo`} className={`flex h-14 w-14 items-center justify-center shadow-[0_8px_18px_rgba(58,38,83,.08)] sm:h-16 sm:w-16 ${logo.image ? 'rounded-2xl border border-[#dbe5f2] bg-white p-2' : 'rounded-full'}`} style={logo.image ? { backgroundColor: logo.imageBackground || '#ffffff' } : { backgroundColor: logo.background, color: logo.foreground }}>
-        {logo.image ? <ProtectedImage src={logo.image} alt="" className="max-h-full max-w-full object-contain" /> : network === 'Orange' ? <span className="h-3 w-6 bg-white" aria-hidden="true" /> : <span className="text-[10px] font-extrabold tracking-[-.04em]">{logo.mark}</span>}
+      <span role="img" aria-label={`${network} logo`} className={`flex ${logo.wide ? 'h-12 w-[76px]' : 'h-14 w-14 sm:h-16 sm:w-16'} items-center justify-center shadow-[0_8px_18px_rgba(58,38,83,.08)] ${logo.image ? 'rounded-2xl border border-[#dbe5f2] bg-white p-2' : 'rounded-full'}`} style={logo.image ? { backgroundColor: logo.imageBackground || '#ffffff' } : { backgroundColor: logo.background, color: logo.foreground }}>
+        {logo.image ? <ProtectedImage src={logo.image} alt="" className={`${logo.wide ? 'max-h-8' : 'max-h-full'} max-w-full object-contain`} /> : network === 'Orange' ? <span className="h-3 w-6 bg-white" aria-hidden="true" /> : <span className="text-[10px] font-extrabold tracking-[-.04em]">{logo.mark}</span>}
       </span>
     </div>
   );

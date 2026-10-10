@@ -16,5 +16,7 @@ These logo files were retrieved from the operators' own public websites and are 
 | Mauritel / Moov Mauritel | https://commons.wikimedia.org/wiki/File:Moov_Mauritel_logo_(French_version).svg — source linked there: http://www.mauritel.mr/imgs/logo_mauritel.gif (public domain) |
 | Glo | https://www.gloworld.com/ng |
 | Telkom Kenya | https://telkom.co.ke/wp-content/uploads/2022/03/logo-telkom.png |
+| Safaricom | User-provided `safaricom-user-provided.png`; original provenance and licence not independently verified. |
+| Cellcom | User-provided `cellcom-user-provided.png`; original provenance and licence not independently verified. |
 
 Other CSS wordmarks remain in place unless an exact logo can be confirmed on an accessible official operator site. No logo from one operator is substituted for another.
