@@ -18,5 +18,7 @@ These logo files were retrieved from the operators' own public websites and are 
 | Telkom Kenya | https://telkom.co.ke/wp-content/uploads/2022/03/logo-telkom.png |
 | Safaricom | User-provided `safaricom-user-provided.png`; original provenance and licence not independently verified. |
 | Cellcom | User-provided `cellcom-user-provided.png`; original provenance and licence not independently verified. |
+| Zamani Telecom | User-provided `zamani-user-provided.png`; original provenance and licence not independently verified. |
+| Mattel | User-provided `mattel-user-provided.png`; original provenance and licence not independently verified. |
 
 Other CSS wordmarks remain in place unless an exact logo can be confirmed on an accessible official operator site. No logo from one operator is substituted for another.
