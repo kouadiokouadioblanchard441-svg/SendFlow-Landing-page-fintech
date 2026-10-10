@@ -6,7 +6,6 @@ import {
   BriefcaseBusiness,
   Check,
   ChevronDown,
-  CircleDot,
   Compass,
   Download,
   Globe2,
@@ -116,7 +115,6 @@ const colors = {
   yellow: '#e8cd4d',
   navy: '#17131f',
   navySoft: '#3d3943',
-  mint: '#9adacb',
   violetPale: '#f4f0ff',
   line: '#e5ddf2',
 } as const;
@@ -350,7 +348,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
 
   return (
     <main className="about-page min-h-[100dvh]" style={{ backgroundColor: colors.ivory, color: colors.navy }}>
-      <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-md" style={{ borderColor: colors.line }}>
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-5 py-3 sm:gap-4 sm:px-8 lg:px-12">
           <button
             type="button"
@@ -416,8 +414,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         </div>
       </header>
 
-      <section className="relative overflow-hidden border-b" style={{ borderColor: colors.line }}>
-        <div className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[34px] border-[#6d35d8]/20 sm:h-[500px] sm:w-[500px]" />
+      <section className="relative overflow-hidden">
         <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-16 lg:px-12 lg:pt-20">
           <div className="rise max-w-3xl">
             <div className={sectionKicker} style={{ color: colors.violet }}>
@@ -513,7 +510,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
                       />
                     ))}
                   </div>
-                  <span className="mx-0.5 h-4 w-px bg-[#e5ddf2]" aria-hidden="true" />
                   <button
                     type="button"
                     onClick={() => setHeroAutoRotateEnabled((enabled) => !enabled)}
@@ -557,14 +553,14 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             </h2>
           </div>
           <div className="grid gap-8 sm:grid-cols-2">
-            <div className="border-t-2 pt-5" style={{ borderColor: colors.violet }}>
+            <div className="pt-5">
               <span className="font-serif text-4xl" style={{ color: colors.violet }}>01</span>
               <h3 className="mt-5 text-lg font-bold">{t({ fr: 'Notre mission', en: 'Our mission' })}</h3>
               <p className="mt-3 text-sm leading-6" style={{ color: colors.navySoft }}>
                 {profile.mission}
               </p>
             </div>
-            <div className="border-t-2 pt-5" style={{ borderColor: colors.mint }}>
+            <div className="pt-5">
               <span className="font-serif text-4xl" style={{ color: colors.violet }}>02</span>
               <h3 className="mt-5 text-lg font-bold">{t({ fr: 'Notre vision', en: 'Our vision' })}</h3>
               <p className="mt-3 text-sm leading-6" style={{ color: colors.navySoft }}>
@@ -575,7 +571,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         </div>
       </section>
 
-      <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
+      <section style={{ backgroundColor: colors.paper }}>
         <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[.8fr_1.2fr] lg:gap-24 lg:px-12">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
@@ -593,12 +589,8 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             </p>
           </div>
           <div className="relative space-y-10 pl-8 sm:pl-14">
-            <div className="absolute bottom-3 left-[10px] top-3 w-px sm:left-[26px]" style={{ backgroundColor: colors.line }} />
             {storySteps.map((step, index) => (
               <article key={step.year} className="relative">
-                <span className="absolute -left-[32px] top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 sm:-left-[56px]" style={{ borderColor: colors.paper, backgroundColor: index === 1 ? colors.yellow : colors.violet }}>
-                  <CircleDot size={8} className="text-transparent" />
-                </span>
                 <p className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: colors.violet }}>{step.year}</p>
                 <h3 className="mt-2 font-serif text-3xl leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>{step.title}</h3>
                 <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: colors.navySoft }}>{step.body}</p>
@@ -649,7 +641,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         </div>
       </section>
 
-      <section className="border-y" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
+      <section style={{ backgroundColor: colors.paper }}>
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1fr_.8fr] lg:items-center lg:px-12">
           <div>
             <div className={sectionKicker} style={{ color: colors.violet }}>
@@ -662,7 +654,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
           </div>
           <ul className="space-y-4">
             {benefits.map((benefit) => (
-              <li key={benefit} className="flex items-start gap-3 border-b pb-4 text-sm font-medium leading-6" style={{ borderColor: 'rgba(33,29,44,.16)', color: colors.navy }}>
+              <li key={benefit} className="flex items-start gap-3 pb-4 text-sm font-medium leading-6" style={{ color: colors.navy }}>
                 <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: colors.violet, color: colors.paper }}>
                   <Check size={12} strokeWidth={3} />
                 </span>
@@ -712,7 +704,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
                 </div>
               </div>
             </div>
-            <div className="mt-10 flex flex-wrap justify-center gap-3 border-t pt-6 sm:justify-start" style={{ borderColor: colors.line }}>
+            <div className="mt-10 flex flex-wrap justify-center gap-3 pt-6 sm:justify-start">
               {profile.linkedinUrl && (
                 <a
                   href={profile.linkedinUrl}
@@ -798,7 +790,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
 
       <section className="px-5 pb-12 sm:px-8 lg:px-12">
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[30px] border px-6 py-14 shadow-[0_18px_50px_rgba(23,36,62,.06)] sm:px-12 sm:py-20 lg:px-20" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
-          <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border-[26px] border-[#6d35d8]/20" />
           <div className="relative flex flex-col items-start justify-between gap-9 lg:flex-row lg:items-end">
             <div className="max-w-2xl">
               <div className={sectionKicker} style={{ color: colors.violet }}>
