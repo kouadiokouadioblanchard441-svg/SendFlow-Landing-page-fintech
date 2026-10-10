@@ -314,6 +314,7 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   Nexttel: { mark: 'N', background: '#e52936', foreground: '#ffffff' },
   Telecel: { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelGhanaOperatorLogo },
   'Telecel Faso': { mark: 'T', background: '#ed1c24', foreground: '#ffffff', image: telecelFasoOperatorLogo },
+  'Telecel Mali': { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelGhanaOperatorLogo },
   Airtel: { mark: 'airtel', background: '#e4002b', foreground: '#ffffff', image: airtelOperatorLogo },
   Vodafone: { mark: 'V', background: '#e60000', foreground: '#ffffff' },
   Africell: { mark: 'a', background: '#e40046', foreground: '#ffffff', image: africellOperatorLogo, imageBackground: '#211d2c' },

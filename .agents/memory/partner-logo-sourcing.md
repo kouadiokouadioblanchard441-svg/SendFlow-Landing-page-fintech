@@ -3,8 +3,8 @@ name: Partner logo sourcing
 description: How to handle third-party payment operator logos when the exact approved asset is not available locally.
 ---
 
-Do not reuse a local operator logo for a different brand. If the exact official asset cannot be verified, use a clearly labeled brand wordmark or wait for an approved asset from the user. For this project, the user confirmed that the local Mixx by Yas asset is the T-Money mark used in the product.
+Reuse the same verified logo for the same operator when it appears in multiple countries, including country-specific network labels that clearly refer to that brand. Do not reuse a local operator logo for a different brand. If the exact official asset cannot be verified, use a clearly labeled brand wordmark or wait for an approved asset from the user. For this project, the user confirmed that the local Mixx by Yas asset is the T-Money mark used in the product.
 
-**Why:** A local image can look plausible while representing a different operator, which is worse than a visibly provisional wordmark in a financial product interface; the project owner explicitly resolved this ambiguity for T-Money.
+**Why:** A local image can look plausible while representing a different operator, which is worse than a visibly provisional wordmark in a financial product interface. The user also expects one verified operator logo to remain consistent across countries.
 
-**How to apply:** Verify the operator name attached to every asset before adding it to feature cards, routes, compatibility lists, or admin-managed media.
+**How to apply:** Verify the operator name attached to every asset before adding it to feature cards, routes, compatibility lists, or admin-managed media. When country labels differ, reuse an existing asset only when they clearly name the same operator/brand; retain a different logo where the brand itself has a distinct local identity.
