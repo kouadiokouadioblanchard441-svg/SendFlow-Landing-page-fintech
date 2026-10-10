@@ -242,6 +242,23 @@ button[data-testid="button-submit-email"] {
 }
 
 /* Restore SendFlow's actual violet only on the About page; keep the landing palette unchanged. */
+.about-page {
+  background-color: #ffffff !important;
+  color: #17131f;
+  font-family: 'Satoshi', 'Work Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+.about-page .font-serif {
+  font-family: inherit !important;
+}
+.about-page h1,
+.about-page h2,
+.about-page h3 {
+  font-weight: 700;
+}
+.about-page blockquote {
+  font-weight: 600;
+}
 .about-page [class*="bg-[#6d35d8]"] { background-color: #6d35d8 !important; }
 .about-page [class*="text-[#6d35d8]"] { color: #6d35d8 !important; }
 .about-page [class*="border-[#6d35d8]"] { border-color: #6d35d8 !important; }
