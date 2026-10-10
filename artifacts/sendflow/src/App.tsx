@@ -48,6 +48,15 @@ import momoMtnOperatorLogo from './assets/operator-logos/operator-logo-momo-mtn.
 import freeOperatorLogo from './assets/operator-logos/operator-logo-07.png';
 import mixxOperatorLogo from './assets/operator-logos/operator-logo-08.png';
 import mpesaOperatorLogo from './assets/operator-logos/operator-logo-09.png';
+import celtiisOperatorLogo from './assets/operator-logos/celtiis-official.svg';
+import camtelOperatorLogo from './assets/operator-logos/camtel-official.png';
+import telecelGhanaOperatorLogo from './assets/operator-logos/telecel-ghana-official.png';
+import telecelFasoOperatorLogo from './assets/operator-logos/telecel-faso-official.png';
+import africellOperatorLogo from './assets/operator-logos/africell-official-white.png';
+import qcellOperatorLogo from './assets/operator-logos/qcell-official.png';
+import comiumOperatorLogo from './assets/operator-logos/comium-official.svg';
+import gloOperatorLogo from './assets/operator-logos/glo-official.png';
+import telkomKenyaOperatorLogo from './assets/operator-logos/telkom-kenya-official.png';
 import crossNetworkIcon from './assets/sendflow-icon-cross-network.svg';
 import internationalIcon from './assets/sendflow-icon-international-transfer.svg';
 import trackingIcon from './assets/sendflow-icon-transaction-tracking.svg';
@@ -289,34 +298,35 @@ type LandingCountryView = {
   heroPositionY: number | null;
 };
 
-type OperatorLogo = { mark: string; background: string; foreground: string; image?: string };
+type OperatorLogo = { mark: string; background: string; foreground: string; image?: string; imageBackground?: string };
 
 const operatorLogoMarks: Record<string, OperatorLogo> = {
   Orange: { mark: '', background: '#ff7900', foreground: '#ffffff', image: orangeOperatorLogo },
   MTN: { mark: 'MTN', background: '#ffca05', foreground: '#17131f', image: momoMtnOperatorLogo },
   'Moov Africa': { mark: 'moov', background: '#e83e8c', foreground: '#ffffff', image: moovOperatorLogo },
   Wave: { mark: '⌁', background: '#1769ff', foreground: '#ffffff', image: waveOperatorLogo },
-  Celtiis: { mark: 'C', background: '#1a9c75', foreground: '#ffffff' },
+  Celtiis: { mark: 'C', background: '#1a9c75', foreground: '#ffffff', image: celtiisOperatorLogo },
   Togocom: { mark: 'T', background: '#e22d39', foreground: '#ffffff', image: mixxOperatorLogo },
   'T-Money': { mark: 'T-Money', background: '#1553a5', foreground: '#ffffff', image: mixxOperatorLogo },
-  Camtel: { mark: 'C', background: '#0b5fa5', foreground: '#ffffff' },
+  Camtel: { mark: 'C', background: '#0b5fa5', foreground: '#ffffff', image: camtelOperatorLogo },
   Nexttel: { mark: 'N', background: '#e52936', foreground: '#ffffff' },
-  'Telecel Faso': { mark: 'T', background: '#ed1c24', foreground: '#ffffff' },
+  Telecel: { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelGhanaOperatorLogo },
+  'Telecel Faso': { mark: 'T', background: '#ed1c24', foreground: '#ffffff', image: telecelFasoOperatorLogo },
   Airtel: { mark: 'airtel', background: '#e4002b', foreground: '#ffffff', image: airtelOperatorLogo },
   Vodafone: { mark: 'V', background: '#e60000', foreground: '#ffffff' },
-  Africell: { mark: 'a', background: '#e40046', foreground: '#ffffff' },
-  QCell: { mark: 'Q', background: '#008c44', foreground: '#ffffff' },
-  Comium: { mark: 'C', background: '#f58220', foreground: '#ffffff' },
+  Africell: { mark: 'a', background: '#e40046', foreground: '#ffffff', image: africellOperatorLogo, imageBackground: '#211d2c' },
+  QCell: { mark: 'Q', background: '#008c44', foreground: '#ffffff', image: qcellOperatorLogo },
+  Comium: { mark: 'C', background: '#f58220', foreground: '#ffffff', image: comiumOperatorLogo },
   Cellcom: { mark: 'C', background: '#f58220', foreground: '#ffffff' },
   'Lonestar Cell MTN': { mark: 'MTN', background: '#ffca05', foreground: '#17131f', image: momoMtnOperatorLogo },
   Mauritel: { mark: 'M', background: '#008dba', foreground: '#ffffff' },
   Mattel: { mark: 'M', background: '#e2001a', foreground: '#ffffff' },
   Chinguitel: { mark: 'C', background: '#00a8a8', foreground: '#ffffff' },
   'Zamani Telecom': { mark: 'Z', background: '#ef7d00', foreground: '#ffffff' },
-  Glo: { mark: 'G', background: '#78be20', foreground: '#ffffff' },
+  Glo: { mark: 'G', background: '#78be20', foreground: '#ffffff', image: gloOperatorLogo },
   '9mobile': { mark: '9', background: '#78be20', foreground: '#ffffff' },
   Safaricom: { mark: 'S', background: '#00a651', foreground: '#ffffff' },
-  Telkom: { mark: 'T', background: '#0072bc', foreground: '#ffffff' },
+  Telkom: { mark: 'T', background: '#0072bc', foreground: '#ffffff', image: telkomKenyaOperatorLogo, imageBackground: '#211d2c' },
   MoMo: { mark: 'MoMo', background: '#1b65a7', foreground: '#ffffff', image: momoMtnOperatorLogo },
   Free: { mark: 'Free', background: '#111827', foreground: '#ffffff', image: freeOperatorLogo },
   'M-Pesa': { mark: 'M-Pesa', background: '#f2f2f2', foreground: '#17131f', image: mpesaOperatorLogo },
@@ -341,7 +351,7 @@ function OperatorRow({
   };
   return (
     <div className="flex items-center justify-center">
-      <span role="img" aria-label={`${network} logo`} className={`flex h-14 w-14 items-center justify-center shadow-[0_8px_18px_rgba(58,38,83,.08)] sm:h-16 sm:w-16 ${logo.image ? 'rounded-2xl border border-[#dbe5f2] bg-white p-2' : 'rounded-full'}`} style={logo.image ? undefined : { backgroundColor: logo.background, color: logo.foreground }}>
+      <span role="img" aria-label={`${network} logo`} className={`flex h-14 w-14 items-center justify-center shadow-[0_8px_18px_rgba(58,38,83,.08)] sm:h-16 sm:w-16 ${logo.image ? 'rounded-2xl border border-[#dbe5f2] bg-white p-2' : 'rounded-full'}`} style={logo.image ? { backgroundColor: logo.imageBackground || '#ffffff' } : { backgroundColor: logo.background, color: logo.foreground }}>
         {logo.image ? <ProtectedImage src={logo.image} alt="" className="max-h-full max-w-full object-contain" /> : network === 'Orange' ? <span className="h-3 w-6 bg-white" aria-hidden="true" /> : <span className="text-[10px] font-extrabold tracking-[-.04em]">{logo.mark}</span>}
       </span>
     </div>
@@ -1054,7 +1064,7 @@ function LandingPage() {
                          <span
                             key={operator.id}
                             className="hero-operator-badge"
-                            style={{ ...position, animationDelay: `${index * -0.7}s` }}
+                             style={{ ...position, animationDelay: `${index * -0.7}s`, ...(fallbackLogo.imageBackground ? { backgroundColor: fallbackLogo.imageBackground } : {}) }}
                             aria-label={`${operator.name} logo`}
                          >
                             {logoUrl || fallbackLogo.image ? <ProtectedImage src={logoUrl || fallbackLogo.image} alt="" /> : <span>{fallbackLogo.mark}</span>}
