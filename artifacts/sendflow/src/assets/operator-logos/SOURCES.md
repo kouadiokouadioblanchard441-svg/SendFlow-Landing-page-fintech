@@ -11,6 +11,8 @@ These logo files were retrieved from the operators' own public websites and are 
 | Africell | https://www.africell.gm/wp-content/uploads/2019/12/africellLogo_777x237_white.png |
 | QCell | https://qcell.gm/wp-content/uploads/2022/02/QCelll-logo-SVG.png |
 | Comium | https://www.comium.gm/assets/img/logo-rd.svg |
+| Chinguitel | https://commons.wikimedia.org/wiki/File:Logo_of_Chinguitel.png — source linked there: https://chinguitel.mr/new_site/resources/images/logo.png (public domain) |
+| Mauritel / Moov Mauritel | https://commons.wikimedia.org/wiki/File:Moov_Mauritel_logo_(French_version).svg — source linked there: http://www.mauritel.mr/imgs/logo_mauritel.gif (public domain) |
 | Glo | https://www.gloworld.com/ng |
 | Telkom Kenya | https://telkom.co.ke/wp-content/uploads/2022/03/logo-telkom.png |
 

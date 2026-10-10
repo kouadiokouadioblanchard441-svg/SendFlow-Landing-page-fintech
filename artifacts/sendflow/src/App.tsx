@@ -55,6 +55,8 @@ import telecelFasoOperatorLogo from './assets/operator-logos/telecel-faso-offici
 import africellOperatorLogo from './assets/operator-logos/africell-official-white.png';
 import qcellOperatorLogo from './assets/operator-logos/qcell-official.png';
 import comiumOperatorLogo from './assets/operator-logos/comium-official.svg';
+import chinguitelOperatorLogo from './assets/operator-logos/chinguitel-official.png';
+import mauritelOperatorLogo from './assets/operator-logos/mauritel-official.svg';
 import gloOperatorLogo from './assets/operator-logos/glo-official.png';
 import telkomKenyaOperatorLogo from './assets/operator-logos/telkom-kenya-official.png';
 import crossNetworkIcon from './assets/sendflow-icon-cross-network.svg';
@@ -319,9 +321,9 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   Comium: { mark: 'C', background: '#f58220', foreground: '#ffffff', image: comiumOperatorLogo },
   Cellcom: { mark: 'C', background: '#f58220', foreground: '#ffffff' },
   'Lonestar Cell MTN': { mark: 'MTN', background: '#ffca05', foreground: '#17131f', image: momoMtnOperatorLogo },
-  Mauritel: { mark: 'M', background: '#008dba', foreground: '#ffffff' },
+  Mauritel: { mark: 'M', background: '#008dba', foreground: '#ffffff', image: mauritelOperatorLogo },
   Mattel: { mark: 'M', background: '#e2001a', foreground: '#ffffff' },
-  Chinguitel: { mark: 'C', background: '#00a8a8', foreground: '#ffffff' },
+  Chinguitel: { mark: 'C', background: '#00a8a8', foreground: '#ffffff', image: chinguitelOperatorLogo },
   'Zamani Telecom': { mark: 'Z', background: '#ef7d00', foreground: '#ffffff' },
   Glo: { mark: 'G', background: '#78be20', foreground: '#ffffff', image: gloOperatorLogo },
   '9mobile': { mark: '9', background: '#78be20', foreground: '#ffffff' },
