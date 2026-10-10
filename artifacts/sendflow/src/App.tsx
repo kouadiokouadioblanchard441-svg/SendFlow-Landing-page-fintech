@@ -62,6 +62,8 @@ import safaricomOperatorLogo from './assets/operator-logos/safaricom-user-provid
 import cellcomOperatorLogo from './assets/operator-logos/cellcom-user-provided.png';
 import zamaniOperatorLogo from './assets/operator-logos/zamani-user-provided.png';
 import mattelOperatorLogo from './assets/operator-logos/mattel-user-provided.png';
+import nineMobileOperatorLogo from './assets/operator-logos/9mobile-user-provided.png';
+import expressoOperatorLogo from './assets/operator-logos/expresso-user-provided.png';
 import crossNetworkIcon from './assets/sendflow-icon-cross-network.svg';
 import internationalIcon from './assets/sendflow-icon-international-transfer.svg';
 import trackingIcon from './assets/sendflow-icon-transaction-tracking.svg';
@@ -325,12 +327,13 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   Comium: { mark: 'C', background: '#f58220', foreground: '#ffffff', image: comiumOperatorLogo },
   Cellcom: { mark: 'C', background: '#0055a4', foreground: '#ffffff', image: cellcomOperatorLogo },
   'Lonestar Cell MTN': { mark: 'MTN', background: '#ffca05', foreground: '#17131f', image: momoMtnOperatorLogo },
+  Expresso: { mark: 'E', background: '#6d5bd0', foreground: '#ffffff', image: expressoOperatorLogo },
   Mauritel: { mark: 'M', background: '#008dba', foreground: '#ffffff', image: mauritelOperatorLogo },
   Mattel: { mark: 'M', background: '#e2001a', foreground: '#ffffff', image: mattelOperatorLogo },
   Chinguitel: { mark: 'C', background: '#00a8a8', foreground: '#ffffff', image: chinguitelOperatorLogo },
   'Zamani Telecom': { mark: 'Z', background: '#ef7d00', foreground: '#ffffff', image: zamaniOperatorLogo, wide: true },
   Glo: { mark: 'G', background: '#78be20', foreground: '#ffffff', image: gloOperatorLogo },
-  '9mobile': { mark: '9', background: '#78be20', foreground: '#ffffff' },
+  '9mobile': { mark: '9', background: '#005b45', foreground: '#ffffff', image: nineMobileOperatorLogo },
   Safaricom: { mark: 'S', background: '#00a651', foreground: '#ffffff', image: safaricomOperatorLogo, wide: true },
   Telkom: { mark: 'T', background: '#0072bc', foreground: '#ffffff', image: telkomKenyaOperatorLogo, imageBackground: '#211d2c' },
   MoMo: { mark: 'MoMo', background: '#1b65a7', foreground: '#ffffff', image: momoMtnOperatorLogo },

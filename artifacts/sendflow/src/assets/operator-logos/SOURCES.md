@@ -1,6 +1,6 @@
 # Operator logo sources
 
-These logo files were retrieved from the operators' own public websites and are bundled locally so the page does not depend on third-party image hosting at runtime.
+These logo files are bundled locally so the page does not depend on third-party image hosting at runtime. User-provided files are identified explicitly; their original provenance and licence have not been independently verified.
 
 | Operator | Official source |
 | --- | --- |
@@ -20,5 +20,7 @@ These logo files were retrieved from the operators' own public websites and are 
 | Cellcom | User-provided `cellcom-user-provided.png`; original provenance and licence not independently verified. |
 | Zamani Telecom | User-provided `zamani-user-provided.png`; original provenance and licence not independently verified. |
 | Mattel | User-provided `mattel-user-provided.png`; original provenance and licence not independently verified. |
+| 9mobile | User-provided `9mobile-user-provided.png`; original provenance and licence not independently verified. |
+| Expresso | User-provided `expresso-user-provided.png`; original provenance and licence not independently verified. |
 
 Other CSS wordmarks remain in place unless an exact logo can be confirmed on an accessible official operator site. No logo from one operator is substituted for another.
