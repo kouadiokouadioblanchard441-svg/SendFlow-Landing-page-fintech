@@ -6,9 +6,9 @@ These logo files were retrieved from the operators' own public websites and are 
 | --- | --- |
 | Celtiis | https://celtiis.bj/ |
 | Camtel | https://www.camtel.cm/images/logo.png |
-| Telecel Ghana | https://www.telecel.com.gh/img/Telecel-Icon-Red.png |
-| Telecel Mali | Shares the Telecel Ghana asset because both entries use the Telecel brand. |
-| Telecel Faso | https://www.telecelfaso.bf/ |
+| Telecel (Ghana, Mali, Burkina Faso) | User-provided `telecel-user-provided.png`, shared across all three country labels. The image’s original provenance and licence have not been independently verified. |
+| Previous Telecel Ghana asset (unused) | https://www.telecel.com.gh/img/Telecel-Icon-Red.png |
+| Previous Telecel Faso asset (unused) | https://www.telecelfaso.bf/ |
 | Africell | https://www.africell.gm/wp-content/uploads/2019/12/africellLogo_777x237_white.png |
 | QCell | https://qcell.gm/wp-content/uploads/2022/02/QCelll-logo-SVG.png |
 | Comium | https://www.comium.gm/assets/img/logo-rd.svg |

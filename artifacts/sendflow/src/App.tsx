@@ -50,8 +50,7 @@ import mixxOperatorLogo from './assets/operator-logos/operator-logo-08.png';
 import mpesaOperatorLogo from './assets/operator-logos/operator-logo-09.png';
 import celtiisOperatorLogo from './assets/operator-logos/celtiis-official.svg';
 import camtelOperatorLogo from './assets/operator-logos/camtel-official.png';
-import telecelGhanaOperatorLogo from './assets/operator-logos/telecel-ghana-official.png';
-import telecelFasoOperatorLogo from './assets/operator-logos/telecel-faso-official.png';
+import telecelOperatorLogo from './assets/operator-logos/telecel-user-provided.png';
 import africellOperatorLogo from './assets/operator-logos/africell-official-white.png';
 import qcellOperatorLogo from './assets/operator-logos/qcell-official.png';
 import comiumOperatorLogo from './assets/operator-logos/comium-official.svg';
@@ -312,9 +311,9 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   'T-Money': { mark: 'T-Money', background: '#1553a5', foreground: '#ffffff', image: mixxOperatorLogo },
   Camtel: { mark: 'C', background: '#0b5fa5', foreground: '#ffffff', image: camtelOperatorLogo },
   Nexttel: { mark: 'N', background: '#e52936', foreground: '#ffffff' },
-  Telecel: { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelGhanaOperatorLogo },
-  'Telecel Faso': { mark: 'T', background: '#ed1c24', foreground: '#ffffff', image: telecelFasoOperatorLogo },
-  'Telecel Mali': { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelGhanaOperatorLogo },
+  Telecel: { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelOperatorLogo },
+  'Telecel Faso': { mark: 'T', background: '#ed1c24', foreground: '#ffffff', image: telecelOperatorLogo },
+  'Telecel Mali': { mark: 'T', background: '#e32526', foreground: '#ffffff', image: telecelOperatorLogo },
   Airtel: { mark: 'airtel', background: '#e4002b', foreground: '#ffffff', image: airtelOperatorLogo },
   Vodafone: { mark: 'V', background: '#e60000', foreground: '#ffffff' },
   Africell: { mark: 'a', background: '#e40046', foreground: '#ffffff', image: africellOperatorLogo, imageBackground: '#211d2c' },
