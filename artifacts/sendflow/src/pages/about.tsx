@@ -6,20 +6,16 @@ import {
   BriefcaseBusiness,
   Check,
   ChevronDown,
-  Compass,
   Download,
   Globe2,
   GraduationCap,
-  HeartHandshake,
   Instagram,
   Linkedin,
   Pause,
   Play,
   Quote,
   Sparkles,
-  Target,
   UserRound,
-  Zap,
 } from 'lucide-react';
 import { SiGmail } from 'react-icons/si';
 import sendflowMark from '@assets/sendflow-mark-original.png';
@@ -205,10 +201,37 @@ function Feature({
       <h3 className="font-serif text-[28px] leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>
         {title}
       </h3>
-      <p className="mt-4 text-sm leading-6" style={{ color: colors.navySoft }}>
+      <p className="about-document-copy mt-4 text-sm leading-6" style={{ color: colors.navySoft }}>
         {description}
       </p>
     </article>
+  );
+}
+
+function AboutSectionHeading({
+  number,
+  title,
+  illustration,
+  illustrationAlt,
+}: {
+  number: string;
+  title: string;
+  illustration?: string;
+  illustrationAlt?: string;
+}) {
+  return (
+    <div className="about-document-heading">
+      <p className="about-document-number">{number}</p>
+      <h2>{title}</h2>
+      {illustration && (
+        <img
+          src={illustration}
+          alt={illustrationAlt ?? ''}
+          className="about-document-illustration"
+          loading="lazy"
+        />
+      )}
+    </div>
   );
 }
 
@@ -353,16 +376,16 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
           <button
             type="button"
             onClick={onBackHome}
-            className="group inline-flex items-center gap-3 text-left"
+            className="group order-1 inline-flex items-center gap-3 text-left"
             aria-label={t({ fr: 'Retour à l’accueil', en: 'Back home' })}
           >
             <Mark />
-            <span className="hidden text-sm font-bold tracking-[-0.03em] sm:inline">SendFlow</span>
+            <span className="text-sm font-bold tracking-[-0.03em]">SendFlow</span>
           </button>
           <button
             type="button"
             onClick={onBackHome}
-             className="link-underline hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-70 md:inline-flex"
+            className="link-underline order-2 hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-70 md:inline-flex"
           >
             <ArrowLeft size={15} />
             {t({ fr: 'Retour à l’accueil', en: 'Back home' })}
@@ -370,7 +393,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
           <button
             type="button"
             onClick={onDownload}
-            className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-full bg-[#6d35d8] px-3.5 py-2 text-[11px] font-bold text-white shadow-[0_6px_16px_rgba(109,53,216,.22)] transition-colors hover:bg-[#5822c3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] sm:px-4 sm:text-xs md:ml-0"
+            className="order-3 ml-auto inline-flex min-h-10 items-center gap-2 rounded-2xl bg-[#6d35d8] px-3.5 py-2 text-[11px] font-bold text-white shadow-[0_6px_16px_rgba(109,53,216,.22)] transition-colors hover:bg-[#5822c3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] sm:px-4 sm:text-xs md:ml-0"
           >
             <Download size={15} aria-hidden="true" />
             <span className="sm:hidden">{t({ fr: 'Télécharger', en: 'Download' })}</span>
@@ -380,7 +403,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             <div
               role="group"
               aria-label={isFrench ? 'Choisir la langue' : 'Choose language'}
-              className="inline-flex shrink-0 items-center gap-0.5 rounded-full border bg-white p-0.5 shadow-[0_4px_12px_rgba(23,36,62,.05)]"
+              className="order-2 inline-flex shrink-0 items-center gap-0.5 rounded-full border bg-white p-0.5 shadow-[0_4px_12px_rgba(23,36,62,.05)] md:order-4"
               style={{ borderColor: colors.line }}
             >
               <button
@@ -421,7 +444,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
               <Sparkles size={14} />
               {t({ fr: 'L’histoire derrière SendFlow', en: 'The story behind SendFlow' })}
             </div>
-            <h1 className="max-w-4xl font-serif text-[clamp(2.35rem,5.3vw,4.5rem)] leading-[1.02] tracking-[-0.055em]" style={{ color: colors.navy }}>
+            <h1 className="about-document-page-title max-w-4xl font-serif text-[clamp(2.15rem,4.8vw,3.1rem)] leading-[1.08] tracking-[-0.045em]" style={{ color: colors.navy }}>
               {t({ fr: 'L’argent circule mieux quand les gens se comprennent.', en: 'Money moves better when people understand each other.' })}
             </h1>
             <p className="mt-8 max-w-xl text-base leading-7 sm:text-lg" style={{ color: colors.navySoft }}>
@@ -465,7 +488,6 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
             className="relative mx-auto flex min-h-[350px] w-full max-w-[470px] items-center justify-center sm:min-h-[450px]"
             data-testid="about-hero-carousel"
           >
-            <div className="absolute h-[240px] w-[240px] rounded-full border border-[#6d35d8]/25 sm:h-[350px] sm:w-[350px]" />
             <div className="float-art relative h-[260px] w-[250px] rotate-[-3deg] overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-[0_26px_50px_rgba(23,36,62,.14)] sm:h-[330px] sm:w-[315px]">
               <ProtectedImage
                 key={activeHeroSlide.id}
@@ -541,75 +563,62 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         </div>
       </section>
 
-      <section id="mission" className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12">
-        <div className="grid gap-10 lg:grid-cols-[.75fr_1.25fr] lg:gap-20">
-          <div>
-            <div className={sectionKicker} style={{ color: colors.violet }}>
-              <Target size={14} />
-              {t({ fr: 'Une conviction concrète', en: 'A practical conviction' })}
-            </div>
-            <h2 className="max-w-md font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
-              {t({ fr: 'Rendre la simplicité accessible à tous.', en: 'Make simplicity accessible to everyone.' })}
-            </h2>
-          </div>
-          <div className="grid gap-8 sm:grid-cols-2">
-            <div className="pt-5">
-              <span className="font-serif text-4xl" style={{ color: colors.violet }}>01</span>
-              <h3 className="mt-5 text-lg font-bold">{t({ fr: 'Notre mission', en: 'Our mission' })}</h3>
-              <p className="mt-3 text-sm leading-6" style={{ color: colors.navySoft }}>
-                {profile.mission}
-              </p>
-            </div>
-            <div className="pt-5">
-              <span className="font-serif text-4xl" style={{ color: colors.violet }}>02</span>
-              <h3 className="mt-5 text-lg font-bold">{t({ fr: 'Notre vision', en: 'Our vision' })}</h3>
-              <p className="mt-3 text-sm leading-6" style={{ color: colors.navySoft }}>
-                {profile.vision}
-              </p>
-            </div>
-          </div>
+      <section id="mission" className="about-document-section">
+        <AboutSectionHeading
+          number="I."
+          title={t({ fr: 'Notre raison d’être', en: 'Our reason for being' })}
+          illustration={crossNetworkIcon}
+          illustrationAlt={t({ fr: 'Illustration de réseaux de paiement connectés', en: 'Illustration of connected payment networks' })}
+        />
+        <p className="about-document-copy about-document-lead">
+          {t({ fr: 'Rendre la simplicité accessible à tous.', en: 'Make simplicity accessible to everyone.' })}
+        </p>
+        <div className="about-document-columns">
+          <article>
+            <h3><span>01</span> {t({ fr: 'Notre mission', en: 'Our mission' })}</h3>
+            <p className="about-document-copy">{profile.mission}</p>
+          </article>
+          <article>
+            <h3><span>02</span> {t({ fr: 'Notre vision', en: 'Our vision' })}</h3>
+            <p className="about-document-copy">{profile.vision}</p>
+          </article>
         </div>
       </section>
 
-      <section style={{ backgroundColor: colors.paper }}>
-        <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[.8fr_1.2fr] lg:gap-24 lg:px-12">
-          <div>
-            <div className={sectionKicker} style={{ color: colors.violet }}>
-              <Compass size={14} />
-              {t({ fr: 'Le chemin', en: 'The path' })}
-            </div>
-            <h2 className="max-w-sm font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
-              {t({ fr: 'Une idée qui a pris racine dans le réel.', en: 'An idea rooted in real life.' })}
-            </h2>
-            <p className="mt-6 max-w-sm text-sm leading-6" style={{ color: colors.navySoft }}>
-              {t({
-                fr: 'Pas de raccourci spectaculaire. Un apprentissage patient : écouter, comprendre les contraintes, puis construire quelque chose qui tient.',
-                en: 'No spectacular shortcut. A patient practice: listen, understand the constraints, then build something that holds.',
-              })}
-            </p>
-          </div>
-          <div className="relative space-y-10 pl-8 sm:pl-14">
-            {storySteps.map((step, index) => (
-              <article key={step.year} className="relative">
-                <p className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: colors.violet }}>{step.year}</p>
-                <h3 className="mt-2 font-serif text-3xl leading-none tracking-[-0.04em]" style={{ color: colors.navy }}>{step.title}</h3>
-                <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: colors.navySoft }}>{step.body}</p>
-              </article>
-            ))}
-          </div>
+      <section className="about-document-section">
+        <AboutSectionHeading
+          number="II."
+          title={t({ fr: 'Le chemin de SendFlow', en: 'The SendFlow journey' })}
+          illustration={aboutHeroHandshake}
+          illustrationAlt={t({ fr: 'Illustration de collaboration autour de SendFlow', en: 'Illustration of collaboration around SendFlow' })}
+        />
+        <p className="about-document-copy about-document-lead">
+          {t({
+            fr: 'Pas de raccourci spectaculaire. Un apprentissage patient : écouter, comprendre les contraintes, puis construire quelque chose qui tient.',
+            en: 'No spectacular shortcut. A patient practice: listen, understand the constraints, then build something that holds.',
+          })}
+        </p>
+        <div className="about-document-timeline">
+          {storySteps.map((step) => (
+            <article key={step.year}>
+              <p className="about-document-eyebrow">{step.year}</p>
+              <h3>{step.title}</h3>
+              <p className="about-document-copy">{step.body}</p>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12">
-        <div className="mb-8 max-w-2xl">
-          <div className={sectionKicker} style={{ color: colors.violet }}>
-            <Zap size={14} />
-            {t({ fr: 'Ce que SendFlow rend possible', en: 'What SendFlow makes possible' })}
-          </div>
-          <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
-            {t({ fr: 'Moins de friction. Plus de mouvement.', en: 'Less friction. More movement.' })}
-          </h2>
-        </div>
+      <section className="about-document-section">
+        <AboutSectionHeading
+          number="III."
+          title={t({ fr: 'Ce que SendFlow rend possible', en: 'What SendFlow makes possible' })}
+          illustration={internationalTransferIcon}
+          illustrationAlt={t({ fr: 'Illustration d’un transfert entre réseaux', en: 'Illustration of a transfer between networks' })}
+        />
+        <p className="about-document-copy about-document-lead">
+          {t({ fr: 'Moins de friction. Plus de mouvement.', en: 'Less friction. More movement.' })}
+        </p>
         <div className="grid gap-4 md:grid-cols-3">
           <Feature
             icon={crossNetworkIcon}
@@ -641,18 +650,17 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         </div>
       </section>
 
-      <section style={{ backgroundColor: colors.paper }}>
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1fr_.8fr] lg:items-center lg:px-12">
-          <div>
-            <div className={sectionKicker} style={{ color: colors.violet }}>
-              <Check size={14} />
-              {t({ fr: 'Le bénéfice au quotidien', en: 'The everyday benefit' })}
-            </div>
-            <h2 className="max-w-xl font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
-              {t({ fr: 'Une technologie qui s’efface quand elle fait bien son travail.', en: 'Technology that disappears when it does its job well.' })}
-            </h2>
-          </div>
-          <ul className="space-y-4">
+      <section className="about-document-section">
+        <AboutSectionHeading
+          number="IV."
+          title={t({ fr: 'Le bénéfice au quotidien', en: 'The everyday benefit' })}
+          illustration={visibleDetailsIcon}
+          illustrationAlt={t({ fr: 'Illustration d’informations de transfert clairement présentées', en: 'Illustration of clearly presented transfer information' })}
+        />
+        <p className="about-document-copy about-document-lead">
+          {t({ fr: 'Une technologie qui s’efface quand elle fait bien son travail.', en: 'Technology that disappears when it does its job well.' })}
+        </p>
+        <ul className="about-document-benefits">
             {benefits.map((benefit) => (
               <li key={benefit} className="flex items-start gap-3 pb-4 text-sm font-medium leading-6" style={{ color: colors.navy }}>
                 <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: colors.violet, color: colors.paper }}>
@@ -661,25 +669,17 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
                 {benefit}
               </li>
             ))}
-          </ul>
-        </div>
+        </ul>
       </section>
 
-      <section id="founder" className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-12">
-        <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <div className={sectionKicker} style={{ color: colors.violet }}>
-              <UserRound size={14} />
-              {t({ fr: 'À l’origine du mouvement', en: 'At the origin of the movement' })}
-            </div>
-            <h2 className="font-serif text-[clamp(1.9rem,3.8vw,3.25rem)] leading-[1.04] tracking-[-0.045em]" style={{ color: colors.navy }}>
-              {t({ fr: 'Le visage derrière le produit.', en: 'The person behind the product.' })}
-            </h2>
-          </div>
-          <p className="max-w-xs text-sm leading-6" style={{ color: colors.navySoft }}>{profile.shortBio}</p>
-        </div>
+      <section id="founder" className="about-document-section">
+        <AboutSectionHeading
+          number="V."
+          title={t({ fr: 'À l’origine de SendFlow', en: 'At the origin of SendFlow' })}
+        />
+        <p className="about-document-copy about-document-lead">{profile.shortBio}</p>
 
-        <div className="grid overflow-hidden rounded-[30px] border lg:grid-cols-[.82fr_1.18fr]" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
+        <div className="about-document-founder grid overflow-hidden rounded-[30px] border lg:grid-cols-[.82fr_1.18fr]" style={{ borderColor: colors.line, backgroundColor: colors.paper }}>
           <div className="relative h-[280px] sm:h-[360px] lg:h-[390px] lg:self-start">
             <FounderPhoto profile={profile} />
             <div className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] shadow-sm" style={{ backgroundColor: colors.yellow, color: colors.navy }}>
@@ -692,7 +692,7 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
           <div className="flex flex-col justify-between p-7 sm:p-10 lg:p-14">
             <div>
               <Quote size={28} style={{ color: colors.violet }} />
-              <blockquote className="mt-6 max-w-2xl font-serif text-3xl leading-[1.02] tracking-[-0.04em] sm:text-4xl" style={{ color: colors.navy }}>
+              <blockquote className="about-document-copy mt-6 max-w-2xl font-serif text-lg leading-[1.68] tracking-normal" style={{ color: colors.navy }}>
                 “{profile.story}”
               </blockquote>
               <div className="mt-8">

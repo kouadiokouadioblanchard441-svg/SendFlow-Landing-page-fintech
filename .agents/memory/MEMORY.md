@@ -5,6 +5,7 @@
 - [Partner logo sourcing](partner-logo-sourcing.md) — Never substitute one operator’s asset for another; use an explicit wordmark until an approved official logo is available.
 - [Plesk deployment boundaries](plesk-deployment-boundaries.md) — External hosting needs direct provider APIs and portable media storage; managed connectors and sidecars do not carry over.
 - [Landing page appearance](landing-appearance-approval.md) — Keep the SendFlow landing design unchanged unless the user explicitly requests visual edits.
+- [Découvrir page style](discover-page-style.md) — Match the privacy-policy reference and keep the five long-form sections fully localized, 1,000+ words in French and English.
 - [Server-side input validation](server-input-validation.md) — Treat every browser-provided value as untrusted and validate it at the API boundary before storage or use.
 - [Newsletter campaign retries](newsletter-campaign-retries.md) — Keep failed sends read-only until per-recipient delivery tracking can prevent accidental duplicate campaigns.
 - [Empty CMS collections](empty-cms-collections.md) — A loaded empty public collection is authoritative; never resurrect defaults just because its length is zero.
