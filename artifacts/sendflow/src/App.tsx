@@ -8,6 +8,7 @@ import { shadcn } from '@clerk/themes';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
+import { getLocaleFromPath, getLocalizedPath, navigateToLocale } from '@/lib/localized-routes';
 import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
 import NotFound from '@/pages/not-found';
@@ -18,6 +19,7 @@ import { EditableLegalPage } from '@/pages/editable-legal';
 import DownloadPage from '@/pages/download';
 import FeaturesPage from '@/pages/features';
 import SecurityPage from '@/pages/security';
+import CorridorGuidePage from '@/pages/corridor-guide';
 import { SendFlowFooter } from '@/components/sendflow-footer';
 import { ProtectedImage } from '@/components/protected-image';
 import sendflowMark from '@assets/sendflow-mark-original.png';
@@ -474,6 +476,8 @@ function App() {
               <Route path="/conditions-utilisation" component={() => <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />} />
               <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
               <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
+              <Route path="/france-senegal" component={CorridorGuidePage} />
+              <Route path="/en/*?" component={EnglishPublicRoute} />
               <Route path="/admin" component={LegacyAdminRedirect} />
               <Route path="/admin/*" component={LegacyAdminRedirect} />
               <Route path="/panel" component={PanelRoute} />
@@ -485,6 +489,20 @@ function App() {
       </ClerkProvider>
     </WouterRouter>
   );
+}
+
+function EnglishPublicRoute() {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/en/';
+  if (path === '/en' || path === '/en/') return <LandingPage />;
+  if (path === '/en/features') return <FeaturesPage />;
+  if (path === '/en/security') return <SecurityPage />;
+  if (path === '/en/download') return <DownloadPage />;
+  if (path === '/en/about') return <AboutRoute />;
+  if (path === '/en/terms') return <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />;
+  if (path === '/en/privacy') return <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />;
+  if (path === '/en/legal-notice') return <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />;
+  if (path === '/en/france-senegal') return <CorridorGuidePage />;
+  return <NotFoundRoute />;
 }
 
 function SignInPage() {
@@ -510,6 +528,7 @@ function SignUpPage() {
 }
 
 function PublicLegalRoute({ page: Page, slug }: { page: (props: LegalPageProps) => ReactElement; slug: string }) {
+  const locale = getLocaleFromPath(window.location.pathname);
   const { data } = usePublicLandingBundle();
   const legalPage = data?.legalPages?.find((item) => item.slug === slug && item.isVisible);
   const legalSections = data?.legalSections?.filter((item) => item.pageId === legalPage?.id).sort((a, b) => a.orderIndex - b.orderIndex) ?? [];
@@ -518,13 +537,15 @@ function PublicLegalRoute({ page: Page, slug }: { page: (props: LegalPageProps) 
     confidentialite: 'Politique de confidentialité',
     'mentions-legales': 'Mentions légales',
   };
-  const legalTitle = legalPage?.titleFr || fallbackTitles[slug] || 'Informations légales';
+  const legalTitle = locale === 'fr'
+    ? legalPage?.titleFr || fallbackTitles[slug] || 'Informations légales'
+    : legalPage?.titleEn || 'Legal information';
   useSeo({
     path: `/${slug}`,
-    locale: 'fr',
+    locale,
     title: `${legalTitle} · SendFlow`,
-    description: legalPage?.introFr || `${legalTitle} de SendFlow.`,
-    breadcrumbs: [{ name: 'Accueil', path: '/' }, { name: legalTitle, path: `/${slug}` }],
+    description: locale === 'fr' ? legalPage?.introFr || `${legalTitle} de SendFlow.` : legalPage?.introEn || `${legalTitle} by SendFlow.`,
+    breadcrumbs: [{ name: locale === 'fr' ? 'Accueil' : 'Home', path: '/' }, { name: legalTitle, path: `/${slug}` }],
   });
   if (legalPage && legalSections.length > 0) {
     return <EditableLegalPage page={legalPage} sections={legalSections} settings={data?.settings ? {
@@ -560,7 +581,7 @@ function usePublicLandingBundle() {
 
 function AboutRoute() {
   const [, navigate] = useLocation();
-  const [language, setLanguage] = useState<Language>('fr');
+  const [language] = useState<Language>(() => getLocaleFromPath(window.location.pathname));
   const { data: landingBundle } = usePublicLandingBundle();
 
   const profile = useMemo<FounderProfile>(() => {
@@ -625,9 +646,9 @@ function AboutRoute() {
         phone: landingBundle?.settings?.aboutContactPhone,
         whatsapp: landingBundle?.settings?.aboutContactWhatsapp,
       }}
-      onBackHome={() => navigate('/')}
-      onDownload={() => navigate('/download')}
-      onChangeLocale={(nextLocale) => setLanguage(nextLocale)}
+      onBackHome={() => navigate(getLocalizedPath('/', language))}
+      onDownload={() => navigate(getLocalizedPath('/download', language))}
+      onChangeLocale={(nextLocale) => navigateToLocale(window.location.pathname, nextLocale)}
     />
   );
 }
@@ -807,7 +828,7 @@ function AdminLoginForm({ panelToken, adminEmail, panelEmail }: { panelToken: st
 
 function LandingPage() {
   // Editorial copy is loaded from the public landing bundle.
-  const [language, setLanguage] = useState<Language>('fr');
+  const [language] = useState<Language>(() => getLocaleFromPath(window.location.pathname));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<LandingCountryView>(countries[0]);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -941,6 +962,10 @@ function LandingPage() {
       applicationCategory: 'FinanceApplication',
       downloadUrls: [googlePlayUrl, appStoreUrl].filter((url): url is string => Boolean(url)),
     },
+    service: {
+      name: 'SendFlow money transfer service',
+      serviceType: 'Digital money transfer and payment-network routing',
+    },
   });
   useEffect(() => {
     const nextCountry = activeCountries.find((country) => country.code === selectedCountry.code) ?? activeCountries[0];
@@ -953,7 +978,7 @@ function LandingPage() {
   const goTo = (id: string) => {
     setMobileOpen(false);
     if (id === 'security') {
-      window.location.assign(`${basePath}/securite`);
+      window.location.assign(getLocalizedPath('/securite', language));
       return;
     }
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -984,11 +1009,11 @@ function LandingPage() {
             <BrandLockup />
           </button>
           <div className="hidden items-center gap-7 md:flex">
-            {publicNavItems.map((item) => <a key={item.id} href={publicNavHref(item.id)} onClick={() => setMobileOpen(false)} className="link-underline text-[13px] font-medium text-[#5e5766] transition-colors hover:text-[#6d35d8]" data-testid={`link-nav-${item.id}`}>{t(item.label, language)}</a>)}
+            {publicNavItems.map((item) => <a key={item.id} href={getLocalizedPath(publicNavHref(item.id), language)} onClick={() => setMobileOpen(false)} className="link-underline text-[13px] font-medium text-[#5e5766] transition-colors hover:text-[#6d35d8]" data-testid={`link-nav-${item.id}`}>{t(item.label, language)}</a>)}
           </div>
           <div className="hidden items-center gap-3 md:flex">
-            <button onClick={() => setLanguage(isFrench ? 'en' : 'fr')} className="flex items-center gap-1 rounded-full px-2 py-2 text-[12px] font-semibold text-[#5e5766] hover:text-[#6d35d8]" data-testid="button-language">{isFrench ? 'EN' : 'FR'} <Globe2 size={14} /></button>
-             <Link href="/download" onClick={() => setMobileOpen(false)} className="rounded-full bg-[#211d2c] px-4 py-2.5 text-[12px] font-semibold !text-white transition-transform hover:-translate-y-0.5" data-testid="button-nav-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-1 inline" size={14} /></Link>
+            <button onClick={() => navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr')} className="flex items-center gap-1 rounded-full px-2 py-2 text-[12px] font-semibold text-[#5e5766] hover:text-[#6d35d8]" data-testid="button-language">{isFrench ? 'EN' : 'FR'} <Globe2 size={14} /></button>
+             <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="rounded-full bg-[#211d2c] px-4 py-2.5 text-[12px] font-semibold !text-white transition-transform hover:-translate-y-0.5" data-testid="button-nav-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-1 inline" size={14} /></Link>
           </div>
           <button type="button" onClick={downloadBrief} className="hidden items-center gap-1 rounded-full px-2 py-2 text-[11px] font-semibold text-[#6d35d8] lg:flex" data-testid="button-download-brief">{isFrench ? 'Brief' : 'Brief'} <ArrowDownRight size={13} /></button>
           <button className="rounded-full p-2 md:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu" data-testid="button-open-menu"><Menu size={21} /></button>
@@ -1002,10 +1027,10 @@ function LandingPage() {
             <button onClick={() => setMobileOpen(false)} className="rounded-full border border-[#2d2535]/10 p-2" data-testid="button-close-menu"><X size={19} /></button>
           </div>
           <div className="mt-16 flex flex-col gap-6">
-            {publicNavItems.map((item) => <a key={item.id} href={publicNavHref(item.id)} onClick={() => setMobileOpen(false)} className="flex items-center border-b border-[#2d2535]/10 pb-4 text-left text-2xl font-semibold tracking-[-.04em]" data-testid={`link-mobile-${item.id}`}>{t(item.label, language)}</a>)}
+            {publicNavItems.map((item) => <a key={item.id} href={getLocalizedPath(publicNavHref(item.id), language)} onClick={() => setMobileOpen(false)} className="flex items-center border-b border-[#2d2535]/10 pb-4 text-left text-2xl font-semibold tracking-[-.04em]" data-testid={`link-mobile-${item.id}`}>{t(item.label, language)}</a>)}
           </div>
-          <button onClick={() => { setLanguage(isFrench ? 'en' : 'fr'); setMobileOpen(false); }} className="mt-12 flex items-center gap-2 text-sm font-semibold text-[#6d35d8]" data-testid="button-mobile-language"><span aria-hidden="true">{isFrench ? '🇬🇧' : '🇫🇷'}</span> {isFrench ? 'Passer en anglais' : 'Switch to French'}</button>
-            <Link href="/download" onClick={() => setMobileOpen(false)} className="mt-5 block w-full rounded-full bg-[#6d35d8] px-5 py-4 text-center text-sm font-semibold !text-white" data-testid="button-mobile-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2 inline" size={16} /></Link>
+          <button onClick={() => { navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr'); setMobileOpen(false); }} className="mt-12 flex items-center gap-2 text-sm font-semibold text-[#6d35d8]" data-testid="button-mobile-language"><span aria-hidden="true">{isFrench ? '🇬🇧' : '🇫🇷'}</span> {isFrench ? 'Passer en anglais' : 'Switch to French'}</button>
+             <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="mt-5 block w-full rounded-full bg-[#6d35d8] px-5 py-4 text-center text-sm font-semibold !text-white" data-testid="button-mobile-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2 inline" size={16} /></Link>
         </div>
       </div>}
 
@@ -1031,8 +1056,8 @@ function LandingPage() {
               <h1 className="rise delay-1 mt-6 max-w-[760px] whitespace-pre-line text-[clamp(3.7rem,9vw,7.6rem)] font-extrabold leading-[.88] tracking-[-.09em] text-[#17131f]">{t(localizedSection('hero', { title: { fr: 'L’argent circule.\nLes réseaux aussi.', en: 'Money moves.\nNetworks do too.' }, body: { fr: '', en: '' } }).title, language)}</h1>
               <p className="rise delay-2 mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px]">{t(localizedSection('hero', { title: { fr: '', en: '' }, body: { fr: 'SendFlow simplifie vos transferts d’argent entre différents réseaux de paiement, localement et au-delà des frontières.', en: 'SendFlow simplifies money transfers across different payment networks, locally and across borders.' } }).body, language)}</p>
               <div className="rise delay-3 mt-9 flex w-full max-w-[520px] flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center">
-                 <Link href="/download" className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={15} /></Link>
-                 <Link href="/a-propos" className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-discover"><Play className="mr-2 text-white" size={14} fill="currentColor" />{t(contentCopy(landingBundle?.content, 'cta.discover', { fr: 'Découvrir SendFlow', en: 'Discover SendFlow' }), language)}</Link>
+                 <Link href={getLocalizedPath('/download', language)} className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={15} /></Link>
+                 <Link href={getLocalizedPath('/a-propos', language)} className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-discover"><Play className="mr-2 text-white" size={14} fill="currentColor" />{t(contentCopy(landingBundle?.content, 'cta.discover', { fr: 'Découvrir SendFlow', en: 'Discover SendFlow' }), language)}</Link>
               </div>
             </div>
               <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)]">
@@ -1193,7 +1218,7 @@ function LandingPage() {
              <p className="text-[11px] font-bold uppercase tracking-[.17em] text-[#e8cd4d]">{t(contentCopy(landingBundle?.content, 'cta.nextMove', { fr: 'Le prochain mouvement', en: 'The next move' }), language)}</p>
              <h2 className="mt-5 max-w-[820px] whitespace-pre-line text-6xl font-extrabold leading-[.86] tracking-[-.08em] sm:text-8xl">{t(contentCopy(landingBundle?.content, 'cta.download.title', { fr: 'Votre prochain transfert\ncommence ici.', en: 'Your next transfer\nstarts here.' }), language)}</h2>
               <p className="mt-7 max-w-[540px] text-[17px] font-semibold leading-7 text-[#f4edff]">{t(contentCopy(landingBundle?.content, 'cta.download.body', { fr: 'Téléchargez bientôt l’application SendFlow et simplifiez vos transferts entre réseaux.', en: 'Download the SendFlow app soon and simplify transfers across networks.' }), language)}</p>
-                <Link href="/download" className="mt-6 inline-flex items-center rounded-[14px] border-2 border-[#a68bea] bg-[#5b21b6] px-6 py-3.5 text-[14px] font-extrabold text-white shadow-[0_14px_28px_rgba(33,29,44,.24)] transition-all hover:-translate-y-0.5 hover:bg-[#4c1d95]" data-testid="button-download-placeholder">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={17} /></Link>
+                <Link href={getLocalizedPath('/download', language)} className="mt-6 inline-flex items-center rounded-[14px] border-2 border-[#a68bea] bg-[#5b21b6] px-6 py-3.5 text-[14px] font-extrabold text-white shadow-[0_14px_28px_rgba(33,29,44,.24)] transition-all hover:-translate-y-0.5 hover:bg-[#4c1d95]" data-testid="button-download-placeholder">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={17} /></Link>
               <div className="mt-4 flex flex-wrap gap-3">
                <StoreBadge store="Google Play" icon="play" href={googlePlayUrl} soonLabel={isFrench ? 'bientôt' : 'coming soon'} className="sendflow-store-badge--large sendflow-store-badge--featured" />
                <StoreBadge store="App Store" icon="apple" href={appStoreUrl} soonLabel={isFrench ? 'bientôt' : 'coming soon'} className="sendflow-store-badge--large sendflow-store-badge--featured" />
@@ -1217,7 +1242,7 @@ function LandingPage() {
            whatsapp: landingBundle?.settings?.homeContactWhatsapp,
          }}
        />
-      <footer className="bg-[#211d2c] px-5 py-12 text-[#fbf8ef] sm:px-8 sm:py-16"><div className="mx-auto max-w-[1240px]"><div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_.6fr_.6fr_.8fr]"><div><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8cd4d] text-[#211d2c]"><ArrowDownRight size={17} strokeWidth={2.5} /></span><span className="text-[17px] font-bold tracking-[-.045em]">sendflow<span className="text-[#e8cd4d]">.</span></span></div><p className="mt-6 max-w-[280px] text-[13px] leading-6 text-[#bcb6c5]">{isFrench ? 'Une vision plus calme des mouvements d’argent en Afrique.' : 'A calmer vision for moving money across Africa.'}</p></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Explorer' : 'Explore'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]">{navItems.slice(0, 3).map((item) => <button key={item.id} onClick={() => goTo(item.id)} className="w-fit transition-colors hover:text-[#e8cd4d]" data-testid={`link-footer-${item.id}`}>{t(item.label, language)}</button>)}</div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Projet' : 'Project'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]"><button onClick={() => goTo('security')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-security">{isFrench ? 'Notre approche' : 'Our approach'}</button><button onClick={() => goTo('faq')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-faq">{isFrench ? 'Questions' : 'Questions'}</button><button onClick={() => goTo('join')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-join">{isFrench ? 'Contact' : 'Contact'}</button></div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Statut' : 'Status'}</p><div className="mt-5 flex items-center gap-2 text-[13px] text-[#bcb6c5]"><span className="h-2 w-2 rounded-full bg-[#9adacb]" />{isFrench ? 'Démo en évolution' : 'Demo in progress'}</div><button onClick={() => setLanguage(isFrench ? 'en' : 'fr')} className="mt-5 flex items-center gap-2 text-[12px] font-semibold text-[#e8cd4d]" data-testid="button-footer-language"><Globe2 size={14} /> {isFrench ? 'English version' : 'Version française'}</button></div></div><div className="mt-14 flex flex-col justify-between gap-4 border-t border-[#fbf8ef]/15 pt-5 text-[10px] text-[#8d8792] sm:flex-row"><span>© 2026 SendFlow Studio. {isFrench ? 'Projet conceptuel.' : 'Concept project.'}</span><span className="flex gap-4"><span>{isFrench ? 'Confidentialité' : 'Privacy'}</span><span>{isFrench ? 'Mentions' : 'Legal'}</span></span></div></div></footer>
+      <footer className="bg-[#211d2c] px-5 py-12 text-[#fbf8ef] sm:px-8 sm:py-16"><div className="mx-auto max-w-[1240px]"><div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_.6fr_.6fr_.8fr]"><div><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8cd4d] text-[#211d2c]"><ArrowDownRight size={17} strokeWidth={2.5} /></span><span className="text-[17px] font-bold tracking-[-.045em]">sendflow<span className="text-[#e8cd4d]">.</span></span></div><p className="mt-6 max-w-[280px] text-[13px] leading-6 text-[#bcb6c5]">{isFrench ? 'Une vision plus calme des mouvements d’argent en Afrique.' : 'A calmer vision for moving money across Africa.'}</p></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Explorer' : 'Explore'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]">{navItems.slice(0, 3).map((item) => <button key={item.id} onClick={() => goTo(item.id)} className="w-fit transition-colors hover:text-[#e8cd4d]" data-testid={`link-footer-${item.id}`}>{t(item.label, language)}</button>)}</div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Projet' : 'Project'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]"><button onClick={() => goTo('security')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-security">{isFrench ? 'Notre approche' : 'Our approach'}</button><button onClick={() => goTo('faq')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-faq">{isFrench ? 'Questions' : 'Questions'}</button><button onClick={() => goTo('join')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-join">{isFrench ? 'Contact' : 'Contact'}</button></div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Statut' : 'Status'}</p><div className="mt-5 flex items-center gap-2 text-[13px] text-[#bcb6c5]"><span className="h-2 w-2 rounded-full bg-[#9adacb]" />{isFrench ? 'Démo en évolution' : 'Demo in progress'}</div><button onClick={() => navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr')} className="mt-5 flex items-center gap-2 text-[12px] font-semibold text-[#e8cd4d]" data-testid="button-footer-language"><Globe2 size={14} /> {isFrench ? 'English version' : 'Version française'}</button></div></div><div className="mt-14 flex flex-col justify-between gap-4 border-t border-[#fbf8ef]/15 pt-5 text-[10px] text-[#8d8792] sm:flex-row"><span>© 2026 SendFlow Studio. {isFrench ? 'Projet conceptuel.' : 'Concept project.'}</span><span className="flex gap-4"><span>{isFrench ? 'Confidentialité' : 'Privacy'}</span><span>{isFrench ? 'Mentions' : 'Legal'}</span></span></div></div></footer>
     </div>
   );
 }

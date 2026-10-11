@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import { test } from 'node:test';
 import { normalizeSiteOrigin } from '../src/lib/site-origin.ts';
 import { absoluteSeoUrl, renderSeoDocuments } from './seo-documents.ts';
+import { getLocaleFromPath, getLocalizedAlternates, getLocalizedPath } from '../src/lib/localized-routes.ts';
 
 const root = new URL('../', import.meta.url);
 const [html, sitemap, robots] = await Promise.all(
@@ -18,12 +19,14 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(normalizeSiteOrigin(''), undefined);
   const rendered = renderSeoDocuments(origin, { html, sitemap, robots });
   const locations = [...rendered.sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  assert.equal(locations.length, 8);
+  assert.equal(locations.length, 18);
   assert.deepEqual(locations, [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)]
     .map(match => `${origin}${match[1]}`));
   assert.ok(rendered.robots.includes(`Sitemap: ${origin}/sitemap.xml`));
   assert.ok(rendered.robots.includes('Disallow: /panel/'));
   assert.ok(rendered.html.includes(`<link rel="canonical" href="${origin}/" />`));
+  assert.ok(rendered.html.includes(`<link rel="alternate" hreflang="fr" href="${origin}/" />`));
+  assert.ok(rendered.html.includes(`<link rel="alternate" hreflang="en" href="${origin}/en/" />`));
   assert.ok(rendered.html.includes(`property="og:url" content="${origin}/"`));
   assert.ok(rendered.html.includes(`property="og:image" content="${origin}/sendflow-favicon.png"`));
   assert.ok(rendered.html.includes(`name="twitter:image" content="${origin}/sendflow-favicon.png"`));
@@ -32,6 +35,17 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(schema['@graph'][0].logo, `${origin}/sendflow-favicon.png`);
   assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').url, `${origin}/`);
   assert.equal(schema['@context'], 'https://schema.org');
+});
+
+test('public routes have stable reciprocal French and English URLs', () => {
+  assert.equal(getLocaleFromPath('/en/features'), 'en');
+  assert.equal(getLocalizedPath('/fonctionnalites', 'en'), '/en/features');
+  assert.equal(getLocalizedPath('/en/features', 'fr'), '/fonctionnalites');
+  assert.deepEqual(getLocalizedAlternates('/en/'), { fr: '/', en: '/en/' });
+  assert.deepEqual(getLocalizedAlternates('/france-senegal'), {
+    fr: '/france-senegal',
+    en: '/en/france-senegal',
+  });
 });
 
 test('missing or invalid origins fail explicitly', () => {

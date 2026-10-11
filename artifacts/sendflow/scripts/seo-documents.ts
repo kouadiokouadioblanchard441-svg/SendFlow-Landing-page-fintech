@@ -28,6 +28,14 @@ export function renderSeoDocuments(
     },
   );
   html = html.replace('<!-- sendflow-canonical -->', `<link rel="canonical" href="${origin}/" />`);
+  html = html.replace(
+    '<!-- sendflow-hreflang -->',
+    [
+      `<link rel="alternate" hreflang="fr" href="${origin}/" />`,
+      `<link rel="alternate" hreflang="en" href="${origin}/en/" />`,
+      `<link rel="alternate" hreflang="x-default" href="${origin}/" />`,
+    ].join('\n    '),
+  );
   const sitemap = sources.sitemap.replace(/<loc>([^<]+)<\/loc>/g, (_, value) =>
     `<loc>${absoluteSeoUrl(origin, value.trim())}</loc>`,
   );

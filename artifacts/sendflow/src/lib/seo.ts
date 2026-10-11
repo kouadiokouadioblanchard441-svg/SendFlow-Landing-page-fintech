@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { normalizeSiteOrigin } from './site-origin';
+import { getLocalizedAlternates, getLocalizedPath } from './localized-routes';
 
 export type SeoLocale = 'fr' | 'en';
 
@@ -20,6 +21,12 @@ export type SeoApplication = {
   downloadUrls?: string[];
 };
 
+export type SeoService = {
+  name: string;
+  serviceType: string;
+  areaServed?: string[];
+};
+
 export type SeoConfig = {
   path: string;
   locale: SeoLocale;
@@ -31,6 +38,7 @@ export type SeoConfig = {
   breadcrumbs?: SeoBreadcrumb[];
   faqItems?: SeoFaqItem[];
   application?: SeoApplication;
+  service?: SeoService;
 };
 
 const schemaId = 'sendflow-seo-schema';
@@ -67,6 +75,25 @@ function setCanonical(href: string) {
     document.head.appendChild(element);
   }
   element.href = href;
+}
+
+function setAlternateLanguages(path: string) {
+  document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((element) => element.remove());
+  const alternates = getLocalizedAlternates(path);
+  if (!alternates) return;
+
+  for (const locale of ['fr', 'en'] as const) {
+    const link = document.createElement('link');
+    link.rel = 'alternate';
+    link.hreflang = locale;
+    link.href = absoluteUrl(alternates[locale]);
+    document.head.appendChild(link);
+  }
+  const fallback = document.createElement('link');
+  fallback.rel = 'alternate';
+  fallback.hreflang = 'x-default';
+  fallback.href = absoluteUrl(alternates.fr);
+  document.head.appendChild(fallback);
 }
 
 function setSchema(config: SeoConfig, pageUrl: string, imageUrl: string) {
@@ -108,7 +135,7 @@ function setSchema(config: SeoConfig, pageUrl: string, imageUrl: string) {
         '@type': 'ListItem',
         position: index + 1,
         name: breadcrumb.name,
-        item: absoluteUrl(breadcrumb.path),
+        item: absoluteUrl(getLocalizedPath(breadcrumb.path, config.locale)),
       })),
     });
   }
@@ -141,6 +168,20 @@ function setSchema(config: SeoConfig, pageUrl: string, imageUrl: string) {
     graph.push(application);
   }
 
+  if (config.service) {
+    graph.push({
+      '@type': 'Service',
+      '@id': `${pageUrl}#service`,
+      name: config.service.name,
+      serviceType: config.service.serviceType,
+      url: pageUrl,
+      provider: { '@id': organizationId },
+      ...(config.service.areaServed?.length
+        ? { areaServed: config.service.areaServed.map((name) => ({ '@type': 'Country', name })) }
+        : {}),
+    });
+  }
+
   const script = document.createElement('script');
   script.id = schemaId;
   script.type = 'application/ld+json';
@@ -151,7 +192,8 @@ function setSchema(config: SeoConfig, pageUrl: string, imageUrl: string) {
 export function applySeo(config: SeoConfig) {
   if (typeof document === 'undefined') return;
 
-  const pageUrl = absoluteUrl(config.path);
+  const pagePath = getLocalizedPath(config.path, config.locale);
+  const pageUrl = absoluteUrl(pagePath);
   const imageUrl = absoluteUrl(config.imagePath ?? '/sendflow-favicon.png');
   document.documentElement.lang = config.locale;
   document.title = config.title;
@@ -168,6 +210,7 @@ export function applySeo(config: SeoConfig) {
   setMeta('name', 'twitter:description', config.description);
   setMeta('name', 'twitter:image', imageUrl);
   setCanonical(pageUrl);
+  setAlternateLanguages(pagePath);
   setSchema(config, pageUrl, imageUrl);
 }
 

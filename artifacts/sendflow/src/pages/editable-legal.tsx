@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import { ProtectedImage } from '@/components/protected-image';
+import { getLocaleFromPath, getLocalizedPath, navigateToLocale } from '@/lib/localized-routes';
 import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 
 type LegalPage = {
@@ -72,7 +73,7 @@ export function EditableLegalPage({
   sections: LegalSection[];
   settings: LegalSettings | null;
 }) {
-  const [locale, setLocale] = useState<'fr' | 'en'>('fr');
+  const [locale] = useState<'fr' | 'en'>(() => getLocaleFromPath(window.location.pathname));
   const isFrench = locale === 'fr';
   const companyName = settings?.companyName || 'Flow Digital SARL';
   const address = settings?.legalAddress || 'Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire';
@@ -87,21 +88,21 @@ export function EditableLegalPage({
     <div className="sendflow-legal-page min-h-screen bg-white text-[#1d1d1f]">
       <header className="sticky top-0 z-40 border-b border-[#e5e7eb] bg-white/95 px-3 py-3 shadow-sm backdrop-blur-md md:px-10">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2" aria-label={isFrench ? 'Retour à SendFlow' : 'Back to SendFlow'}>
+          <Link href={getLocalizedPath('/', locale)} className="flex items-center gap-2" aria-label={isFrench ? 'Retour à SendFlow' : 'Back to SendFlow'}>
             <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white"><ProtectedImage src={sendflowMark} alt="" className="h-8 w-7 object-contain" /></span>
             <ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-6 w-auto object-contain" />
           </Link>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setLocale(isFrench ? 'en' : 'fr')}
+              onClick={() => navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr')}
               aria-label={isFrench ? 'Passer en anglais' : 'Passer en français'}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#1d1d1f]/15 bg-white px-2.5 py-2 text-[11px] font-bold transition-colors hover:border-[#7c3aed] hover:text-[#7c3aed] sm:px-3"
             >
               <span aria-hidden="true" className="text-[15px] leading-none">{isFrench ? '🇫🇷' : '🇬🇧'}</span>
               <span>{isFrench ? 'FR' : 'EN'}</span>
             </button>
-            <Link href="/" className="inline-flex min-w-[144px] items-center justify-center rounded-full bg-[#7c3aed] px-3 py-2.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-[#6d28d9] sm:min-w-[164px] sm:px-5 sm:text-[12px]">
+            <Link href={getLocalizedPath('/', locale)} className="inline-flex min-w-[144px] items-center justify-center rounded-full bg-[#7c3aed] px-3 py-2.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-[#6d28d9] sm:min-w-[164px] sm:px-5 sm:text-[12px]">
               {isFrench ? 'Retour à l’accueil' : 'Back to home'}
             </Link>
           </div>

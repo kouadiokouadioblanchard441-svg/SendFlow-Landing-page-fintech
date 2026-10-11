@@ -9,4 +9,14 @@
   <url><loc>/conditions-utilisation</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>/confidentialite</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>/mentions-legales</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>/en/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>/en/features</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>/en/security</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>/en/download</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>/en/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>/en/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>/en/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>/en/legal-notice</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>/france-senegal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>/en/france-senegal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>

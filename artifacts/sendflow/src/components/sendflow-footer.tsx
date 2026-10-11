@@ -8,6 +8,7 @@ import facebookLogo from '@assets/facebook-logo-clean-icon-png_1789582951886.png
 import whatsappLogo from '@assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg';
 import { ProtectedImage } from '@/components/protected-image';
 import { getTelHref, getWhatsAppHref, type ContactDetails } from '@/lib/contact';
+import { getLocalizedPath } from '@/lib/localized-routes';
 
 type Copy = { fr: string; en: string };
 
@@ -114,6 +115,7 @@ function contentValue(content: FooterContentItem[], key: string, fallback: Copy,
 }
 
 export function SendFlowFooter({ isFrench, onNavigate, settings, content, contact }: SendFlowFooterProps) {
+  const locale = isFrench ? 'fr' : 'en';
   const supportEmail = contact?.email?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
   const supportPhone = contact?.phone?.trim() || settings?.supportPhone?.trim() || '';
   const whatsappHref = contact?.whatsapp?.trim()
@@ -169,9 +171,9 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
           </section>
           <section>
             <h3>{isFrench ? 'Réglementation' : 'Regulation'}</h3>
-            <Link href="/confidentialite">{isFrench ? 'Politique de Confidentialité' : 'Privacy Policy'}</Link>
-            <Link href="/conditions-utilisation">{isFrench ? 'Conditions d’utilisation' : 'Terms of Use'}</Link>
-            <Link href="/mentions-legales">{isFrench ? 'Mentions légales' : 'Legal notice'}</Link>
+            <Link href={getLocalizedPath('/confidentialite', locale)}>{isFrench ? 'Politique de Confidentialité' : 'Privacy Policy'}</Link>
+            <Link href={getLocalizedPath('/conditions-utilisation', locale)}>{isFrench ? 'Conditions d’utilisation' : 'Terms of Use'}</Link>
+            <Link href={getLocalizedPath('/mentions-legales', locale)}>{isFrench ? 'Mentions légales' : 'Legal notice'}</Link>
           </section>
         </div>
 
@@ -206,7 +208,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
 
         <div className="sendflow-footer-bottom">
           <span>© 2026 {legalCompany}. {isFrench ? 'Tous droits réservés.' : 'All rights reserved.'}</span>
-          <div><Link href="/confidentialite">{isFrench ? 'Confidentialité' : 'Privacy'}</Link><Link href="/mentions-legales">{isFrench ? 'Mentions légales' : 'Legal notice'}</Link></div>
+          <div><Link href={getLocalizedPath('/confidentialite', locale)}>{isFrench ? 'Confidentialité' : 'Privacy'}</Link><Link href={getLocalizedPath('/mentions-legales', locale)}>{isFrench ? 'Mentions légales' : 'Legal notice'}</Link></div>
         </div>
       </div>
     </footer>
