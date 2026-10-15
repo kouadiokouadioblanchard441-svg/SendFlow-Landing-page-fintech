@@ -20,10 +20,10 @@ Ne retirez pas de fichiers de `dist/` : le bundle Express dépend aussi des work
 ## Déploiement après synchronisation Git
 
 1. Synchronisez le dépôt Git dans `/sendflow.africa`.
-2. Configurez les noms de variables ci-dessous dans Plesk, sans placer de secrets dans Git.
-3. Installez avec `pnpm install --frozen-lockfile --prod=false`.
-4. Exécutez `npm run build`. Cette commande lance les tests et contrôles TypeScript, construit le frontend et Express puis assemble `dist/`.
-5. Vérifiez que `dist/index.cjs` et `dist/public/index.html` existent et ne sont pas vides.
+2. Sélectionnez Node.js 24 LTS et configurez les noms de variables ci-dessous dans Plesk, sans placer de secrets dans Git.
+3. Depuis la racine de l’application, exécutez `pnpm run deploy:plesk`. Le script installe les dépendances, lance les tests et les contrôles TypeScript, construit le frontend et Express, puis vérifie les fichiers requis dans `dist/`.
+4. Vérifiez dans le gestionnaire de fichiers que `dist/index.cjs` et `dist/public/index.html` existent et ne sont pas vides.
+5. Réglez le document root sur `/sendflow.africa/dist/public`.
 6. Redémarrez l’application Node.js dans Plesk.
 
 Le build dépend des paquets et des sources du monorepo : ne déployez pas seulement `dist/` sans les dépendances runtime installées. Ne lancez aucun script de migration ou de seed lors d’un déploiement normal.
