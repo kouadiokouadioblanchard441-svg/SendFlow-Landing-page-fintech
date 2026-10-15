@@ -127,6 +127,7 @@ export function LegalMentionsPage({ legalEmail, contactPhone, whatsappNumber }: 
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
+      visualVariant="discover"
       eyebrow="SendFlow · Éditeur"
       title="Mentions légales"
       intro="Cette page présente l’identité de l’éditeur de SendFlow, les informations de publication, les règles d’utilisation du site et les responsabilités liées aux contenus et aux services proposés."

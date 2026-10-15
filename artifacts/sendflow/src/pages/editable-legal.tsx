@@ -83,7 +83,7 @@ export function EditableLegalPage({
   const whatsappHref = getWhatsAppHref(settings?.whatsappNumber);
   const title = isFrench ? page.titleFr : page.titleEn;
   const intro = isFrench ? page.introFr : page.introEn;
-  const usesDiscoverStyle = page.slug === 'conditions-utilisation' || page.slug === 'confidentialite';
+  const usesDiscoverStyle = ['conditions-utilisation', 'confidentialite', 'mentions-legales'].includes(page.slug);
 
   return (
     <div

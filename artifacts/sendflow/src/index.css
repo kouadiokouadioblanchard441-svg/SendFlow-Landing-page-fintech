@@ -2769,6 +2769,10 @@ section#faq .reveal.space-y-2 > div {
   background: #fff;
 }
 
+.sendflow-legal-page[data-visual-variant="discover"] main article {
+  max-width: 900px;
+}
+
 .sendflow-legal-page[data-visual-variant="discover"] > header {
   border-bottom: 1px solid #e8def8;
   background: rgba(255, 255, 255, .97) !important;
@@ -2851,8 +2855,8 @@ section#faq .reveal.space-y-2 > div {
 .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section > div {
   margin-top: 18px;
   color: #40384c;
-  font-size: clamp(.96rem, 1.12vw, 1.04rem);
-  line-height: 1.8;
+  font-size: clamp(1rem, 1.16vw, 1.075rem);
+  line-height: 1.82;
 }
 
 .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section > div p {
@@ -2876,6 +2880,7 @@ section#faq .reveal.space-y-2 > div {
 
 .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-meta {
   padding: 15px 18px;
+  font-size: 14px;
 }
 
 .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc {
@@ -2885,6 +2890,8 @@ section#faq .reveal.space-y-2 > div {
 .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc > ol li {
   border-radius: 10px;
   padding: 5px 7px;
+  font-size: 15px;
+  line-height: 1.7;
 }
 
 .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc a {
