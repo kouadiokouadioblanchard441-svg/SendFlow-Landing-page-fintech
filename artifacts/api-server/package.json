@@ -12,7 +12,8 @@
     "test:request-validation": "node --test scripts/requestValidation.test.ts",
     "test:landing-visibility": "node --test scripts/landing-visibility.test.ts",
     "test:public-storage": "node --test scripts/public-object-storage.test.ts",
-    "test:clerk-proxy": "node --test scripts/clerk-proxy-security.test.ts"
+    "test:clerk-proxy": "node --test scripts/clerk-proxy-security.test.ts",
+    "test:origin-security": "node --test scripts/origin-security.test.ts"
   },
   "dependencies": {
     "@clerk/express": "^2.1.66",

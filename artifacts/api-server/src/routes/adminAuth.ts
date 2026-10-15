@@ -12,7 +12,7 @@ import {
   setAdminSessionCookie,
   verifyAdminPassword,
 } from "../middlewares/adminAuth";
-import { createRateLimiter, isAllowedOrigin } from "../middlewares/security";
+import { createRateLimiter, isAllowedMutationOrigin } from "../middlewares/security";
 import { adminLoginSchema, panelLookupSchema } from "../lib/requestValidation";
 
 const router: IRouter = Router();
@@ -29,7 +29,7 @@ const panelLookupRateLimit = createRateLimiter({
 
 function rejectUntrustedOrigin(req: Request, res: Response): boolean {
   const origin = req.get("origin");
-  if (origin && !isAllowedOrigin(origin)) {
+  if (!isAllowedMutationOrigin(origin)) {
     res.status(403).json({ error: "Origin not allowed" });
     return true;
   }

@@ -18,23 +18,37 @@ function requestKey(req: Request): string {
 export function createRateLimiter(options: RateLimitOptions): RequestHandler {
   const buckets = new Map<string, Bucket>();
   const MAX_BUCKETS = 10_000;
+  const PRUNE_INTERVAL = 256;
+  let requestsSincePrune = 0;
 
   return (req, res, next) => {
     const now = Date.now();
     const key = requestKey(req);
     const current = buckets.get(key);
-    const bucket = current && current.resetAt > now
-      ? current
-      : { count: 0, resetAt: now + options.windowMs };
+    let bucket: Bucket;
 
-    bucket.count += 1;
-    buckets.set(key, bucket);
+    if (current && current.resetAt > now) {
+      bucket = current;
+      bucket.count += 1;
+      // Keep the map in least-recently-used order when its hard cap is reached.
+      buckets.delete(key);
+      buckets.set(key, bucket);
+    } else {
+      if (current) buckets.delete(key);
+      bucket = { count: 1, resetAt: now + options.windowMs };
 
-    if (buckets.size > MAX_BUCKETS) {
+      requestsSincePrune += 1;
+      if (requestsSincePrune >= PRUNE_INTERVAL || buckets.size >= MAX_BUCKETS) {
+        requestsSincePrune = 0;
       for (const [bucketKey, value] of buckets) {
         if (value.resetAt <= now) buckets.delete(bucketKey);
-        if (buckets.size <= MAX_BUCKETS) break;
+        }
       }
+      if (buckets.size >= MAX_BUCKETS) {
+        const leastRecentlyUsedKey = buckets.keys().next().value;
+        if (leastRecentlyUsedKey !== undefined) buckets.delete(leastRecentlyUsedKey);
+      }
+      buckets.set(key, bucket);
     }
 
     if (bucket.count > options.max) {
@@ -78,4 +92,8 @@ if (process.env.NODE_ENV !== "production") {
 
 export function isAllowedOrigin(origin: string): boolean {
   return configuredOrigins.has(origin);
+}
+
+export function isAllowedMutationOrigin(origin: string | undefined): boolean {
+  return typeof origin === "string" && origin.length > 0 && isAllowedOrigin(origin);
 }
