@@ -2673,3 +2673,91 @@ section#faq .reveal.space-y-2 > div {
     transform: translateY(-2px);
   }
 }
+
+/* Public cards share the clear violet edge and grounded shadow established on
+   /a-propos. Scope these rules to known content cards; illustration/media,
+   controls, navigation, forms and decorative surfaces remain untouched. */
+.noise #features-cards [class*="min-h-[360px]"],
+.noise #features-cards > div > .reveal.mt-16.rounded-\[28px\] .group.min-h-\[250px\] {
+  border: 1.5px solid #d6c8e9 !important;
+  background-color: #fff !important;
+  box-shadow: 0 3px 0 rgba(35, 27, 48, .12), 0 10px 22px rgba(68, 42, 105, .09) !important;
+}
+
+.noise #features-cards > div > .reveal.mt-16.rounded-\[28px\] {
+  border: 2px solid #cbb9e6 !important;
+  background-color: #fff !important;
+  box-shadow: 0 5px 0 rgba(35, 27, 48, .15), 0 16px 32px rgba(68, 42, 105, .10) !important;
+}
+
+.noise #how .group.min-h-\[210px\] {
+  border: 1.5px solid rgba(221, 207, 245, .78) !important;
+  background-color: #39265f !important;
+  box-shadow: 0 4px 0 rgba(17, 9, 35, .28), 0 14px 28px rgba(17, 9, 35, .22) !important;
+}
+
+.noise #international > [class*="rounded-[28px]"],
+.noise #international > [class*="rounded-[20px]"],
+.noise #security .reveal > .mt-8.grid > .rounded-2xl {
+  border: 1.5px solid #cbb9e6 !important;
+  box-shadow: 0 4px 0 rgba(35, 27, 48, .13), 0 14px 28px rgba(68, 42, 105, .10) !important;
+}
+
+.noise #international > [class*="rounded-[28px]"] {
+  background-color: #fff !important;
+}
+
+.noise #international > [class*="rounded-[20px]"],
+.noise #security .reveal > .mt-8.grid > .rounded-2xl {
+  background-color: #fff !important;
+}
+
+.sf-features-page .sf-features-card,
+.sf-features-page .sf-features-security {
+  border: 1.5px solid #d6c8e9;
+  box-shadow: 0 4px 0 rgba(35, 27, 48, .13), 0 15px 30px rgba(68, 42, 105, .10);
+}
+
+.sf-features-page .sf-features-security {
+  background: #f7f3ff;
+}
+
+.sf-download-page .sf-download-step,
+.sf-download-page .sf-download-support {
+  border: 1.5px solid #d6c8e9;
+  box-shadow: 0 4px 0 rgba(35, 27, 48, .13), 0 15px 30px rgba(68, 42, 105, .10);
+}
+
+.sf-download-page .sf-download-support {
+  background: #f7f3ff;
+}
+
+.sendflow-legal-page main article [class*="rounded-2xl"][class*="shadow-"] {
+  border: 1.5px solid #d6c8e9 !important;
+  background-color: #fff !important;
+  box-shadow: 0 3px 0 rgba(35, 27, 48, .12), 0 10px 22px rgba(68, 42, 105, .09) !important;
+}
+
+.sf-security-page .sf-security-guarantees ul {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 13px;
+}
+
+.sf-security-page .sf-security-guarantees li {
+  min-width: 0;
+  align-items: center;
+  padding: 15px 16px;
+  border: 1.5px solid #d6c8e9;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(35, 27, 48, .12), 0 10px 22px rgba(68, 42, 105, .09);
+}
+
+@media (min-width: 760px) {
+  .sf-security-page .sf-security-guarantees ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sf-security-page .sf-security-guarantees li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
