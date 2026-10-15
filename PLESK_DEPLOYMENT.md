@@ -18,6 +18,27 @@ node dist/index.cjs
 
 Le même serveur Express sert les routes `/api/*` et les fichiers du frontend. Les routes React inconnues retombent sur `dist/public/index.html`.
 
+## Déploiement par push Git
+
+Le dossier `dist/` est un résultat généré et est exclu de Git. Il ne doit donc pas être attendu dans le dépôt après un push. Après avoir envoyé les sources dans le répertoire d'application Plesk, le build doit être exécuté sur Plesk pour créer `dist/index.cjs` et `dist/public`.
+
+Avant le premier push, configure dans les variables d'environnement de l'application Plesk :
+
+- `VITE_PUBLIC_SITE_URL=https://sendflow.africa`
+- `VITE_CLERK_PUBLISHABLE_KEY` avec la clé publiable de production Clerk (`pk_live_...`)
+- `VITE_CLERK_PROXY_URL=/api/__clerk` (valeur par défaut du script)
+- `BASE_PATH=/` (valeur par défaut du script)
+
+Dans l'intégration Git Plesk, si une commande après déploiement est disponible, configure :
+
+```bash
+pnpm run deploy:plesk
+```
+
+Cette commande installe les dépendances du workspace, exécute tests et vérifications TypeScript, construit le frontend et l'API, puis vérifie les fichiers requis pour Plesk. Elle refuse de continuer si la version de Node.js, le domaine public ou la clé publiable Clerk de production ne sont pas configurés. Si l'intégration Git n'exécute pas de commande après chaque push, lance `pnpm run deploy:plesk` depuis l'onglet **Run Node.js commands** après le déploiement des sources.
+
+Après le premier build, configure le fichier de démarrage `dist/index.cjs` et le Document Root `dist/public`, puis redémarre l'application. Pour chaque push suivant, la commande de déploiement doit reconstruire `dist` avant de redémarrer le serveur.
+
 ## Commandes
 
 Installation :
