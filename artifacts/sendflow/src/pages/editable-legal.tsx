@@ -83,9 +83,13 @@ export function EditableLegalPage({
   const whatsappHref = getWhatsAppHref(settings?.whatsappNumber);
   const title = isFrench ? page.titleFr : page.titleEn;
   const intro = isFrench ? page.introFr : page.introEn;
+  const usesDiscoverStyle = page.slug === 'conditions-utilisation' || page.slug === 'confidentialite';
 
   return (
-    <div className="sendflow-legal-page min-h-screen bg-white text-[#1d1d1f]">
+    <div
+      className="sendflow-legal-page min-h-screen bg-white text-[#1d1d1f]"
+      data-visual-variant={usesDiscoverStyle ? 'discover' : 'standard'}
+    >
       <header className="sticky top-0 z-40 border-b border-[#e5e7eb] bg-white/95 px-3 py-3 shadow-sm backdrop-blur-md md:px-10">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
           <Link href={getLocalizedPath('/', locale)} className="flex items-center gap-2" aria-label={isFrench ? 'Retour à SendFlow' : 'Back to SendFlow'}>
@@ -113,14 +117,14 @@ export function EditableLegalPage({
           <div className="mb-10">
             <p className="font-worksans text-[11px] font-bold uppercase tracking-[.16em] text-[#7c3aed]">SendFlow · {isFrench ? 'Document légal' : 'Legal document'}</p>
             <h1 className="mt-5 break-words text-left text-[30px] font-bold leading-tight tracking-[-.025em] text-[#1d1d1f] sm:text-[42px]">{title}</h1>
-            <p className="mt-5 text-justify text-[15px] leading-7 text-[#666] sm:text-base">{intro}</p>
-            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-y border-[#e5e7eb] py-4 text-[13px] text-[#666]">
+            <p className="sendflow-legal-intro mt-5 text-justify text-[15px] leading-7 text-[#666] sm:text-base">{intro}</p>
+            <div className="sendflow-legal-meta mt-5 flex flex-wrap gap-x-6 gap-y-2 border-y border-[#e5e7eb] py-4 text-[13px] text-[#666]">
               <span><strong className="text-[#1d1d1f]">{isFrench ? 'Version' : 'Version'} :</strong> {isFrench ? '17 septembre 2026' : 'September 17, 2026'}</span>
               <span><strong className="text-[#1d1d1f]">{isFrench ? 'Contact' : 'Contact'} :</strong> {contactEmail}</span>
             </div>
           </div>
 
-          <nav aria-label={isFrench ? 'Sommaire du document' : 'Document contents'} className="mb-14 border-b border-[#e5e7eb] pb-8">
+          <nav aria-label={isFrench ? 'Sommaire du document' : 'Document contents'} className="sendflow-legal-toc mb-14 border-b border-[#e5e7eb] pb-8">
             <p className="mb-4 text-[12px] font-bold uppercase tracking-[.12em] text-[#1d1d1f]">{isFrench ? 'Sommaire' : 'Contents'}</p>
             <ol className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
               {sections.map((section) => (
@@ -134,10 +138,11 @@ export function EditableLegalPage({
             </ol>
           </nav>
 
-          <div className="space-y-12">
+          <div className={`sendflow-legal-content ${usesDiscoverStyle ? 'sendflow-legal-content-cards' : 'space-y-12'}`}>
             {sections.map((section) => (
-              <section id={`legal-section-${section.sectionNumber}`} key={`${section.sectionNumber}-${section.titleFr}`} className="scroll-mt-28">
-                <h2 className="border-t border-[#e5e7eb] pt-7 text-left text-[20px] font-semibold uppercase leading-tight text-[#1d1d1f]">{section.sectionNumber}. {isFrench ? section.titleFr : section.titleEn}</h2>
+              <section id={`legal-section-${section.sectionNumber}`} key={`${section.sectionNumber}-${section.titleFr}`} className="sendflow-legal-card scroll-mt-28">
+                <p className="sendflow-legal-section-number">{String(section.sectionNumber).padStart(2, '0')}</p>
+                <h2 className="sendflow-legal-section-title">{isFrench ? section.titleFr : section.titleEn}</h2>
                 <div className="sendflow-legal-body mt-4 space-y-4 text-[15px] leading-[1.65] text-[#666] sm:text-base">
                   {renderLegalBody(isFrench ? section.bodyFr : section.bodyEn)}
                 </div>

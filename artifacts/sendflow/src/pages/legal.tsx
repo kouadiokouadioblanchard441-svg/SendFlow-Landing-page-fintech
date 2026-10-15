@@ -30,6 +30,14 @@ export type LegalPageProps = {
   whatsappNumber?: string | null;
 };
 
+type LegalLayoutProps = LegalPageProps & {
+  title: string;
+  eyebrow: string;
+  intro: string;
+  visualVariant?: 'standard' | 'discover';
+  children: ReactNode;
+};
+
 function normalizeSupportEmail(value?: string | null): string {
   return value?.trim() || legalCompanyDetails.email;
 }
@@ -48,12 +56,24 @@ function LegalBulletList({ children }: { children: ReactNode }) {
   return <ul className="list-disc space-y-2 pl-5 marker:text-[#6d35d8]">{children}</ul>;
 }
 
-function LegalLayout({ title, eyebrow, intro, legalEmail, contactPhone, whatsappNumber, children }: { title: string; eyebrow: string; intro: string; legalEmail?: string | null; contactPhone?: string | null; whatsappNumber?: string | null; children: ReactNode }) {
+function LegalLayout({
+  title,
+  eyebrow,
+  intro,
+  legalEmail,
+  contactPhone,
+  whatsappNumber,
+  visualVariant = 'standard',
+  children,
+}: LegalLayoutProps) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   const phoneHref = getTelHref(contactPhone);
   const whatsappHref = getWhatsAppHref(whatsappNumber);
   return (
-    <div className="sendflow-legal-page min-h-screen bg-white text-[#17131f]">
+    <div
+      className="sendflow-legal-page min-h-screen bg-white text-[#17131f]"
+      data-visual-variant={visualVariant}
+    >
       <header className="sticky top-0 z-40 border-b border-[#2d2535]/10 bg-[#f7f3e9]/90 px-5 py-4 backdrop-blur-md sm:px-8">
         <div className="mx-auto flex max-w-[1060px] items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2" aria-label="Retour à SendFlow">
@@ -79,7 +99,7 @@ function LegalLayout({ title, eyebrow, intro, legalEmail, contactPhone, whatsapp
             <p className="mt-7 text-[17px] font-semibold leading-7 text-[#40384c]">{intro}</p>
           </div>
 
-          <div className="mt-12 space-y-12">
+          <div className={`sendflow-legal-content mt-12 ${visualVariant === 'discover' ? 'sendflow-legal-content-cards' : 'space-y-12'}`}>
             {children}
           </div>
         </article>
@@ -218,6 +238,7 @@ export function TermsPage({ legalEmail, contactPhone, whatsappNumber }: LegalPag
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
+      visualVariant="discover"
       eyebrow="SendFlow · Conditions"
       title="Conditions générales d’utilisation"
       intro="Les présentes conditions encadrent l’accès au site, à l’application et aux fonctionnalités SendFlow proposées par Flow Digital SARL. Elles expliquent ce que SendFlow fait, ce qu’il ne fait pas, les responsabilités de chacun et les règles applicables aux transferts."
@@ -338,6 +359,7 @@ export function PrivacyPage({ legalEmail, contactPhone, whatsappNumber }: LegalP
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
+      visualVariant="discover"
       eyebrow="SendFlow · Confidentialité"
       title="Politique de confidentialité"
       intro="Cette politique explique quelles données SendFlow peut traiter, pourquoi elles sont utilisées, avec qui elles peuvent être partagées, combien de temps elles sont conservées et comment exercer vos droits."

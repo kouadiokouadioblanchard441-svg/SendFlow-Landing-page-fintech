@@ -2761,3 +2761,165 @@ section#faq .reveal.space-y-2 > div {
     grid-column: 1 / -1;
   }
 }
+
+/* Legal reading pages use the same clean white canvas and clearly separated
+   violet cards as the Discover page, without changing the legal-notice page. */
+.sendflow-legal-page[data-visual-variant="discover"] {
+  font-family: 'Satoshi', 'Work Sans', ui-sans-serif, system-ui, sans-serif;
+  background: #fff;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] > header {
+  border-bottom: 1px solid #e8def8;
+  background: rgba(255, 255, 255, .97) !important;
+  box-shadow: 0 6px 18px rgba(39, 26, 61, .045);
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards {
+  display: grid;
+  gap: 22px;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section {
+  margin: 0 !important;
+  padding: clamp(22px, 4vw, 38px);
+  border: 2px solid #cbb9e6;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow:
+    0 5px 0 rgba(35, 27, 48, .14),
+    0 16px 32px rgba(68, 42, 105, .09);
+  scroll-margin-top: 112px;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section > p:first-child {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid #e8def8;
+  border-radius: 999px;
+  background: #f7f3ff;
+  color: #6d35d8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section > h2 {
+  margin-top: 16px;
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  color: #17131f;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  font-weight: 760;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+  text-align: left;
+  text-transform: none;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-section-title {
+  margin-top: 16px;
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  color: #17131f;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  font-weight: 760;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+  text-align: left;
+  text-transform: none;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-section-number {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid #e8def8;
+  border-radius: 999px;
+  background: #f7f3ff;
+  color: #6d35d8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section > div {
+  margin-top: 18px;
+  color: #40384c;
+  font-size: clamp(.96rem, 1.12vw, 1.04rem);
+  line-height: 1.8;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section > div p {
+  text-align: left;
+  text-justify: auto;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-intro {
+  color: #5c5369 !important;
+  text-align: left;
+  text-justify: auto;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-meta,
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc {
+  border: 1.5px solid #d6c8e9 !important;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(35, 27, 48, .12), 0 10px 22px rgba(68, 42, 105, .08);
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-meta {
+  padding: 15px 18px;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc {
+  padding: 20px;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc > ol li {
+  border-radius: 10px;
+  padding: 5px 7px;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc a {
+  color: #5c5369;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-toc a:hover {
+  color: #6d35d8;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] > footer {
+  border-top: 1px solid #e8def8;
+  background: #fff !important;
+  color: #17131f !important;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] > footer p {
+  color: #5c5369 !important;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] > footer a {
+  color: #5b21b6;
+}
+
+.sendflow-legal-page[data-visual-variant="discover"] > footer a:hover {
+  color: #6d35d8 !important;
+}
+
+@media (max-width: 767px) {
+  .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards {
+    gap: 14px;
+  }
+
+  .sendflow-legal-page[data-visual-variant="discover"] .sendflow-legal-content-cards > section {
+    padding: 21px 18px;
+    border-radius: 20px;
+  }
+}
