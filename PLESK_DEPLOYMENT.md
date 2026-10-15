@@ -47,6 +47,8 @@ Installation :
 pnpm install --frozen-lockfile --prod=false
 ```
 
+Les scripts d'installation nécessaires sont approuvés explicitement dans `pnpm-workspace.yaml` (`esbuild`, `@clerk/shared` et les autres outils du build). Ne pas utiliser `pnpm approve-builds` pour autoriser toutes les dépendances.
+
 Développement frontend + backend :
 
 ```bash
