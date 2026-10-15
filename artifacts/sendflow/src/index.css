@@ -2632,3 +2632,44 @@ section#faq .reveal.space-y-2 > div {
 @media (prefers-reduced-motion: reduce) {
   .about-page .float-art { animation: none; }
 }
+
+/* Give every informational card a clear edge and the grounded depth from the
+   user's reference, without introducing another brand color or decorative bars. */
+.about-page .about-document-section,
+.about-page .about-document-carousel,
+.about-page .about-document-founder-photo {
+  border: 2px solid #cbb9e6;
+  box-shadow:
+    0 5px 0 rgba(35, 27, 48, .16),
+    0 16px 32px rgba(68, 42, 105, .10);
+}
+.about-page .about-document-columns article,
+.about-page .about-document-timeline article,
+.about-page .about-document-feature,
+.about-page .about-document-benefits li,
+.about-page .about-document-longform,
+.about-page .about-document-illustration {
+  border: 1.5px solid #d6c8e9;
+  background-color: #fff;
+  box-shadow:
+    0 3px 0 rgba(35, 27, 48, .12),
+    0 9px 18px rgba(68, 42, 105, .07);
+}
+.about-page .about-document-columns article,
+.about-page .about-document-timeline article,
+.about-page .about-document-feature,
+.about-page .about-document-benefits li {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+@media (hover: hover) {
+  .about-page .about-document-columns article:hover,
+  .about-page .about-document-timeline article:hover,
+  .about-page .about-document-feature:hover,
+  .about-page .about-document-benefits li:hover {
+    border-color: #a98bd5;
+    box-shadow:
+      0 4px 0 rgba(35, 27, 48, .14),
+      0 14px 24px rgba(68, 42, 105, .11);
+    transform: translateY(-2px);
+  }
+}
