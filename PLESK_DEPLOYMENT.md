@@ -10,7 +10,7 @@ Ne retirez pas de fichiers de `dist/` : le bundle Express dépend aussi des work
 
 - **Application root** : `/sendflow.africa` d’après la configuration montrée. Vérifiez que ce dossier contient le `package.json` racine, `pnpm-workspace.yaml`, `index.cjs` et `artifacts/`.
 - **Document root** : `dist/public`, relatif à l’application root.
-- **Application Startup File** : `dist/index.cjs`.
+- **Application Startup File** : `index.cjs` (wrapper à la racine qui charge `dist/index.cjs`).
 - **Commande de build** : `npm run build`.
 - **Commande de démarrage** : `npm start` (le script racine charge le même serveur compilé via `index.cjs`).
 - **Version Node.js** : Node 24 LTS recommandé. Le build requiert Node 20.19+, 22.12+ ou 24+.
