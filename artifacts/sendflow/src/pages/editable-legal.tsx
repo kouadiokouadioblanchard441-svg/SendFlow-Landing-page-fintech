@@ -76,7 +76,7 @@ export function EditableLegalPage({
   const [locale] = useState<'fr' | 'en'>(() => getLocaleFromPath(window.location.pathname));
   const isFrench = locale === 'fr';
   const companyName = settings?.companyName || 'Flow Digital SARL';
-  const address = settings?.legalAddress || 'Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire';
+  const address = settings?.legalAddress?.trim() || '';
   const email = settings?.legalEmail || 'legal@sendflow.studio';
   const contactEmail = settings?.contactEmail || email;
   const contactPhoneHref = getTelHref(settings?.contactPhone);
@@ -152,7 +152,7 @@ export function EditableLegalPage({
 
           <div className="mt-16 border-t border-[#e5e7eb] pt-6 text-[14px] leading-6 text-[#666]">
             <p className="font-bold text-[#1d1d1f]">{companyName} · {settings?.legalForm || 'Société à responsabilité limitée'}</p>
-            <p>{address}</p>
+            {address && <p>{address}</p>}
             <a href={`mailto:${contactEmail}`} className="font-semibold text-[#2563eb] hover:underline">{contactEmail}</a>
             {contactPhoneHref && <a href={contactPhoneHref} className="ml-4 font-semibold text-[#2563eb] hover:underline">{settings?.contactPhone}</a>}
             {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" className="ml-4 font-semibold text-[#2563eb] hover:underline">WhatsApp</a>}

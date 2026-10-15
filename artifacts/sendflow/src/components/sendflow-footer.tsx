@@ -124,7 +124,8 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
   const phoneHref = getTelHref(supportPhone);
   const legalCompany = settings?.companyName?.trim() || 'Flow Digital SARL';
   const legalForm = settings?.legalForm?.trim();
-  const legalAddress = settings?.legalAddress?.trim() || settings?.footerAddress?.trim() || 'Côte d’Ivoire, Abidjan, Cocody Riviera Palmeraie';
+  const legalAddress = settings?.legalAddress?.trim() || settings?.footerAddress?.trim() || '';
+  const footerAddress = settings?.footerAddress?.trim() || '';
   const legalEmail = settings?.legalEmail?.trim() || supportEmail;
   const navigate = (id: string) => {
     if (onNavigate) {
@@ -183,7 +184,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
             <span className="sendflow-office-flag" aria-hidden="true">{settings?.footerAddressFlag || '🇨🇮'}</span>
             <div>
               <strong>{settings?.footerAddressCountry || copy('footer.address.country', { fr: 'Côte d’Ivoire', en: 'Côte d’Ivoire' })}</strong>
-              <p>{settings?.footerAddress || copy('footer.address.value', { fr: 'Abidjan, Cocody Riviera Palmeraie', en: 'Abidjan, Cocody Riviera Palmeraie' })}</p>
+              {footerAddress && <p>{footerAddress}</p>}
             </div>
           </div>
         </section>
@@ -202,7 +203,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
           <p>{copy('footer.legal.disclaimer', { fr: 'SendFlow est une solution de technologie financière, développée par Flow Digital SARL. Nous ne sommes pas une banque ; nos services s’appuient sur des partenariats avec des banques et des institutions financières dûment agréées.', en: 'SendFlow is a financial technology solution developed by Flow Digital SARL. We are not a bank; our services rely on partnerships with duly licensed banks and financial institutions.' })}</p>
           <p>{copy('footer.legal.partners', { fr: 'Les services de paiement SendFlow sont proposés via des partenaires agréés dans les territoires où le service est disponible, conformément aux règles locales. Les conditions varient selon la destination, le réseau et le montant du transfert.', en: 'SendFlow payment services are offered through licensed partners in territories where the service is available, in accordance with local rules. Conditions vary by destination, network, and transfer amount.' })}</p>
           <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.identity', { fr: 'Identité légale', en: 'Legal identity' })} :</strong> {legalCompany}{legalForm ? ` · ${legalForm}` : ''}</p>
-          <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.address', { fr: 'Adresse légale', en: 'Legal address' })} :</strong> {legalAddress}</p>
+          {legalAddress && <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.address', { fr: 'Adresse légale', en: 'Legal address' })} :</strong> {legalAddress}</p>}
           <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.contact', { fr: 'Contact légal', en: 'Legal contact' })} :</strong> <a href={`mailto:${legalEmail}`}>{legalEmail}</a></p>
         </section>
 

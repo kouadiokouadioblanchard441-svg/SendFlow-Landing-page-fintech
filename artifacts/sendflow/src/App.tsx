@@ -561,6 +561,7 @@ function PublicLegalRoute({ page: Page, slug }: { page: (props: LegalPageProps) 
   return <Page
     supportEmail={data?.settings?.supportEmail ?? null}
     legalEmail={data?.settings?.legalContactEmail || data?.settings?.legalEmail || null}
+    legalAddress={data?.settings?.legalAddress ?? null}
     contactPhone={data?.settings?.legalContactPhone ?? null}
     whatsappNumber={data?.settings?.legalContactWhatsapp ?? null}
   />;

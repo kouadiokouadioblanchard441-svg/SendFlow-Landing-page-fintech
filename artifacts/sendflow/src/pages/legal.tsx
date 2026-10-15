@@ -8,7 +8,6 @@ import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 const legalCompanyDetails = {
   name: 'Flow Digital SARL',
   legalForm: 'Société à responsabilité limitée',
-  address: 'Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire',
   email: 'legal@sendflow.studio',
   publicationDirector: 'Aïcha Koné, Gérante de Flow Digital SARL',
   host: 'Horizon Compute Ltd.',
@@ -26,6 +25,7 @@ type LegalSectionProps = {
 export type LegalPageProps = {
   supportEmail?: string | null;
   legalEmail?: string | null;
+  legalAddress?: string | null;
   contactPhone?: string | null;
   whatsappNumber?: string | null;
 };
@@ -61,6 +61,7 @@ function LegalLayout({
   eyebrow,
   intro,
   legalEmail,
+  legalAddress,
   contactPhone,
   whatsappNumber,
   visualVariant = 'standard',
@@ -107,7 +108,7 @@ function LegalLayout({
 
       <footer className="border-t border-[#2d2535]/10 bg-[#211d2c] px-5 py-10 text-[#fbf8ef] sm:px-8">
         <div className="mx-auto flex max-w-[900px] flex-col gap-6 text-[12px] sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-[470px] leading-5 text-[#c9c0d6]">Flow Digital SARL · Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan</p>
+          <p className="max-w-[470px] leading-5 text-[#c9c0d6]">{legalAddress?.trim() ? `${legalCompanyDetails.name} · ${legalAddress.trim()}` : legalCompanyDetails.name}</p>
           <div className="flex flex-wrap gap-4 font-bold">
             <Link href="/" className="text-[#e8cd4d] hover:underline">Accueil</Link>
             <Link href="/conditions-utilisation" className="hover:text-[#e8cd4d]">Conditions</Link>
@@ -123,7 +124,7 @@ function LegalLayout({
   );
 }
 
-export function LegalMentionsPage({ legalEmail, contactPhone, whatsappNumber }: LegalPageProps) {
+export function LegalMentionsPage({ legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
@@ -132,6 +133,7 @@ export function LegalMentionsPage({ legalEmail, contactPhone, whatsappNumber }: 
       title="Mentions légales"
       intro="Cette page présente l’identité de l’éditeur de SendFlow, les informations de publication, les règles d’utilisation du site et les responsabilités liées aux contenus et aux services proposés."
       legalEmail={legalEmail}
+      legalAddress={legalAddress}
       contactPhone={contactPhone}
       whatsappNumber={whatsappNumber}
     >
@@ -146,10 +148,10 @@ export function LegalMentionsPage({ legalEmail, contactPhone, whatsappNumber }: 
             <p className="text-[11px] font-extrabold uppercase tracking-[.16em] text-[#6d35d8]">Forme juridique</p>
             <p className="mt-2 text-[15px] font-bold leading-6 text-[#211d2c]">{legalCompanyDetails.legalForm}</p>
           </div>
-          <div className="rounded-2xl border border-[#e6def3] bg-white px-5 py-4 shadow-[0_10px_30px_rgba(58,38,83,.05)]">
-            <p className="text-[11px] font-extrabold uppercase tracking-[.16em] text-[#6d35d8]">Siège social</p>
-            <p className="mt-2 text-[15px] font-bold leading-6 text-[#211d2c]">{legalCompanyDetails.address}</p>
-          </div>
+          {legalAddress?.trim() && <div className="rounded-2xl border border-[#e6def3] bg-white px-5 py-4 shadow-[0_10px_30px_rgba(58,38,83,.05)]">
+            <p className="text-[11px] font-extrabold uppercase tracking-[.16em] text-[#6d35d8]">Adresse légale</p>
+            <p className="mt-2 text-[15px] font-bold leading-6 text-[#211d2c]">{legalAddress.trim()}</p>
+          </div>}
           <div className="rounded-2xl border border-[#e6def3] bg-white px-5 py-4 shadow-[0_10px_30px_rgba(58,38,83,.05)]">
             <p className="text-[11px] font-extrabold uppercase tracking-[.16em] text-[#6d35d8]">Adresse électronique</p>
             <a className="mt-2 block break-all text-[15px] font-bold leading-6 text-[#5b21b6] underline decoration-[#cbb6f3] underline-offset-4" href={`mailto:${contactEmail}`} data-testid="link-legal-support-email">{contactEmail}</a>
@@ -235,7 +237,7 @@ export function LegalMentionsPage({ legalEmail, contactPhone, whatsappNumber }: 
   );
 }
 
-export function TermsPage({ legalEmail, contactPhone, whatsappNumber }: LegalPageProps) {
+export function TermsPage({ legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
@@ -244,11 +246,13 @@ export function TermsPage({ legalEmail, contactPhone, whatsappNumber }: LegalPag
       title="Conditions générales d’utilisation"
       intro="Les présentes conditions encadrent l’accès au site, à l’application et aux fonctionnalités SendFlow proposées par Flow Digital SARL. Elles expliquent ce que SendFlow fait, ce qu’il ne fait pas, les responsabilités de chacun et les règles applicables aux transferts."
       legalEmail={legalEmail}
+      legalAddress={legalAddress}
       contactPhone={contactPhone}
       whatsappNumber={whatsappNumber}
     >
       <LegalSection number="01" title="Identification de l’éditeur">
-        <p>SendFlow est une marque et une solution technologique développées par <strong>Flow Digital SARL</strong>, société établie en Côte d’Ivoire, dont l’adresse officielle de contact est : Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire.</p>
+        <p>SendFlow est une marque et une solution technologique développées par <strong>Flow Digital SARL</strong>, société établie en Côte d’Ivoire.</p>
+        {legalAddress?.trim() && <p><strong>Adresse légale :</strong> {legalAddress.trim()}</p>}
         <p>Pour toute question relative aux présentes conditions, à l’utilisation du service ou à une réclamation, l’utilisateur peut écrire à <a className="font-bold text-[#5b21b6] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>. Les informations propres à un partenaire de paiement sont présentées dans les conditions du parcours lorsqu’il intervient dans une opération.</p>
       </LegalSection>
 
@@ -356,7 +360,7 @@ export function TermsPage({ legalEmail, contactPhone, whatsappNumber }: LegalPag
   );
 }
 
-export function PrivacyPage({ legalEmail, contactPhone, whatsappNumber }: LegalPageProps) {
+export function PrivacyPage({ legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
   const contactEmail = normalizeSupportEmail(legalEmail);
   return (
     <LegalLayout
@@ -365,11 +369,13 @@ export function PrivacyPage({ legalEmail, contactPhone, whatsappNumber }: LegalP
       title="Politique de confidentialité"
       intro="Cette politique explique quelles données SendFlow peut traiter, pourquoi elles sont utilisées, avec qui elles peuvent être partagées, combien de temps elles sont conservées et comment exercer vos droits."
       legalEmail={legalEmail}
+      legalAddress={legalAddress}
       contactPhone={contactPhone}
       whatsappNumber={whatsappNumber}
     >
       <LegalSection number="01" title="Responsable du traitement">
-        <p>Le responsable du traitement présenté dans cette politique est <strong>Flow Digital SARL</strong>, opérateur de la marque SendFlow, établi à Immeuble Horizon, Boulevard Latrille, Cocody, Abidjan, Côte d’Ivoire.</p>
+        <p>Le responsable du traitement présenté dans cette politique est <strong>Flow Digital SARL</strong>, opérateur de la marque SendFlow, établi en Côte d’Ivoire.</p>
+        {legalAddress?.trim() && <p><strong>Adresse légale :</strong> {legalAddress.trim()}</p>}
         <p>Pour toute question relative aux données personnelles, vous pouvez contacter <a className="font-bold text-[#5b21b6] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>. Lorsqu’un partenaire exécute directement une opération de paiement, il peut agir comme responsable indépendant ou responsable conjoint pour certaines données et présenter sa propre politique.</p>
       </LegalSection>
 
