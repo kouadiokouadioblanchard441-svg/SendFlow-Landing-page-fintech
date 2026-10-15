@@ -17,6 +17,7 @@ export function normalizeSiteOrigin(value: string | undefined): string | undefin
     url.pathname !== '/' || url.port ||
     host === 'localhost' || !host.includes('.') ||
     host.endsWith('.localhost') || host.endsWith('.local') ||
+    // TODO : Vérifier toute migration de cette exclusion sans affaiblir le contrôle de l’origine.
     host.endsWith('.replit.dev') ||
     /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.includes(':')
   ) {

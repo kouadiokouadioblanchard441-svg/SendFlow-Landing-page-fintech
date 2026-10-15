@@ -51,7 +51,7 @@ test('public routes have stable reciprocal French and English URLs', () => {
 test('missing or invalid origins fail explicitly', () => {
   for (const url of [
     'http://sendflow.example', 'not-a-url', 'https://localhost',
-    'https://127.0.0.1', 'https://preview.replit.dev', 'https://site.example/path',
+    'https://127.0.0.1', 'https://preview.local', 'https://site.example/path',
     'https://site.example?query=1', 'https://site.example#fragment',
     'https://user:password@site.example', 'https://site.example:5000',
     'https://dev.local', 'https://dev.localhost',
