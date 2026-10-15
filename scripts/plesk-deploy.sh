@@ -63,5 +63,5 @@ for file in "${required_files[@]}"; do
 done
 
 echo "Plesk build is ready."
-echo "Startup file: dist/index.cjs"
+echo "Startup file: index.cjs"
 echo "Document root: dist/public"

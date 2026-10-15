@@ -7,16 +7,17 @@ Le projet garde ses packages frontend et backend séparés dans le monorepo, mai
 - Frontend React/Vite : `artifacts/sendflow`
 - Backend Express : `artifacts/api-server`
 - Build final Plesk : `dist/index.cjs`
+- Fichier de démarrage Plesk présent dans le dépôt : `index.cjs`
 - Frontend servi par Express : `dist/public`
 - Fichiers annexes de logs et sourcemaps : conserver tout le dossier `dist`.
 
-Plesk doit exécuter uniquement :
+Plesk doit démarrer depuis le fichier racine :
 
 ```bash
-node dist/index.cjs
+node index.cjs
 ```
 
-Le même serveur Express sert les routes `/api/*` et les fichiers du frontend. Les routes React inconnues retombent sur `dist/public/index.html`.
+Le fichier racine `index.cjs` charge le serveur compilé `dist/index.cjs`. Si `dist` n'a pas encore été généré sur Plesk, le démarrage s'arrête avec un message indiquant de lancer le build. Le même serveur Express sert les routes `/api/*` et les fichiers du frontend. Les routes React inconnues retombent sur `dist/public/index.html`.
 
 ## Déploiement par push Git
 
@@ -37,7 +38,7 @@ pnpm run deploy:plesk
 
 Cette commande installe les dépendances du workspace, exécute tests et vérifications TypeScript, construit le frontend et l'API, puis vérifie les fichiers requis pour Plesk. Elle refuse de continuer si la version de Node.js, le domaine public ou la clé publiable Clerk de production ne sont pas configurés. Si l'intégration Git n'exécute pas de commande après chaque push, lance `pnpm run deploy:plesk` depuis l'onglet **Run Node.js commands** après le déploiement des sources.
 
-Après le premier build, configure le fichier de démarrage `dist/index.cjs` et le Document Root `dist/public`, puis redémarre l'application. Pour chaque push suivant, la commande de déploiement doit reconstruire `dist` avant de redémarrer le serveur.
+Après le push, configure le fichier de démarrage `index.cjs`. Lance le build pour créer `dist`, puis règle le Document Root sur `dist/public` et redémarre l'application. Pour chaque push suivant, la commande de déploiement doit reconstruire `dist` avant de redémarrer le serveur.
 
 ## Commandes
 
@@ -77,7 +78,7 @@ Le build :
 - Gestionnaire : pnpm 10 (version vérifiée : 10.26.1). Le projet refuse les installations via npm.
 - **Application root** : racine du projet, contenant `package.json` et `dist`.
 - **Document root** : `dist/public`, si Plesk permet de servir les fichiers statiques directement.
-- **Application startup file** : `dist/index.cjs`, relatif à l'Application root.
+- **Application startup file** : `index.cjs`, relatif à l'Application root.
 - Mode de l'application : production ; activer HTTPS.
 - Le dossier courant du processus doit être la racine du projet, car Express y résout `dist/public`.
 - Les dépendances de développement sont nécessaires pendant le build, d'où `--prod=false` à l'installation.
