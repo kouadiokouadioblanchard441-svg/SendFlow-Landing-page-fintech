@@ -3,3 +3,6 @@
 
 # No need to store the pnpm store twice.
 .local
+
+# Plesk deployment bundles are generated output, not source files.
+generated-artifacts/

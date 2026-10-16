@@ -2,29 +2,31 @@
 
 ## Mode de livraison retenu
 
-Le dépôt est relié à GitHub et le projet possède déjà un flux Git/Plesk avec build sur le serveur. Aucun ZIP existant n’a été trouvé; je n’en crée pas un second. `dist/` est un résultat de build ignoré par Git : Plesk le régénère après la synchronisation du code avec `npm run build`. Le paquet exécutable est donc le dossier `dist/` produit par cette commande, avec les sources et manifestes du dépôt nécessaires au build et à l’installation.
+Le code source est synchronisé par Git. Le build de production est ensuite téléversé séparément, car le Plesk montré ne propose que Node.js 21.7.3, alors que la version actuelle de Vite exige Node.js 20.19+ ou 22.12+ pour construire le frontend. Le build est produit ici avec Node.js 24 et empaqueté dans `generated-artifacts/sendflow-plesk-dist.zip`. L’archive contient le dossier `dist/` à sa racine.
 
-Ne retirez pas de fichiers de `dist/` : le bundle Express dépend aussi des workers Pino et le frontend dépend de tous les fichiers de `dist/public`. Ne téléversez pas `node_modules`, caches, fichiers `.env` ou valeurs secrètes.
+`dist/` reste ignoré par Git : le paquet est fourni pour téléversement manuel dans Plesk, sans ajouter environ 40 Mo de fichiers générés à l’historique du dépôt. N’en retirez aucun fichier : le serveur Express dépend des workers Pino et le frontend de l’ensemble des fichiers de `dist/public`. L’archive n’inclut ni `node_modules`, ni cache, ni fichier `.env`, ni secret.
 
 ## Réglages Plesk
 
 - **Application root** : `/sendflow.africa` d’après la configuration montrée. Vérifiez que ce dossier contient le `package.json` racine, `pnpm-workspace.yaml`, `index.cjs` et `artifacts/`.
 - **Document root** : `dist/public`, relatif à l’application root.
 - **Application Startup File** : `index.cjs` (wrapper à la racine qui charge `dist/index.cjs`).
-- **Commande de build** : `npm run build`.
+- **Build** : généré sur Node.js 24 avant téléversement ; ne lancez pas `npm run build` sur Node.js 21.7.3.
 - **Commande de démarrage** : `npm start` (le script racine charge le même serveur compilé via `index.cjs`).
-- **Version Node.js** : Node 24 LTS recommandé. Le build requiert Node 20.19+, 22.12+ ou 24+.
+- **Version Node.js sur l’hébergement** : utilisez Node.js 21.7.3, la version visible dans le panneau Plesk fourni. Le démarrage du serveur sur cette version doit être confirmé par les tests après redémarrage.
 - **Gestionnaire de paquets** : pnpm 10, car le projet refuse `npm install`.
 - **Mode** : production, avec HTTPS actif. Le processus doit démarrer depuis l’application root.
 
 ## Déploiement après synchronisation Git
 
 1. Synchronisez le dépôt Git dans `/sendflow.africa`.
-2. Sélectionnez Node.js 24 LTS et configurez les noms de variables ci-dessous dans Plesk, sans placer de secrets dans Git.
-3. Depuis la racine de l’application, exécutez `pnpm run deploy:plesk`. Le script installe les dépendances, lance les tests et les contrôles TypeScript, construit le frontend et Express, puis vérifie les fichiers requis dans `dist/`.
-4. Vérifiez dans le gestionnaire de fichiers que `dist/index.cjs` et `dist/public/index.html` existent et ne sont pas vides.
-5. Réglez le document root sur `/sendflow.africa/dist/public`.
-6. Redémarrez l’application Node.js dans Plesk.
+2. Dans Plesk, installez les dépendances avec le gestionnaire `pnpm`. Le dépôt autorise maintenant les scripts d’installation nécessaires de `esbuild` et `@clerk/shared`.
+3. Téléversez `generated-artifacts/sendflow-plesk-dist.zip` dans `/sendflow.africa` et extrayez-le à cet endroit. Vérifiez que cela crée `/sendflow.africa/dist/index.cjs` et `/sendflow.africa/dist/public/index.html` — pas un dossier imbriqué `/dist/dist`.
+4. Vérifiez aussi la présence de tous les workers Pino ainsi que de `dist/public/sitemap.xml` et `dist/public/robots.txt`.
+5. Réglez le document root sur `/sendflow.africa/dist/public` et le startup file sur `index.cjs`.
+6. Configurez les variables d’environnement listées ci-dessous, puis redémarrez l’application Node.js.
+
+Ne lancez pas `pnpm run deploy:plesk` sur Node.js 21.7.3 : ce script reconstruit le frontend et exige une version de Node.js compatible avec Vite. Le build précompilé et les tests de démarrage sur l’hébergement restent deux vérifications distinctes.
 
 Le build dépend des paquets et des sources du monorepo : ne déployez pas seulement `dist/` sans les dépendances runtime installées. Ne lancez aucun script de migration ou de seed lors d’un déploiement normal.
 
