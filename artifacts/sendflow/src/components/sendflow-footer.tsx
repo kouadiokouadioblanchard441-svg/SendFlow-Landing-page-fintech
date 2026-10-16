@@ -116,7 +116,7 @@ function contentValue(content: FooterContentItem[], key: string, fallback: Copy,
 
 export function SendFlowFooter({ isFrench, onNavigate, settings, content, contact }: SendFlowFooterProps) {
   const locale = isFrench ? 'fr' : 'en';
-  const supportEmail = contact?.email?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportEmail = contact?.email?.trim() || settings?.supportEmail?.trim() || '';
   const supportPhone = contact?.phone?.trim() || settings?.supportPhone?.trim() || '';
   const whatsappHref = contact?.whatsapp?.trim()
     ? getWhatsAppHref(contact.whatsapp)
@@ -126,7 +126,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
   const legalForm = settings?.legalForm?.trim();
   const legalAddress = settings?.legalAddress?.trim() || settings?.footerAddress?.trim() || '';
   const footerAddress = settings?.footerAddress?.trim() || '';
-  const legalEmail = settings?.legalEmail?.trim() || supportEmail;
+  const legalEmail = settings?.legalContactEmail?.trim() || settings?.legalEmail?.trim() || '';
   const navigate = (id: string) => {
     if (onNavigate) {
       onNavigate(id);
@@ -165,7 +165,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
           </section>
           <section>
             <h3>{isFrench ? 'Assistance' : 'Support'}</h3>
-            <a href={`mailto:${supportEmail}`} data-testid="link-footer-support-email">{supportEmail}</a>
+            {supportEmail && <a href={`mailto:${supportEmail}`} data-testid="link-footer-support-email">{supportEmail}</a>}
             {phoneHref && <a href={phoneHref} data-testid="link-footer-support-phone">{supportPhone}</a>}
             {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" data-testid="link-footer-support-whatsapp">WhatsApp</a>}
             <button onClick={() => navigate('join')}>{copy('footer.referral', { fr: 'Parrainage', en: 'Referral' })}</button>
@@ -204,7 +204,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
           <p>{copy('footer.legal.partners', { fr: 'Les services de paiement SendFlow sont proposés via des partenaires agréés dans les territoires où le service est disponible, conformément aux règles locales. Les conditions varient selon la destination, le réseau et le montant du transfert.', en: 'SendFlow payment services are offered through licensed partners in territories where the service is available, in accordance with local rules. Conditions vary by destination, network, and transfer amount.' })}</p>
           <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.identity', { fr: 'Identité légale', en: 'Legal identity' })} :</strong> {legalCompany}{legalForm ? ` · ${legalForm}` : ''}</p>
           {legalAddress && <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.address', { fr: 'Adresse légale', en: 'Legal address' })} :</strong> {legalAddress}</p>}
-          <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.contact', { fr: 'Contact légal', en: 'Legal contact' })} :</strong> <a href={`mailto:${legalEmail}`}>{legalEmail}</a></p>
+          {legalEmail && <p className="sendflow-footer-legal-identity"><strong>{copy('footer.legal.contact', { fr: 'Contact légal', en: 'Legal contact' })} :</strong> <a href={`mailto:${legalEmail}`}>{legalEmail}</a></p>}
         </section>
 
         <div className="sendflow-footer-bottom">

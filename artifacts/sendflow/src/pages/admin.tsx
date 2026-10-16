@@ -783,7 +783,7 @@ function FounderEditor({
 }
 
 const siteSettingsDefaults: Record<string, Primitive> = {
-  supportEmail: 'support@sendflow.studio',
+  supportEmail: '',
   supportPhone: '',
   websiteUrl: '',
   linkedinUrl: '',
@@ -811,7 +811,7 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   companyName: 'Flow Digital SARL',
   legalForm: 'Société à responsabilité limitée',
   legalAddress: '',
-  legalEmail: 'legal@sendflow.studio',
+  legalEmail: '',
   footerAddressFlag: '🇨🇮',
   footerAddressCountry: 'Côte d’Ivoire',
   footerAddress: '',
@@ -1385,7 +1385,7 @@ export default function AdminPage() {
               </div>
             )}
            </section>}
-          <footer className="sendflow-admin-footer"><span>SendFlow Editorial Desk</span><span>Les modifications sont enregistrées directement sur la landing de production.</span><span>v1.0 · <a href={`mailto:${String(bundle.settings?.supportEmail || 'support@sendflow.studio')}`}>Besoin d’aide ?</a></span></footer>
+          <footer className="sendflow-admin-footer"><span>SendFlow Editorial Desk</span><span>Les modifications sont enregistrées directement sur la landing de production.</span><span>v1.0 · {bundle.settings?.supportEmail ? <a href={`mailto:${bundle.settings.supportEmail}`}>Besoin d’aide ?</a> : 'Besoin d’aide ?'}</span></footer>
         </div>
       </main>
       {notice && <div className={`sendflow-admin-notice ${notice.tone}`} role="status" data-testid="status-save-feedback">{notice.tone === 'success' ? <Check size={17} /> : <AlertTriangle size={17} />}<span>{notice.text}</span><button onClick={() => setNotice(null)} aria-label="Fermer le message"><X size={14} /></button></div>}

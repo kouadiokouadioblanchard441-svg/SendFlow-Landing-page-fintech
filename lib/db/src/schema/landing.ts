@@ -69,7 +69,7 @@ export const landingSiteSettings = pgTable(
   "landing_site_settings",
   {
     id: serial("id").primaryKey(),
-    supportEmail: text("support_email").notNull().default("support@sendflow.studio"),
+    supportEmail: text("support_email").notNull().default(""),
     supportPhone: text("support_phone"),
     websiteUrl: text("website_url"),
     linkedinUrl: text("linkedin_url"),
@@ -97,7 +97,7 @@ export const landingSiteSettings = pgTable(
     companyName: text("company_name").notNull().default("Flow Digital SARL"),
     legalForm: text("legal_form").notNull().default("Société à responsabilité limitée"),
     legalAddress: text("legal_address").notNull().default(""),
-    legalEmail: text("legal_email").notNull().default("support@sendflow.studio"),
+    legalEmail: text("legal_email").notNull().default(""),
     footerAddressFlag: text("footer_address_flag").notNull().default("🇨🇮"),
     footerAddressCountry: text("footer_address_country").notNull().default("Côte d’Ivoire"),
     footerAddress: text("footer_address").notNull().default(""),

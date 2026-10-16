@@ -8,7 +8,6 @@ import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 const legalCompanyDetails = {
   name: 'Flow Digital SARL',
   legalForm: 'Société à responsabilité limitée',
-  email: 'legal@sendflow.studio',
   publicationDirector: 'Aïcha Koné, Gérante de Flow Digital SARL',
   host: 'Horizon Compute Ltd.',
   hostAddress: '42 River Lane, Dublin 2, Irlande',
@@ -38,8 +37,8 @@ type LegalLayoutProps = LegalPageProps & {
   children: ReactNode;
 };
 
-function normalizeSupportEmail(value?: string | null): string {
-  return value?.trim() || legalCompanyDetails.email;
+function normalizeContactEmail(legalEmail?: string | null, supportEmail?: string | null): string {
+  return legalEmail?.trim() || supportEmail?.trim() || '';
 }
 
 function LegalSection({ number, title, children }: LegalSectionProps) {
@@ -60,6 +59,7 @@ function LegalLayout({
   title,
   eyebrow,
   intro,
+  supportEmail,
   legalEmail,
   legalAddress,
   contactPhone,
@@ -67,7 +67,7 @@ function LegalLayout({
   visualVariant = 'standard',
   children,
 }: LegalLayoutProps) {
-  const contactEmail = normalizeSupportEmail(legalEmail);
+  const contactEmail = normalizeContactEmail(legalEmail, supportEmail);
   const phoneHref = getTelHref(contactPhone);
   const whatsappHref = getWhatsAppHref(whatsappNumber);
   return (
@@ -124,8 +124,8 @@ function LegalLayout({
   );
 }
 
-export function LegalMentionsPage({ legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
-  const contactEmail = normalizeSupportEmail(legalEmail);
+export function LegalMentionsPage({ supportEmail, legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
+  const contactEmail = normalizeContactEmail(legalEmail, supportEmail);
   return (
     <LegalLayout
       visualVariant="discover"
@@ -133,6 +133,7 @@ export function LegalMentionsPage({ legalEmail, legalAddress, contactPhone, what
       title="Mentions légales"
       intro="Cette page présente l’identité de l’éditeur de SendFlow, les informations de publication, les règles d’utilisation du site et les responsabilités liées aux contenus et aux services proposés."
       legalEmail={legalEmail}
+      supportEmail={supportEmail}
       legalAddress={legalAddress}
       contactPhone={contactPhone}
       whatsappNumber={whatsappNumber}
@@ -237,8 +238,8 @@ export function LegalMentionsPage({ legalEmail, legalAddress, contactPhone, what
   );
 }
 
-export function TermsPage({ legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
-  const contactEmail = normalizeSupportEmail(legalEmail);
+export function TermsPage({ supportEmail, legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
+  const contactEmail = normalizeContactEmail(legalEmail, supportEmail);
   return (
     <LegalLayout
       visualVariant="discover"
@@ -246,6 +247,7 @@ export function TermsPage({ legalEmail, legalAddress, contactPhone, whatsappNumb
       title="Conditions générales d’utilisation"
       intro="Les présentes conditions encadrent l’accès au site, à l’application et aux fonctionnalités SendFlow proposées par Flow Digital SARL. Elles expliquent ce que SendFlow fait, ce qu’il ne fait pas, les responsabilités de chacun et les règles applicables aux transferts."
       legalEmail={legalEmail}
+      supportEmail={supportEmail}
       legalAddress={legalAddress}
       contactPhone={contactPhone}
       whatsappNumber={whatsappNumber}
@@ -360,8 +362,8 @@ export function TermsPage({ legalEmail, legalAddress, contactPhone, whatsappNumb
   );
 }
 
-export function PrivacyPage({ legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
-  const contactEmail = normalizeSupportEmail(legalEmail);
+export function PrivacyPage({ supportEmail, legalEmail, legalAddress, contactPhone, whatsappNumber }: LegalPageProps) {
+  const contactEmail = normalizeContactEmail(legalEmail, supportEmail);
   return (
     <LegalLayout
       visualVariant="discover"
@@ -369,6 +371,7 @@ export function PrivacyPage({ legalEmail, legalAddress, contactPhone, whatsappNu
       title="Politique de confidentialité"
       intro="Cette politique explique quelles données SendFlow peut traiter, pourquoi elles sont utilisées, avec qui elles peuvent être partagées, combien de temps elles sont conservées et comment exercer vos droits."
       legalEmail={legalEmail}
+      supportEmail={supportEmail}
       legalAddress={legalAddress}
       contactPhone={contactPhone}
       whatsappNumber={whatsappNumber}

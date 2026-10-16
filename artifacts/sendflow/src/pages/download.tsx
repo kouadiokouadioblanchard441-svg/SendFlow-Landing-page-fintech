@@ -297,7 +297,7 @@ export default function DownloadPage() {
 
   const closeMenu = () => setMenuOpen(false);
   const toggleLanguage = () => { navigateToLocale(window.location.pathname, language === 'fr' ? 'en' : 'fr'); closeMenu(); };
-  const supportEmail = settings?.downloadContactEmail?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportEmail = settings?.downloadContactEmail?.trim() || settings?.supportEmail?.trim() || '';
   const supportPhone = settings?.downloadContactPhone?.trim() || '';
   const whatsappHref = getWhatsAppHref(settings?.downloadContactWhatsapp);
   const phoneHref = getTelHref(supportPhone);
@@ -342,7 +342,7 @@ export default function DownloadPage() {
             <Link href={getLocalizedPath('/', language)}>{t.navHome}</Link>
             <Link href={getLocalizedPath('/fonctionnalites', language)}>{t.navFeatures}</Link>
             <Link href={getLocalizedPath('/securite', language)}>{t.navSecurity}</Link>
-            <a href={`mailto:${supportEmail}`}>{t.navSupport}</a>
+            {supportEmail && <a href={`mailto:${supportEmail}`}>{t.navSupport}</a>}
             <button type="button" onClick={toggleLanguage}><Globe2 size={15} />{t.language}</button>
           </nav>
           <button type="button" className="sf-download-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen}><Menu size={26} /></button>
@@ -357,7 +357,7 @@ export default function DownloadPage() {
               <Link href={getLocalizedPath('/', language)} onClick={closeMenu}>{t.navHome}<ChevronRight size={18} /></Link>
               <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu}>{t.navFeatures}<ChevronRight size={18} /></Link>
               <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu}>{t.navSecurity}<ChevronRight size={18} /></Link>
-              <a href={`mailto:${supportEmail}`} onClick={closeMenu}>{t.navSupport}<ChevronRight size={18} /></a>
+              {supportEmail && <a href={`mailto:${supportEmail}`} onClick={closeMenu}>{t.navSupport}<ChevronRight size={18} /></a>}
             </nav>
             <button type="button" className="sf-download-menu-language" onClick={toggleLanguage}>
               <span className="sf-download-language-flag" aria-hidden="true">{language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
@@ -417,7 +417,7 @@ export default function DownloadPage() {
         <section className="sf-download-support">
           <div><p className="sf-download-kicker">{t.supportKicker}</p><h2>{t.supportTitle}</h2><p>{t.supportBody}</p></div>
           <div className="sf-download-support-actions">
-            <a href={`mailto:${supportEmail}`}><Headphones size={18} />{t.contact}<ArrowRight size={17} /></a>
+            {supportEmail && <a href={`mailto:${supportEmail}`}><Headphones size={18} />{t.contact}<ArrowRight size={17} /></a>}
             {phoneHref && <a href={phoneHref} className="sf-download-support-secondary">{supportPhone}</a>}
             {whatsappHref && <a href={whatsappHref} className="sf-download-support-secondary" target="_blank" rel="noreferrer">WhatsApp</a>}
           </div>

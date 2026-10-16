@@ -119,7 +119,7 @@ export default function SecurityPage() {
     navigateToLocale(window.location.pathname, language === 'fr' ? 'en' : 'fr');
     closeMenu();
   };
-  const supportEmail = settings?.securityContactEmail?.trim() || settings?.supportEmail?.trim() || 'support@sendflow.studio';
+  const supportEmail = settings?.securityContactEmail?.trim() || settings?.supportEmail?.trim() || '';
   const pageContact = {
     email: settings?.securityContactEmail,
     phone: settings?.securityContactPhone,
@@ -136,7 +136,7 @@ export default function SecurityPage() {
             <Link href={getLocalizedPath('/fonctionnalites', language)}>{t.features}</Link>
             <Link href={getLocalizedPath('/securite', language)} className="is-active">{t.security}</Link>
             <Link href={getLocalizedPath('/download', language)}>{t.download}</Link>
-            <a href={`mailto:${supportEmail}`}>{t.support}</a>
+            {supportEmail && <a href={`mailto:${supportEmail}`}>{t.support}</a>}
             <button type="button" onClick={toggleLanguage}><Globe2 size={15} />{t.language}</button>
           </nav>
           <button type="button" className="sf-features-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen}>
@@ -157,7 +157,7 @@ export default function SecurityPage() {
               <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu}>{t.features}<ChevronRight size={18} /></Link>
               <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu}>{t.security}<ChevronRight size={18} /></Link>
               <Link href={getLocalizedPath('/download', language)} onClick={closeMenu}>{t.download}<ChevronRight size={18} /></Link>
-              <a href={`mailto:${supportEmail}`} onClick={closeMenu}>{t.support}<ChevronRight size={18} /></a>
+              {supportEmail && <a href={`mailto:${supportEmail}`} onClick={closeMenu}>{t.support}<ChevronRight size={18} /></a>}
             </nav>
             <button type="button" className="sf-features-menu-language" onClick={toggleLanguage}>
               <span aria-hidden="true">{language === 'fr' ? '🇬🇧' : '🇫🇷'}</span>
