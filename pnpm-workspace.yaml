@@ -62,6 +62,8 @@ onlyBuiltDependencies:
   - '@swc/core'
   - '@clerk/shared'
   - esbuild
+  - '@clerk/shared'
+  - esbuild
   - msw
   - unrs-resolver
 
