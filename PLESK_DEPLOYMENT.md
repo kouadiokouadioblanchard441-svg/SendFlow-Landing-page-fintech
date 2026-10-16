@@ -32,9 +32,9 @@ Le build dépend des paquets et des sources du monorepo : ne déployez pas seule
 
 ## Noms des variables d’environnement
 
-Configurez les valeurs séparément dans Plesk. Les variables `VITE_*` sont lues pendant le build; les autres sont lues par le serveur au démarrage.
+Les variables `VITE_*` sont consommées avant le téléversement, pendant le build précompilé. La clé publique dédiée `PLESK_VITE_CLERK_PUBLISHABLE_KEY` est stockée dans les secrets du workspace et transmise à Vite au moment de construire l’archive ; seule cette clé publique est intégrée au bundle. Elle n’est pas nécessaire dans Plesk.
 
-**Build frontend :** `VITE_PUBLIC_SITE_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PROXY_URL`, `BASE_PATH`.
+**Build précompilé :** `VITE_PUBLIC_SITE_URL`, `PLESK_VITE_CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PROXY_URL`, `BASE_PATH`.
 
 **Serveur :** `NODE_ENV`, `PORT`, `NEON_DATABASE_URL`, `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `PUBLIC_SITE_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `PLESK_MEDIA_DIR`.
 
