@@ -36,12 +36,12 @@ if (verifiedPleskNode) {
 NODE
 
 if [[ "${VITE_PUBLIC_SITE_URL:-}" != "https://sendflow.africa" ]]; then
-  echo "Set VITE_PUBLIC_SITE_URL=https://sendflow.africa in Plesk before building." >&2
+  echo "Set VITE_PUBLIC_SITE_URL=https://sendflow.africa in the production build environment." >&2
   exit 1
 fi
 
 if [[ "${VITE_CLERK_PUBLISHABLE_KEY:-}" != pk_live_* ]]; then
-  echo "Set the production Clerk publishable key (pk_live_...) in Plesk before building." >&2
+  echo "Set the production Clerk publishable key (pk_live_...) in the production build environment." >&2
   exit 1
 fi
 

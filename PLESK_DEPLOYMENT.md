@@ -1,54 +1,45 @@
-# SendFlow — paquet de déploiement Plesk
+# SendFlow — déploiement GitHub vers Plesk
 
-## Mode de livraison retenu
+## Mode de livraison
 
-Le dépôt Git contient le code source et les scripts de déploiement. Après chaque synchronisation Git dans Plesk, une action de déploiement lance `pnpm run deploy:plesk` pour installer les dépendances et générer `dist/` sur l’hébergement. Aucun ZIP n’est nécessaire.
+Tu fais toi-même le push sur `main`. Le workflow GitHub Actions `.github/workflows/deploy-plesk.yml` s’exécute ensuite : il installe avec pnpm, lance les tests et le build sous Node.js 21.7.3, transfère `dist/` et `index.cjs` en SSH vers Plesk, puis demande le redémarrage de l’application. Aucun ZIP n’est créé et `dist/` reste exclu du dépôt Git.
 
-`dist/` reste ignoré par Git : c’est un build généré sur Plesk après le pull, pas une source à conserver dans l’historique du dépôt. Le build contient les workers Pino et tous les fichiers sous `dist/public`; ne supprimez aucun de ces fichiers.
+Ce workflow déploie directement les fichiers compilés sur Plesk. **Il ne fait pas un pull Git depuis Plesk.**
 
 ## Réglages Plesk
 
-- **Application root** : `/sendflow.africa` d’après la configuration montrée. Vérifiez que ce dossier contient le `package.json` racine, `pnpm-workspace.yaml`, `index.cjs` et `artifacts/`.
+- **Application root** : `/sendflow.africa` selon les captures. Le chemin absolu système doit correspondre à la valeur de `PLESK_APP_ROOT` dans GitHub.
 - **Document root** : `dist/public`, relatif à l’application root.
-- **Application Startup File** : `index.cjs` (wrapper à la racine qui charge `dist/index.cjs`).
-- **Build** : `pnpm run deploy:plesk`, exécuté après chaque synchronisation Git. Le build et la suite de tests ont été exécutés avec Node.js 21.7.3.
-- **Commande de démarrage** : `npm start` (le script racine lance `node ./index.cjs`; ce wrapper charge le serveur compilé `dist/index.cjs`).
-- **Version Node.js sur l’hébergement** : Node.js 21.7.3, comme indiqué dans le panneau Plesk fourni. Le projet a été testé avec cette version; Vite ne la déclare pas dans sa plage officielle et le script autorise uniquement cette version exacte après validation.
-- **Gestionnaire de paquets** : pnpm 10, car le projet refuse `npm install`.
-- **Mode** : production, avec HTTPS actif. Le processus doit démarrer depuis l’application root.
+- **Application Startup File** : `index.cjs`, qui charge `dist/index.cjs`.
+- **Node.js** : 21.7.3.
+- **Gestionnaire** : pnpm 10.26.1.
+- **Mode** : production.
+- **Redémarrage** : le workflow met à jour `tmp/restart.txt` après le transfert. Vérifie dans Plesk que l’application redémarre bien via ce mécanisme; sinon utilise le bouton Restart App.
 
-## Déploiement après synchronisation Git
+## Configuration GitHub requise avant le premier push de déploiement
 
-1. Configurez le dépôt Git Plesk pour synchroniser le projet dans `/sendflow.africa`.
-2. Sélectionnez `pnpm` comme gestionnaire de paquets. Le dépôt autorise les scripts nécessaires d’`esbuild` et `@clerk/shared`.
-3. Définissez l’action exécutée après chaque déploiement Git : `pnpm run deploy:plesk`, depuis `/sendflow.africa`. Elle installe les dépendances avec le lockfile, lance les tests et le build, puis vérifie les fichiers produits.
-4. Configurez les variables d’environnement de build et de serveur ci-dessous dans Plesk avant d’exécuter l’action.
-5. Vérifiez que le build a créé `/sendflow.africa/dist/index.cjs`, `/sendflow.africa/dist/public/index.html`, les workers Pino, le sitemap et `robots.txt`.
-6. Réglez le document root sur `/sendflow.africa/dist/public` et le startup file sur `index.cjs`, puis redémarrez l’application Node.js.
+Dans les paramètres du dépôt GitHub, ajoute les Actions secrets suivants. Ne les mets jamais dans le code ni dans les journaux :
 
-Si l’interface Git Plesk n’offre pas d’action après le déploiement, lancez `pnpm run deploy:plesk` depuis l’application root après chaque pull, avant de redémarrer Node.js.
+- `PLESK_HOST` — hôte SSH du serveur, pas l’URL d’administration `:8443`.
+- `PLESK_PORT` — port SSH.
+- `PLESK_USER` — utilisateur SSH autorisé à écrire dans l’application root.
+- `PLESK_APP_ROOT` — chemin absolu de l’application root sur le système de fichiers Plesk. Vérifie-le par SSH ou auprès de l’hébergeur; ne suppose pas que `/sendflow.africa` est son chemin absolu.
+- `PLESK_SSH_PRIVATE_KEY` — clé privée dédiée au déploiement; configure la clé publique correspondante sur l’hébergement.
+- `PLESK_KNOWN_HOSTS` — clé d’hôte SSH vérifiée hors bande, au format `known_hosts`; ne désactive pas la vérification SSH.
+- `VITE_CLERK_PUBLISHABLE_KEY` — clé publique Clerk de production (`pk_live_...`), utilisée uniquement pendant le build.
 
-Le build dépend des paquets et des sources du monorepo; conservez-les dans l’application root. Ne lancez aucun script de migration ou de seed lors d’un déploiement normal.
+La clé SSH doit être dédiée au déploiement et limitée aux droits nécessaires sur l’application root. `CLERK_SECRET_KEY`, `NEON_DATABASE_URL`, `RESEND_API_KEY` et les autres secrets serveur ne sont pas envoyés par le workflow; ils restent configurés dans Plesk.
 
-## Noms des variables d’environnement
+Le workflow se déclenche sur chaque push vers `main` et peut aussi être lancé manuellement depuis l’onglet **Actions** du dépôt. Tant que les secrets ci-dessus ne sont pas configurés, le déploiement échouera explicitement au lieu de publier des fichiers partiels.
 
-Les variables `VITE_*` sont consommées lors de l’action de build exécutée dans Plesk. Seule la clé publique Clerk est intégrée au bundle; `CLERK_SECRET_KEY` reste côté serveur.
+## Vérifications après le premier déploiement
 
-**Build :** `VITE_PUBLIC_SITE_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PROXY_URL`, `BASE_PATH`.
+Confirme dans Plesk que `dist/index.cjs` et `dist/public/index.html` existent, règle le Document Root sur `dist/public`, vérifie le Startup File `index.cjs`, puis teste :
 
-**Serveur :** `NODE_ENV`, `PORT`, `NEON_DATABASE_URL`, `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `PUBLIC_SITE_URL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `PLESK_MEDIA_DIR`.
+- `https://sendflow.africa/`
+- `https://sendflow.africa/sign-in`
+- `https://sendflow.africa/api/healthz`
 
-**Facultatives selon la configuration :** `CORS_ORIGINS`, `LOG_LEVEL`, `WEB_DIST_DIR`.
+`/api/health` et `/login` ne sont pas les routes de cette version; utilise `/api/healthz` et `/sign-in`. Le build local ou GitHub ne vérifie pas les accès production à la base, les variables serveur, les permissions de `PLESK_MEDIA_DIR` ni les envois Resend.
 
-Le code actuel ne référence pas `SUPABASE_NEW_DATABASE_URL` ni `SESSION_SECRET`; ne les considérez pas comme des prérequis de cette version. La base actuellement utilisée par le code est identifiée par `NEON_DATABASE_URL`.
-
-## Contrôles après redémarrage
-
-Tester en HTTPS :
-
-- `https://sendflow.africa/` — accueil.
-- `https://sendflow.africa/sign-in` — route de connexion définie par l’application.
-- `https://sendflow.africa/login` — cette route n’est pas définie dans cette version; ne pas la confondre avec `/sign-in`.
-- `https://sendflow.africa/api/healthz` — endpoint santé existant; il répond `{"status":"ok"}`.
-
-`/api/health` n’est pas défini dans cette version; utilisez `/api/healthz`. La vérification du build local ne valide pas les clés Clerk de production, l’accès à la base sur Plesk, les permissions de `PLESK_MEDIA_DIR` ni l’envoi Resend. Aucun accès ou déploiement Plesk n’est effectué par ce guide.
+Si des dépendances serveur de production sont ajoutées ou mises à jour ultérieurement, elles doivent également être installées sur Plesk; le workflow actuel transfère les fichiers compilés, pas `node_modules`.
