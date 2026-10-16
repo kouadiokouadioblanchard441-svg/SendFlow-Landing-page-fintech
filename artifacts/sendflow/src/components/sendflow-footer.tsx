@@ -168,7 +168,6 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
             {supportEmail && <a href={`mailto:${supportEmail}`} data-testid="link-footer-support-email">{supportEmail}</a>}
             {phoneHref && <a href={phoneHref} data-testid="link-footer-support-phone">{supportPhone}</a>}
             {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" data-testid="link-footer-support-whatsapp">WhatsApp</a>}
-            <button onClick={() => navigate('join')}>{copy('footer.referral', { fr: 'Parrainage', en: 'Referral' })}</button>
           </section>
           <section>
             <h3>{isFrench ? 'Réglementation' : 'Regulation'}</h3>

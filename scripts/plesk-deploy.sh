@@ -15,13 +15,23 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 
 node --input-type=commonjs <<'NODE'
-const [major, minor] = process.versions.node.split(".").map(Number);
-const supported = (major === 20 && minor >= 19) || (major === 22 && minor >= 12) || major >= 24;
+const [major, minor, patch] = process.versions.node.split(".").map(Number);
+const verifiedPleskNode = major === 21 && minor === 7 && patch === 3;
+const supported =
+  (major === 20 && minor >= 19) ||
+  verifiedPleskNode ||
+  (major === 22 && minor >= 12) ||
+  major >= 24;
 if (!supported) {
   console.error(
-    `Unsupported Node.js ${process.versions.node}. Use Node.js 20.19+, 22.12+, or 24 LTS on Plesk.`,
+    `Unsupported Node.js ${process.versions.node}. Use Node.js 20.19+, exactly 21.7.3, 22.12+, or 24 LTS.`,
   );
   process.exit(1);
+}
+if (verifiedPleskNode) {
+  console.warn(
+    "Node.js 21.7.3 is outside Vite's declared engine range; this exact version has been validated with the current project build.",
+  );
 }
 NODE
 
