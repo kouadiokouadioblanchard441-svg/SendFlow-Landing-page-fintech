@@ -94,6 +94,11 @@ jobs:
 
           mkdir -p "$app_root"
           rsync -a --delete --exclude='/tmp/' "$release/" "$app_root/"
+          test -s "$app_root/index.cjs"
+          test -s "$app_root/package.json"
+          test -s "$app_root/public/index.html"
+          test -s "$app_root/public/sitemap.xml"
+          test -s "$app_root/public/robots.txt"
           rm -rf "$release"
           mkdir -p "$app_root/tmp"
           touch "$app_root/tmp/restart.txt"

@@ -26,15 +26,3 @@ channel = "stable-25_05"
 
 [userenv.shared]
 VITE_PUBLIC_SITE_URL = "https://sendflow.africa"
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
-
-[[ports]]
-localPort = 8081
-externalPort = 8081
-
-[[ports]]
-localPort = 26095
-externalPort = 80

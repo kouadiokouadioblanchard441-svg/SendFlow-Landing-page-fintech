@@ -8,7 +8,7 @@ Le build de production produit `dist/` à la racine du dépôt, avec un `package
 - **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
 - **Document root** : le dossier `public` sous l’application root, soit `<racine-du-projet>/dist/public`.
 - **Node.js** : Node 22 LTS (le build accepte aussi Node 20.19+).
-- **Gestionnaire Plesk** : npm (manifest runtime minimal, aucune dépendance à installer). Le build du dépôt est effectué avec pnpm 10.26.1.
+- **Gestionnaire Plesk** : pnpm (comme le projet). Le manifeste runtime ne déclare aucune dépendance à installer ; le build du dépôt utilise pnpm 10.26.1.
 - **Mode** : `production`.
 - **Écoute réseau** : le serveur utilise le `PORT` fourni par Plesk et écoute sur `0.0.0.0`.
 
