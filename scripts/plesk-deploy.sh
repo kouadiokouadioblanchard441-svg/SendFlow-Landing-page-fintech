@@ -15,30 +15,42 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 
 node --input-type=commonjs <<'NODE'
-const [major, minor, patch] = process.versions.node.split(".").map(Number);
-const verifiedPleskNode = major === 21 && minor === 7 && patch === 3;
-const supported =
-  (major === 20 && minor >= 19) ||
-  verifiedPleskNode ||
-  (major === 22 && minor >= 12) ||
-  major >= 24;
+const [major, minor] = process.versions.node.split(".").map(Number);
+const supported = (major === 20 && minor >= 19) || major >= 22;
 if (!supported) {
   console.error(
-    `Unsupported Node.js ${process.versions.node}. Use Node.js 20.19+, exactly 21.7.3, 22.12+, or 24 LTS.`,
+    `Unsupported Node.js ${process.versions.node}. Use Node.js 20.19+ or 22+.`,
   );
   process.exit(1);
 }
-if (verifiedPleskNode) {
-  console.warn(
-    "Node.js 21.7.3 is outside Vite's declared engine range; this exact version has been validated with the current project build.",
-  );
-}
 NODE
 
-if [[ "${VITE_PUBLIC_SITE_URL:-}" != "https://sendflow.africa" ]]; then
-  echo "Set VITE_PUBLIC_SITE_URL=https://sendflow.africa in the production build environment." >&2
+PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-}}"
+if [[ -z "$PUBLIC_SITE_URL" ]]; then
+  echo "Set APP_URL or PUBLIC_URL in the production build environment." >&2
   exit 1
 fi
+export VITE_PUBLIC_SITE_URL="$(
+  PUBLIC_SITE_URL="$PUBLIC_SITE_URL" node --input-type=commonjs <<'NODE'
+try {
+  const url = new URL(process.env.PUBLIC_SITE_URL);
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error();
+  }
+  process.stdout.write(url.origin);
+} catch {
+  console.error("APP_URL or PUBLIC_URL must be a valid HTTPS origin without a path.");
+  process.exit(1);
+}
+NODE
+)"
 
 if [[ "${VITE_CLERK_PUBLISHABLE_KEY:-}" != pk_live_* ]]; then
   echo "Set the production Clerk publishable key (pk_live_...) in the production build environment." >&2
@@ -55,6 +67,7 @@ echo "Running tests, type checks, and the Plesk production build..."
 pnpm run build
 
 required_files=(
+  "dist/package.json"
   "dist/index.cjs"
   "dist/pino-worker.cjs"
   "dist/pino-file.cjs"
@@ -73,5 +86,6 @@ for file in "${required_files[@]}"; do
 done
 
 echo "Plesk build is ready."
-echo "Startup file: index.cjs"
+echo "Application root: dist"
+echo "Startup file: index.cjs (dist/index.cjs)"
 echo "Document root: dist/public"

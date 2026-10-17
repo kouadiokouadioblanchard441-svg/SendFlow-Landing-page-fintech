@@ -1,45 +1,88 @@
-# SendFlow — déploiement GitHub vers Plesk
+# SendFlow — préparation et livraison sur Plesk
 
-## Mode de livraison
+## Structure livrée
 
-Tu fais toi-même le push sur `main`. Le workflow GitHub Actions `.github/workflows/deploy-plesk.yml` s’exécute ensuite : il installe avec pnpm, lance les tests et le build sous Node.js 21.7.3, transfère `dist/` et `index.cjs` en SSH vers Plesk, puis demande le redémarrage de l’application. Aucun ZIP n’est créé et `dist/` reste exclu du dépôt Git.
+Le build de production produit `dist/` à la racine du dépôt, avec un `package.json` minimal pour le gestionnaire Node.js de Plesk. Pour Plesk, configure :
 
-Ce workflow déploie directement les fichiers compilés sur Plesk. **Il ne fait pas un pull Git depuis Plesk.**
+- **Application root** : le chemin absolu du dossier `dist` sur le serveur, par exemple `<racine-du-projet>/dist`.
+- **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
+- **Document root** : le dossier `public` sous l’application root, soit `<racine-du-projet>/dist/public`.
+- **Node.js** : Node 22 LTS (le build accepte aussi Node 20.19+).
+- **Gestionnaire Plesk** : npm (manifest runtime minimal, aucune dépendance à installer). Le build du dépôt est effectué avec pnpm 10.26.1.
+- **Mode** : `production`.
+- **Écoute réseau** : le serveur utilise le `PORT` fourni par Plesk et écoute sur `0.0.0.0`.
 
-## Réglages Plesk
+Le serveur recherche les fichiers du site dans `public/` relativement au dossier courant Plesk `dist`. L’arborescence attendue est :
 
-- **Application root** : `/sendflow.africa` selon les captures. Le chemin absolu système doit correspondre à la valeur de `PLESK_APP_ROOT` dans GitHub.
-- **Document root** : `dist/public`, relatif à l’application root.
-- **Application Startup File** : `index.cjs`, qui charge `dist/index.cjs`.
-- **Node.js** : 21.7.3.
-- **Gestionnaire** : pnpm 10.26.1.
-- **Mode** : production.
-- **Redémarrage** : le workflow met à jour `tmp/restart.txt` après le transfert. Vérifie dans Plesk que l’application redémarre bien via ce mécanisme; sinon utilise le bouton Restart App.
+```text
+dist/
+  package.json
+  index.cjs
+  pino-worker.cjs
+  pino-file.cjs
+  pino-pretty.cjs
+  thread-stream-worker.cjs
+  public/
+    index.html
+    assets/
+    sitemap.xml
+    robots.txt
+```
 
-## Configuration GitHub requise avant le premier push de déploiement
+Le répertoire de sortie `dist` est généré par le build et reste exclu du dépôt Git. Le workflow GitHub Actions le construit, puis transfère son contenu dans le dossier Plesk configuré comme `PLESK_APP_ROOT`. Le déploiement ne lance aucune migration de base de données. Il demande le redémarrage Passenger via `tmp/restart.txt`.
 
-Dans les paramètres du dépôt GitHub, ajoute les Actions secrets suivants. Ne les mets jamais dans le code ni dans les journaux :
+## Build et livraison
 
-- `PLESK_HOST` — hôte SSH du serveur, pas l’URL d’administration `:8443`.
-- `PLESK_PORT` — port SSH.
-- `PLESK_USER` — utilisateur SSH autorisé à écrire dans l’application root.
-- `PLESK_APP_ROOT` — chemin absolu de l’application root sur le système de fichiers Plesk. Vérifie-le par SSH ou auprès de l’hébergeur; ne suppose pas que `/sendflow.africa` est son chemin absolu.
-- `PLESK_SSH_PRIVATE_KEY` — clé privée dédiée au déploiement; configure la clé publique correspondante sur l’hébergement.
-- `PLESK_KNOWN_HOSTS` — clé d’hôte SSH vérifiée hors bande, au format `known_hosts`; ne désactive pas la vérification SSH.
-- `VITE_CLERK_PUBLISHABLE_KEY` — clé publique Clerk de production (`pk_live_...`), utilisée uniquement pendant le build.
+À la racine du dépôt, le build complet (tests, vérifications TypeScript, frontend et serveur) est :
 
-La clé SSH doit être dédiée au déploiement et limitée aux droits nécessaires sur l’application root. `CLERK_SECRET_KEY`, `NEON_DATABASE_URL`, `RESEND_API_KEY` et les autres secrets serveur ne sont pas envoyés par le workflow; ils restent configurés dans Plesk.
+```sh
+pnpm run deploy:plesk
+```
 
-Le workflow se déclenche sur chaque push vers `main` et peut aussi être lancé manuellement depuis l’onglet **Actions** du dépôt. Tant que les secrets ci-dessus ne sont pas configurés, le déploiement échouera explicitement au lieu de publier des fichiers partiels.
+Le workflow `.github/workflows/deploy-plesk.yml` utilise pnpm 10.26.1 et Node 22, puis livre le build à Plesk sur un push vers `main` ou par lancement manuel dans GitHub Actions. Aucun push n’est effectué par l’agent. Il n’est pas nécessaire d’exécuter un build ou `pnpm install` dans Plesk : le serveur compilé et les fichiers publics sont déjà générés dans GitHub Actions.
 
-## Vérifications après le premier déploiement
+## Réglages GitHub
 
-Confirme dans Plesk que `dist/index.cjs` et `dist/public/index.html` existent, règle le Document Root sur `dist/public`, vérifie le Startup File `index.cjs`, puis teste :
+Créer ces **Actions variables** (ce ne sont pas des secrets) :
 
-- `https://sendflow.africa/`
-- `https://sendflow.africa/sign-in`
-- `https://sendflow.africa/api/healthz`
+- `APP_URL` **ou** `PUBLIC_URL` : origine HTTPS canonique complète du site, sans chemin. Cette valeur est utilisée au build pour les URLs SEO.
 
-`/api/health` et `/login` ne sont pas les routes de cette version; utilise `/api/healthz` et `/sign-in`. Le build local ou GitHub ne vérifie pas les accès production à la base, les variables serveur, les permissions de `PLESK_MEDIA_DIR` ni les envois Resend.
+Créer ces **Actions secrets** :
 
-Si des dépendances serveur de production sont ajoutées ou mises à jour ultérieurement, elles doivent également être installées sur Plesk; le workflow actuel transfère les fichiers compilés, pas `node_modules`.
+- `PLESK_HOST` : hôte SSH, pas l’adresse du panneau Plesk.
+- `PLESK_PORT` : port SSH.
+- `PLESK_USER` : utilisateur SSH autorisé à écrire dans l’application.
+- `PLESK_APP_ROOT` : chemin absolu du dossier `dist` qui sera l’Application root Plesk. Le workflow transfère directement le contenu compilé dans ce dossier.
+- `PLESK_SSH_PRIVATE_KEY` : clé privée dédiée au déploiement.
+- `PLESK_KNOWN_HOSTS` : clé d’hôte SSH vérifiée, au format `known_hosts`.
+- `VITE_CLERK_PUBLISHABLE_KEY` : clé publique Clerk de production employée pendant le build frontend.
+
+Le dossier `PLESK_APP_ROOT` doit exister ou pouvoir être créé par l’utilisateur SSH. Celui-ci doit également pouvoir créer le dossier de staging voisin et écrire dans `tmp/`.
+
+## Variables d’environnement Plesk
+
+Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les placer dans Git :
+
+- `NODE_ENV` — `production`.
+- `PORT` — fourni par Plesk ; ne pas le remplacer par une valeur fixe.
+- `NEON_DATABASE_URL` — connexion PostgreSQL utilisée par l’application.
+- `CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` — authentification et proxy Clerk.
+- `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
+- `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
+- `APP_URL` ou `PUBLIC_URL` — origine HTTPS du site. Pour mettre à jour le sitemap et les canonicals, la même origine doit aussi être définie dans les Actions variables GitHub avant le build.
+- `LOG_LEVEL` — optionnel.
+- `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
+
+`SESSION_SECRET` n’est pas lu par la version actuelle du serveur SendFlow ; ne l’ajouter que si une fonctionnalité qui l’utilise est introduite. Les variables `ADMIN_BOOTSTRAP_*`, `ADMIN_PANEL_TOKEN` et les scripts de seed ne sont pas requis au démarrage normal. N’exécute aucun script de seed ou de migration pendant le démarrage Plesk.
+
+## Commandes et vérifications
+
+Le build est effectué dans GitHub Actions avec `pnpm run deploy:plesk`. Sur Plesk, ne lance ni `npm install`, ni `pnpm install`, ni une commande de build. Dans **Run Node.js commands**, utiliser seulement le redémarrage après la livraison si le workflow ne l’a pas déjà fait.
+
+Après une livraison réussie, vérifier dans le File Manager que le dossier d’application contient `index.cjs`, les workers Pino et `public/index.html`. Tester :
+
+- `https://<domaine-configuré>/`
+- `https://<domaine-configuré>/sign-in`
+- `https://<domaine-configuré>/api/healthz`
+
+Les pages protégées nécessitant une authentification ne sont pas vérifiables sans session. Une réponse HTTP 200 à `/api/healthz` vérifie que le processus sert l’API, mais ne prouve pas à elle seule que chaque intégration tierce fonctionne.

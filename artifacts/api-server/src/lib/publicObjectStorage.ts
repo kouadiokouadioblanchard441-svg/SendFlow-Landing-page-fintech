@@ -1,4 +1,4 @@
-import { constants } from "node:fs";
+import { constants, existsSync } from "node:fs";
 import { mkdir, open, realpath, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 
@@ -28,8 +28,13 @@ export function getPleskMediaDirectory(): string | null {
 }
 
 function assertOutsideWebRoot(mediaDirectory: string): void {
+  const pleskWebDirectory = path.join(process.cwd(), "public");
+  const workspaceWebDirectory = path.join(process.cwd(), "dist", "public");
+  const defaultWebDirectory = existsSync(pleskWebDirectory)
+    ? pleskWebDirectory
+    : workspaceWebDirectory;
   const webDirectory = path.resolve(
-    process.env.WEB_DIST_DIR ?? path.join(process.cwd(), "dist", "public"),
+    process.env.WEB_DIST_DIR ?? defaultWebDirectory,
   );
   const relative = path.relative(webDirectory, mediaDirectory);
   if (relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative))) {

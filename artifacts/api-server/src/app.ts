@@ -72,7 +72,12 @@ app.use(
 
 app.use("/api", router);
 
-const webDistDir = path.resolve(process.env.WEB_DIST_DIR ?? path.join(process.cwd(), "dist", "public"));
+const pleskWebDistDir = path.join(process.cwd(), "public");
+const workspaceWebDistDir = path.join(process.cwd(), "dist", "public");
+const defaultWebDistDir = existsSync(pleskWebDistDir)
+  ? pleskWebDistDir
+  : workspaceWebDistDir;
+const webDistDir = path.resolve(process.env.WEB_DIST_DIR ?? defaultWebDistDir);
 app.use(express.static(webDistDir, { index: false }));
 app.use((req, res, next) => {
   const isPageRequest = req.method === "GET" || req.method === "HEAD";
