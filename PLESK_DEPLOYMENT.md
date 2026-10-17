@@ -45,7 +45,7 @@ Le workflow `.github/workflows/deploy-plesk.yml` utilise pnpm 10.26.1 et Node 22
 
 Créer ces **Actions variables** (ce ne sont pas des secrets) :
 
-- `APP_URL` **ou** `PUBLIC_URL` : origine HTTPS canonique complète du site, sans chemin. Cette valeur est utilisée au build pour les URLs SEO.
+- `APP_URL` **ou** `PUBLIC_URL` : `https://sendflow.africa` (origine HTTPS canonique, sans chemin). Cette valeur est utilisée au build pour les URLs SEO.
 
 Créer ces **Actions secrets** :
 
@@ -69,7 +69,7 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 - `CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` — authentification et proxy Clerk.
 - `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
 - `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
-- `APP_URL` ou `PUBLIC_URL` — origine HTTPS du site. Pour mettre à jour le sitemap et les canonicals, la même origine doit aussi être définie dans les Actions variables GitHub avant le build.
+- `APP_URL` ou `PUBLIC_URL` — `https://sendflow.africa`. Pour mettre à jour le sitemap et les canonicals, la même origine doit aussi être définie dans les Actions variables GitHub avant le build.
 - `LOG_LEVEL` — optionnel.
 - `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
 
