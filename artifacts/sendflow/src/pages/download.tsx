@@ -35,7 +35,6 @@ type DownloadSettings = {
   regulatorLogoKey?: string | null;
   googlePlayUrl?: string | null;
   appStoreUrl?: string | null;
-  appGalleryUrl?: string | null;
   apkUrl?: string | null;
   downloadContactEmail?: string | null;
   downloadContactPhone?: string | null;
@@ -221,7 +220,7 @@ function Brand() {
   );
 }
 
-function StoreIcon({ store }: { store: 'apple' | 'play' | 'gallery' }) {
+function StoreIcon({ store }: { store: 'apple' | 'play' }) {
   if (store === 'apple') {
     return (
       <svg viewBox="0 0 32 32" aria-hidden="true">
@@ -240,20 +239,16 @@ function StoreIcon({ store }: { store: 'apple' | 'play' | 'gallery' }) {
       </svg>
     );
   }
-  return (
-    <svg viewBox="0 0 32 32" aria-hidden="true">
-      <rect x="3" y="3" width="26" height="26" rx="8" fill="#f3d64f" />
-      <path d="M9 10h14v12H9z" fill="#1d31d7" />
-      <path d="m13 13 6 3-6 3v-6Z" fill="#fff" />
-    </svg>
-  );
+  return null;
 }
 
-function StoreButton({ store, label, href, language }: { store: 'apple' | 'play' | 'gallery'; label: string; href?: string | null; language: Language }) {
-  const title = store === 'apple' ? 'App Store' : store === 'play' ? 'Google Play' : 'AppGallery';
+function StoreButton({ store, label, href, language }: { store: 'apple' | 'play'; label: string; href?: string | null; language: Language }) {
+  const title = store === 'apple' ? 'App Store' : 'Google Play';
   const badge = (
     <span className={`sf-download-store ${href ? '' : 'is-disabled'}`}>
-      <StoreIcon store={store} />
+      <span className="sf-download-store-icon-tile" aria-hidden="true">
+        <StoreIcon store={store} />
+      </span>
       <span><small>{href ? copy[language].available : copy[language].comingSoon}</small><strong>{title}</strong></span>
     </span>
   );

@@ -83,7 +83,7 @@ const siteContactFields = [
   "aboutContactEmail", "aboutContactPhone", "aboutContactWhatsapp",
   "legalContactEmail", "legalContactPhone", "legalContactWhatsapp",
 ] as const;
-const siteLinkFields = ["websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl", "googlePlayUrl", "appStoreUrl", "appGalleryUrl", "apkUrl"] as const;
+const siteLinkFields = ["websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl", "googlePlayUrl", "appStoreUrl", "apkUrl"] as const;
 const siteEmailFields = [
   "supportEmail", "legalEmail",
   "homeContactEmail", "featuresContactEmail", "securityContactEmail",

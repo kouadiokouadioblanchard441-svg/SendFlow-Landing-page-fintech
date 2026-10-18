@@ -106,7 +106,6 @@ export const landingSiteSettings = pgTable(
     regulatorLogoKey: varchar("regulator_logo_key", { length: 160 }),
     googlePlayUrl: text("google_play_url"),
     appStoreUrl: text("app_store_url"),
-    appGalleryUrl: text("app_gallery_url"),
     apkUrl: text("apk_url"),
     ...timestamps,
   },

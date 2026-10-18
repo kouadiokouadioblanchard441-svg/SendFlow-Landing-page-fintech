@@ -820,7 +820,6 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   regulatorLogoKey: '',
   googlePlayUrl: '',
   appStoreUrl: '',
-  appGalleryUrl: '',
   apkUrl: '',
 };
 
@@ -897,7 +896,6 @@ function SiteSettingsEditor({
         {field('regulatorLogoKey', 'Logo du régulateur · clé média')}
         {field('googlePlayUrl', 'Lien Google Play', 'url', 'https://play.google.com/store/apps/details?id=...')}
         {field('appStoreUrl', 'Lien App Store', 'url', 'https://apps.apple.com/...')}
-        {field('appGalleryUrl', 'Lien AppGallery', 'url', 'https://appgallery.huawei.com/...')}
         {field('apkUrl', 'Lien APK Android', 'url', 'https://exemple.com/sendflow.apk')}
       </div>
       <div className="sendflow-admin-founder-foot">

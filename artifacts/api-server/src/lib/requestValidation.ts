@@ -294,7 +294,7 @@ const settingsEmailFields = [
 ] as const;
 const settingsUrlFields = [
   "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl", "whatsappUrl",
-  "googlePlayUrl", "appStoreUrl", "appGalleryUrl",
+  "googlePlayUrl", "appStoreUrl",
 ] as const;
 const settingsOptionalUrlFields = ["apkUrl"] as const;
 const settingsMediaFields = ["regulatorLogoKey"] as const;

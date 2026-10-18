@@ -27,7 +27,6 @@ export type FooterSettings = {
   regulatorLogoKey?: string | null;
   googlePlayUrl?: string | null;
   appStoreUrl?: string | null;
-  appGalleryUrl?: string | null;
   linkedinUrl?: string | null;
   instagramUrl?: string | null;
   facebookUrl?: string | null;
@@ -67,10 +66,10 @@ type SendFlowFooterProps = {
   contact?: ContactDetails;
 };
 
-function StoreLogo({ icon }: { icon: 'play' | 'apple' | 'gallery' }) {
+function StoreLogo({ icon }: { icon: 'play' | 'apple' }) {
   if (icon === 'play') {
     return (
-      <svg viewBox="0 0 32 32" className="h-9 w-9 shrink-0" aria-hidden="true">
+      <svg viewBox="0 0 32 32" className="h-10 w-10 shrink-0" aria-hidden="true">
         <path d="M4.5 3.8C3.6 4.7 3 6.1 3 7.8v16.4c0 1.7.6 3.1 1.5 4l14-14.2L4.5 3.8Z" fill="#00A0FF" />
         <path d="m18.5 14 4.2-4.3 4.8 2.7c1.5.9 1.5 2.5 0 3.4l-4.8 2.7-4.2-4.5Z" fill="#FFD900" />
         <path d="M4.5 3.8 18.5 18l4.2-4.3L7.2 2.3c-1-.5-2-.1-2.7 1.5Z" fill="#FF3A44" />
@@ -81,28 +80,24 @@ function StoreLogo({ icon }: { icon: 'play' | 'apple' | 'gallery' }) {
 
   if (icon === 'apple') {
     return (
-      <svg viewBox="0 0 32 32" className="h-9 w-9 shrink-0" aria-hidden="true">
+      <svg viewBox="0 0 32 32" className="h-10 w-10 shrink-0" aria-hidden="true">
         <path d="M21.2 16.8c0-3 2.5-4.5 2.6-4.6-1.4-2.1-3.7-2.4-4.5-2.4-1.9-.2-3.7 1.1-4.7 1.1-1 0-2.5-1.1-4.1-1-2.1 0-4.1 1.2-5.2 3.1-2.2 3.8-.6 9.4 1.5 12.5 1 1.5 2.3 3.2 3.9 3.1 1.6-.1 2.2-1 4.1-1 1.9 0 2.4 1 4.1.9 1.7 0 2.8-1.5 3.8-3 1.2-1.7 1.7-3.4 1.7-3.5-.1 0-3.2-1.2-3.2-5.2Z" fill="currentColor" />
         <path d="M18.2 7.9c.9-1.1 1.5-2.6 1.3-4.1-1.3.1-2.9.9-3.8 2-.8.9-1.5 2.5-1.3 3.9 1.5.1 2.9-.7 3.8-1.8Z" fill="currentColor" />
       </svg>
     );
   }
 
-  return (
-    <svg viewBox="0 0 32 32" className="h-9 w-9 shrink-0" aria-hidden="true">
-      <rect x="4" y="4" width="24" height="24" rx="7" fill="#E8CD4D" />
-      <path d="M10 11h12v10H10z" fill="#6D35D8" />
-      <path d="m13 13 6 3-6 3v-6Z" fill="#fff" />
-    </svg>
-  );
+  return null;
 }
 
-function StoreBadge({ store, icon, href }: { store: string; icon: 'play' | 'apple' | 'gallery'; href?: string | null }) {
+function StoreBadge({ store, icon, href }: { store: string; icon: 'play' | 'apple'; href?: string | null }) {
   const badge = (
     <div className="sendflow-store-badge" aria-label={`Disponible sur ${store}`}>
-      <StoreLogo icon={icon} />
+      <span className="sendflow-store-logo-tile" aria-hidden="true">
+        <StoreLogo icon={icon} />
+      </span>
       <span>
-        <small>{icon === 'gallery' ? 'DÉCOUVREZ-LE SUR' : icon === 'play' ? 'DISPONIBLE SUR' : 'Télécharger sur'}</small>
+        <small>{icon === 'play' ? 'DISPONIBLE SUR' : 'Télécharger sur'}</small>
         <strong>{store}</strong>
       </span>
     </div>
@@ -193,7 +188,6 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
             <StoreBadge store="Google Play" icon="play" href={settings?.googlePlayUrl} />
             <StoreBadge store="App Store" icon="apple" href={settings?.appStoreUrl} />
           </div>
-          <StoreBadge store="AppGallery" icon="gallery" href={settings?.appGalleryUrl} />
         </section>
 
         <div className="sendflow-footer-divider" />
