@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
+import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
 import { ArrowDownRight, ArrowRight, Check, ChevronDown, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -413,26 +414,114 @@ function App() {
     <WouterRouter base={basePath}>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Switch>
-            <Route path="/" component={LandingPage} />
-            <Route path="/download" component={DownloadPage} />
-            <Route path="/fonctionnalites" component={FeaturesPage} />
-            <Route path="/securite" component={SecurityPage} />
-            <Route path="/a-propos" component={AboutRoute} />
-            <Route path="/conditions-utilisation" component={() => <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />} />
-            <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
-            <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
-            <Route path="/france-senegal" component={CorridorGuidePage} />
-            <Route path="/en/*?" component={EnglishPublicRoute} />
-            <Route path="/admin" component={LegacyAdminRedirect} />
-            <Route path="/admin/*" component={LegacyAdminRedirect} />
-            <Route path="/panel" component={PanelRoute} />
-            <Route component={NotFoundRoute} />
-          </Switch>
+          <AnimatedRoutes />
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
     </WouterRouter>
+  );
+}
+
+type RouteMotionSettings = { direction: -1 | 0 | 1; reduced: boolean };
+
+const routeMotionVariants: Variants = {
+  enter: ({ direction, reduced }: RouteMotionSettings) => ({
+    opacity: reduced ? 1 : 0,
+    x: reduced || direction === 0 ? 0 : direction * 26,
+    y: reduced ? 0 : 8,
+  }),
+  center: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    transition: { duration: 0.42, ease: 'easeOut' },
+  },
+  exit: ({ direction, reduced }: RouteMotionSettings) => ({
+    opacity: reduced ? 1 : 0,
+    x: reduced || direction === 0 ? 0 : direction * -20,
+    y: reduced ? 0 : -4,
+    transition: { duration: 0.22, ease: 'easeIn' },
+  }),
+};
+
+const routeOrder = [
+  '/',
+  '/fonctionnalites',
+  '/securite',
+  '/a-propos',
+  '/france-senegal',
+  '/download',
+  '/conditions-utilisation',
+  '/confidentialite',
+  '/mentions-legales',
+];
+
+function getRouteMotionIndex(path: string) {
+  const normalized = path.replace(/\/+$/, '').toLowerCase() || '/';
+  const localizedPaths: Record<string, string> = {
+    '/en': '/',
+    '/en/features': '/fonctionnalites',
+    '/en/security': '/securite',
+    '/en/about': '/a-propos',
+    '/en/france-senegal': '/france-senegal',
+    '/en/download': '/download',
+    '/en/terms': '/conditions-utilisation',
+    '/en/privacy': '/confidentialite',
+    '/en/legal-notice': '/mentions-legales',
+  };
+  const canonicalPath = localizedPaths[normalized] ?? normalized;
+  return routeOrder.indexOf(canonicalPath);
+}
+
+function AnimatedRoutes() {
+  const [location] = useLocation();
+  const prefersReducedMotion = useReducedMotion();
+  const previousLocation = useRef(location);
+  const previousIndex = getRouteMotionIndex(previousLocation.current);
+  const nextIndex = getRouteMotionIndex(location);
+  const direction: RouteMotionSettings['direction'] =
+    previousIndex < 0 || nextIndex < 0 || previousIndex === nextIndex
+      ? 0
+      : nextIndex > previousIndex
+        ? 1
+        : -1;
+  const motionSettings = { direction, reduced: Boolean(prefersReducedMotion) };
+
+  useEffect(() => {
+    if (previousLocation.current === location) return;
+    previousLocation.current = location;
+    if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location]);
+
+  return (
+    <AnimatePresence mode="wait" custom={motionSettings}>
+      <motion.div
+        key={location}
+        className="sendflow-route-transition"
+        custom={motionSettings}
+        variants={routeMotionVariants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+      >
+        <Switch>
+          <Route path="/" component={LandingPage} />
+          <Route path="/download" component={DownloadPage} />
+          <Route path="/fonctionnalites" component={FeaturesPage} />
+          <Route path="/securite" component={SecurityPage} />
+          <Route path="/a-propos" component={AboutRoute} />
+          <Route path="/conditions-utilisation" component={() => <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />} />
+          <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
+          <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
+          <Route path="/france-senegal" component={CorridorGuidePage} />
+          <Route path="/en/*?" component={EnglishPublicRoute} />
+          <Route path="/admin" component={LegacyAdminRedirect} />
+          <Route path="/admin/*" component={LegacyAdminRedirect} />
+          <Route path="/panel" component={PanelRoute} />
+          <Route component={NotFoundRoute} />
+        </Switch>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

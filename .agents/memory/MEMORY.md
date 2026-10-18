@@ -4,7 +4,7 @@
 - [Free image cleanup](free-image-cleanup.md) — Generated PNGs may include a baked checkerboard; local ImageMagick cleanup can restore usable alpha when automated removal is unavailable.
 - [Partner logo sourcing](partner-logo-sourcing.md) — Never substitute one operator’s asset for another; use an explicit wordmark until an approved official logo is available.
 - [External-host deployment boundaries](plesk-deployment-boundaries.md) — External hosts need portable services and deployment hooks that honor the workspace's pinned package manager.
-- [Landing page appearance](landing-appearance-approval.md) — Keep the SendFlow landing design unchanged unless the user explicitly requests visual edits.
+- [SendFlow motion and appearance](landing-appearance-approval.md) — Keep layout intact unless requested; page transitions should feel polished and directional.
 - [Découvrir page style](discover-page-style.md) — Match the privacy-policy reference and keep the five long-form sections fully localized, 1,000+ words in French and English.
 - [Server-side input validation](server-input-validation.md) — Treat every browser-provided value as untrusted and validate it at the API boundary before storage or use.
 - [Newsletter campaign retries](newsletter-campaign-retries.md) — Keep failed sends read-only until per-recipient delivery tracking can prevent accidental duplicate campaigns.
