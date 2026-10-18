@@ -2,9 +2,9 @@
 
 ## Structure livrée
 
-Le build de production produit `dist/` à la racine du dépôt, avec un `package.json` minimal pour le gestionnaire Node.js de Plesk. Pour Plesk, configure :
+Le build de production produit `dist/` sous le dépôt Plesk, avec un `package.json` minimal pour le gestionnaire Node.js. Le dépôt Git reste à sa racine ; `dist/` est généré automatiquement par l’action post-déploiement Plesk. Configure :
 
-- **Application root** : le chemin absolu du dossier `dist` sur le serveur, par exemple `<racine-du-projet>/dist`.
+- **Application root** : le sous-dossier `dist` généré sous la racine du dépôt Plesk. Le dépôt Git doit rester dans le dossier parent.
 - **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
 - **Document root** : le dossier `public` sous l’application root, soit `<racine-du-projet>/dist/public`.
 - **Node.js** : Node 22 LTS (le build accepte aussi Node 20.19+).
@@ -29,7 +29,7 @@ dist/
     robots.txt
 ```
 
-Le répertoire de sortie `dist` est généré par le build et reste exclu du dépôt Git. Le workflow GitHub Actions le construit, puis transfère son contenu dans le dossier Plesk configuré comme `PLESK_APP_ROOT`. Le déploiement ne lance aucune migration de base de données. Il demande le redémarrage Passenger via `tmp/restart.txt`.
+Le répertoire `dist/` est généré sur Plesk après chaque récupération du dépôt et reste exclu de Git. Le script de déploiement ne lance aucune migration de base de données. Il demande le redémarrage Passenger via `dist/tmp/restart.txt`.
 
 ## Build et livraison
 
@@ -39,25 +39,21 @@ Le répertoire de sortie `dist` est généré par le build et reste exclu du dé
 pnpm run deploy:plesk
 ```
 
-Le workflow `.github/workflows/deploy-plesk.yml` utilise pnpm 10.26.1 et Node 22, puis livre le build à Plesk sur un push vers `main` ou par lancement manuel dans GitHub Actions. Aucun push n’est effectué par l’agent. Il n’est pas nécessaire d’exécuter un build ou `pnpm install` dans Plesk : le serveur compilé et les fichiers publics sont déjà générés dans GitHub Actions.
+## Déploiement depuis Plesk Git
 
-## Réglages GitHub
+Le flux visé est : pousser le code sur GitHub, puis cliquer sur **Pull + Deploy Now** dans Plesk. Dans les actions de déploiement du dépôt Git Plesk, configure une seule fois la commande :
 
-Créer ces **Actions variables** (ce ne sont pas des secrets) :
+```sh
+PUBLIC_SITE_URL=https://sendflow.africa VITE_CLERK_PUBLISHABLE_KEY=pk_live_... bash scripts/plesk-git-deploy.sh
+```
 
-- `APP_URL` **ou** `PUBLIC_URL` : `https://sendflow.africa` (origine HTTPS canonique, sans chemin). Cette valeur est utilisée au build pour les URLs SEO.
+Remplace `pk_live_...` par la clé publique Clerk de production du projet. Ces deux valeurs sont injectées dans la commande de build ; la clé publique n’est pas la clé secrète Clerk.
 
-Créer ces **Actions secrets** :
+Cette commande installe les dépendances du workspace, exécute les tests, les vérifications TypeScript et le build de production, puis crée `dist/` avec l’application compilée et demande le redémarrage Passenger. Après **Pull + Deploy Now**, clique sur **Restart** dans Node.js si Plesk ne redémarre pas automatiquement.
 
-- `PLESK_HOST` : hôte SSH, pas l’adresse du panneau Plesk.
-- `PLESK_PORT` : port SSH.
-- `PLESK_USER` : utilisateur SSH autorisé à écrire dans l’application.
-- `PLESK_APP_ROOT` : chemin absolu du dossier `dist` qui sera l’Application root Plesk. Le workflow transfère directement le contenu compilé dans ce dossier.
-- `PLESK_SSH_PRIVATE_KEY` : clé privée dédiée au déploiement.
-- `PLESK_KNOWN_HOSTS` : clé d’hôte SSH vérifiée, au format `known_hosts`.
-- `VITE_CLERK_PUBLISHABLE_KEY` **ou** `CLERK_PUBLISHABLE_KEY` : clé publique Clerk de production pour le build frontend. Le workflow accepte les deux noms.
+La commande reçoit une origine sous `PUBLIC_SITE_URL`, `APP_URL` ou `PUBLIC_URL`, ainsi que `VITE_CLERK_PUBLISHABLE_KEY`. Cette clé publique peut aussi être fournie sous le nom `CLERK_PUBLISHABLE_KEY`. Ces valeurs ne sont pas des secrets privés ; ne mets jamais `CLERK_SECRET_KEY` ni `NEON_DATABASE_URL` dans la commande de déploiement.
 
-Le dossier `PLESK_APP_ROOT` doit exister ou pouvoir être créé par l’utilisateur SSH. Celui-ci doit également pouvoir créer le dossier de staging voisin et écrire dans `tmp/`.
+Node.js 22 LTS et pnpm 10.26.1 sont requis pour le build. Le script s’arrête avec une erreur explicite si une variable de build manque ou si sa valeur est invalide.
 
 ## Variables d’environnement Plesk
 
@@ -70,8 +66,8 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 - `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
 - `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
 - `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine, le proxy Clerk et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias.
-- `VITE_CLERK_PUBLISHABLE_KEY` est une variable de **build** : elle doit être définie comme secret GitHub Actions, pas seulement dans Plesk. Elle peut aussi être fournie au build sous le nom `CLERK_PUBLISHABLE_KEY`. La clé secrète `CLERK_SECRET_KEY` reste uniquement dans l’environnement Node.js de Plesk.
-- `APP_URL` ou `PUBLIC_URL` dans les Actions variables GitHub — `https://sendflow.africa`, utilisées pour générer le sitemap et les canonicals.
+- `APP_URL` — `https://sendflow.africa`, utilisée au build. Le serveur accepte également `APP_URL` ou `PUBLIC_URL` comme alias de `PUBLIC_SITE_URL`.
+- `VITE_CLERK_PUBLISHABLE_KEY` — clé publique Clerk `pk_live_...` fournie à l’action de build Plesk. Elle peut aussi être fournie au build sous le nom `CLERK_PUBLISHABLE_KEY`.
 - `LOG_LEVEL` — optionnel.
 - `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
 
@@ -79,7 +75,7 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 
 ## Commandes et vérifications
 
-Le build est effectué dans GitHub Actions avec `pnpm run deploy:plesk`. Sur Plesk, ne lance ni `npm install`, ni `pnpm install`, ni une commande de build. Dans **Run Node.js commands**, utiliser seulement le redémarrage après la livraison si le workflow ne l’a pas déjà fait.
+Le build et `pnpm install` sont effectués par l’action post-déploiement Plesk. Ne les lance pas une seconde fois à la main après le pull. Le bouton **Restart** sert à relancer l’application compilée.
 
 Après une livraison réussie, vérifier dans le File Manager que le dossier d’application contient `index.cjs`, les workers Pino et `public/index.html`. Tester :
 

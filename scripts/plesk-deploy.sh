@@ -25,9 +25,9 @@ if (!supported) {
 }
 NODE
 
-PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-}}"
+PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-${PUBLIC_SITE_URL:-}}}"
 if [[ -z "$PUBLIC_SITE_URL" ]]; then
-  echo "Set APP_URL or PUBLIC_URL in the production build environment." >&2
+  echo "Set APP_URL, PUBLIC_URL, or PUBLIC_SITE_URL in the production build environment." >&2
   exit 1
 fi
 export VITE_PUBLIC_SITE_URL="$(
@@ -46,7 +46,7 @@ try {
   }
   process.stdout.write(url.origin);
 } catch {
-  console.error("APP_URL or PUBLIC_URL must be a valid HTTPS origin without a path.");
+  console.error("APP_URL, PUBLIC_URL, or PUBLIC_SITE_URL must be a valid HTTPS origin without a path.");
   process.exit(1);
 }
 NODE
