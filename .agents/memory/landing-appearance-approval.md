@@ -14,3 +14,9 @@ The user explicitly asked for professional page motion across SendFlow: pages sh
 **Why:** motion is part of the modern, professional experience they want, without requesting a redesign of the existing layouts.
 
 **How to apply:** use subtle directional page transitions and preserve the existing visual layout unless the user separately asks to change it.
+
+The user also wants the desktop site to feel professional while keeping the mobile presentation intact.
+
+**Why:** desktop quality is an explicit product requirement, not a secondary consequence of mobile styling.
+
+**How to apply:** verify public pages at desktop widths as well as phone widths; improve desktop composition without regressing mobile.

@@ -1063,9 +1063,9 @@ function LandingPage() {
       <main id="top">
         <section className="relative overflow-hidden px-5 pb-10 pt-36 sm:px-8 sm:pb-16 sm:pt-44">
           <div className="absolute -right-32 top-24 h-[430px] w-[430px] rounded-full bg-[#d4f0e9] opacity-70 blur-3xl" />
-          <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[1.04fr_.96fr] lg:gap-8">
-            <div className="relative z-10 max-w-[680px]">
-              <div className="rise relative mb-7 aspect-[1.45/1] w-full max-w-[640px] overflow-hidden rounded-[34px] border border-[#6d35d8]/10 bg-white shadow-[0_22px_55px_rgba(75,44,180,.1)]" data-testid="hero-image-slot">
+          <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[.95fr_1.05fr] lg:gap-10">
+            <div className="relative z-10 max-w-[680px] lg:pr-4">
+              <div className="rise relative mb-7 aspect-[1.45/1] w-full max-w-[640px] overflow-hidden rounded-[34px] border border-[#6d35d8]/10 bg-white shadow-[0_22px_55px_rgba(75,44,180,.1)] lg:hidden" data-testid="hero-image-slot">
                 <ProtectedImage src={heroPlaceholder} alt={isFrench ? 'Illustration temporaire du passage entre plusieurs réseaux' : 'Temporary illustration of a path across multiple networks'} className="h-full w-full object-cover" />
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
                   <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full border border-[#6d35d8]/15 bg-white/90 px-3 py-2 shadow-[0_8px_20px_rgba(50,30,130,.1)] backdrop-blur-sm">
@@ -1079,14 +1079,14 @@ function LandingPage() {
                   </span>
                 </div>
               </div>
-              <h1 className="rise delay-1 mt-6 max-w-[760px] whitespace-pre-line text-[clamp(3.7rem,9vw,7.6rem)] font-extrabold leading-[.88] tracking-[-.09em] text-[#17131f]">{t(localizedSection('hero', { title: { fr: 'L’argent circule.\nLes réseaux aussi.', en: 'Money moves.\nNetworks do too.' }, body: { fr: '', en: '' } }).title, language)}</h1>
-              <p className="rise delay-2 mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px]">{t(localizedSection('hero', { title: { fr: '', en: '' }, body: { fr: 'SendFlow simplifie vos transferts d’argent entre différents réseaux de paiement, localement et au-delà des frontières.', en: 'SendFlow simplifies money transfers across different payment networks, locally and across borders.' } }).body, language)}</p>
+              <h1 className="rise delay-1 mt-6 max-w-[760px] whitespace-pre-line text-[clamp(3.7rem,9vw,7.6rem)] font-extrabold leading-[.88] tracking-[-.09em] text-[#17131f] lg:mt-0 lg:text-[clamp(3.8rem,6.4vw,6.6rem)] lg:leading-[.92] lg:tracking-[-.075em]">{t(localizedSection('hero', { title: { fr: 'L’argent circule.\nLes réseaux aussi.', en: 'Money moves.\nNetworks do too.' }, body: { fr: '', en: '' } }).title, language)}</h1>
+              <p className="rise delay-2 mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px] lg:mt-6">{t(localizedSection('hero', { title: { fr: '', en: '' }, body: { fr: 'SendFlow simplifie vos transferts d’argent entre différents réseaux de paiement, localement et au-delà des frontières.', en: 'SendFlow simplifies money transfers across different payment networks, locally and across borders.' } }).body, language)}</p>
               <div className="rise delay-3 mt-9 flex w-full max-w-[520px] flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center">
                  <Link href={getLocalizedPath('/download', language)} className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={15} /></Link>
                  <Link href={getLocalizedPath('/a-propos', language)} className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-discover"><Play className="mr-2 text-white" size={14} fill="currentColor" />{t(contentCopy(landingBundle?.content, 'cta.discover', { fr: 'Découvrir SendFlow', en: 'Discover SendFlow' }), language)}</Link>
               </div>
             </div>
-              <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)]">
+              <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)] lg:aspect-[4/3] lg:max-w-[600px]">
                 <ProtectedImage
                  src={heroGlobalConnection}
                  alt={isFrench ? 'Homme devant un globe connecté entre l’Afrique et l’Europe' : 'Man in front of a globe connecting Africa and Europe'}
