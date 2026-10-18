@@ -1054,7 +1054,7 @@ function LandingPage() {
            </div>
          </section>
 
-        <section id="how" className="bg-[#211d2c] px-5 py-24 text-[#fbf8ef] sm:px-8 sm:py-32">
+         <section id="how" className="scroll-mt-28 bg-[#211d2c] px-5 py-24 text-[#fbf8ef] sm:px-8 sm:py-32">
           <div className="mx-auto max-w-[1240px]">
             <div className="reveal grid gap-12 lg:grid-cols-[.75fr_1.25fr] lg:gap-24">
                <div><h2 className="mt-0 max-w-[500px] whitespace-pre-line text-5xl font-extrabold leading-[.9] tracking-[-.075em] text-[#fbf8ef] sm:text-7xl lg:text-8xl">{t(localizedSection('how', { title: { fr: 'Un passage\nsimple.', en: 'One clear\npassage.' }, body: { fr: '', en: '' } }).title, language)}</h2><p className="mt-8 max-w-[360px] text-[16px] font-semibold leading-7 text-[#f4edff] sm:text-[17px]">{t(localizedSection('how', { title: { fr: '', en: '' }, body: { fr: 'Le réseau ne devrait jamais être votre problème. SendFlow rend chaque étape visible, du premier clic au dernier.', en: 'The network should never be your problem. SendFlow makes every step visible, from first click to last.' } }).body, language)}</p></div>
@@ -1095,7 +1095,7 @@ function LandingPage() {
                  </div>
                </div>
              </div>
-             <div id="international" className="reveal mt-12 grid gap-4 lg:grid-cols-[.82fr_1.18fr]">
+              <div id="international" className="reveal mt-12 scroll-mt-28 grid gap-4 lg:grid-cols-[.82fr_1.18fr]">
               <div className="rounded-[28px] bg-[#e8cd4d] p-6 sm:p-8"><div className="flex items-center justify-between"><span className="text-[11px] font-bold uppercase tracking-[.14em]">{isFrench ? 'Couverture SendFlow' : 'SendFlow coverage'}</span><span className="rounded-full bg-[#211d2c]/10 px-3 py-1 text-[10px] font-bold">{activeCountries.length} pays</span></div><div className="mt-10 text-[clamp(3.5rem,8vw,6.5rem)] font-extrabold leading-[.8] tracking-[-.09em]">{activeCountries.length}<span className="font-serif font-normal text-[#6d35d8]">.</span></div><p className="mt-6 max-w-[280px] text-[15px] font-semibold leading-6 text-[#211d2c]/85">{isFrench ? 'Des connexions pensées pour accompagner vos transferts.' : 'Connections designed to support your transfers.'}</p><div className="mt-10 flex flex-wrap gap-2">{activeCountries.map((country) => <button key={country.code} onClick={() => setSelectedCountry(country)} className={`rounded-full border px-3 py-2 text-[11px] font-bold transition-all ${selectedCountry.code === country.code ? 'border-[#211d2c] bg-[#211d2c] text-[#fbf8ef]' : 'border-[#211d2c]/20 hover:border-[#211d2c]'}`} data-testid={`button-country-${country.code}`}><span className="mr-1">{country.flag}</span>{country.code}</button>)}</div></div>
                  {activeSelectedCountry ? <div className="rounded-[20px] border-2 border-[#cbdced] bg-white p-6 shadow-[0_22px_55px_rgba(43,75,115,.14)] sm:p-8">
                 <div className="flex items-start justify-between">

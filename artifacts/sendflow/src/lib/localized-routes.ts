@@ -26,10 +26,12 @@ export function getLocaleFromPath(path: string): PublicLocale {
 }
 
 export function getLocalizedPath(path: string, locale: PublicLocale): string {
-  const normalized = normalizeRoute(path);
+  const suffixStart = path.search(/[?#]/);
+  const routePath = suffixStart < 0 ? path : path.slice(0, suffixStart);
+  const suffix = suffixStart < 0 ? '' : path.slice(suffixStart);
+  const normalized = normalizeRoute(routePath);
   const pair = localizedRoutePairs.find(({ fr, en }) => normalized === fr || normalized === en);
-  if (!pair) return normalized;
-  return pair[locale];
+  return `${pair ? pair[locale] : normalized}${suffix}`;
 }
 
 export function getLocalizedAlternates(path: string): Record<PublicLocale, string> | null {

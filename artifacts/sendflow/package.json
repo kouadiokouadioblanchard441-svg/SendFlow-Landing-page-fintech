@@ -9,6 +9,7 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:landing-countries": "tsx --test scripts/landing-countries.test.ts",
+    "test:localized-routes": "tsx --test scripts/localized-routes.test.ts",
     "test:seo": "tsx --test scripts/seo-documents.test.ts",
     "test:panel-access": "tsx --test scripts/panel-access.test.ts",
     "seo:verify": "node scripts/verify-public-seo.ts"
