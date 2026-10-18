@@ -3,6 +3,7 @@ import type { RequestHandler } from "express";
 import { createProxyServer } from "http-proxy";
 import { logger } from "../lib/logger";
 import { getClerkProxyHost } from "./clerkProxyHost";
+import { getPublicSiteUrl } from "../lib/publicSiteUrl";
 
 export { getClerkProxyHost } from "./clerkProxyHost";
 
@@ -18,7 +19,7 @@ const clerkProxy = createProxyServer({
 clerkProxy.on("proxyReq", (proxyReq, req) => {
   let protocol = "https";
   try {
-    const configuredSite = process.env.PUBLIC_SITE_URL;
+    const configuredSite = getPublicSiteUrl();
     if (configuredSite) {
       const parsed = new URL(configuredSite);
       if (parsed.protocol === "http:" || parsed.protocol === "https:") {

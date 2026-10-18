@@ -1,7 +1,8 @@
 import type { IncomingHttpHeaders } from "node:http";
+import { getPublicSiteUrl } from "../lib/publicSiteUrl";
 
 export function getClerkProxyHost(req: { headers: IncomingHttpHeaders }): string | undefined {
-  const configuredSite = process.env.PUBLIC_SITE_URL?.trim();
+  const configuredSite = getPublicSiteUrl();
   if (configuredSite) {
     try {
       const url = new URL(configuredSite);

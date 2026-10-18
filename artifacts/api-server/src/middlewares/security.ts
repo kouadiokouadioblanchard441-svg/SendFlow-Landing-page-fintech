@@ -1,4 +1,5 @@
 import type { Request, RequestHandler } from "express";
+import { getPublicSiteUrl } from "../lib/publicSiteUrl";
 
 type RateLimitOptions = {
   windowMs: number;
@@ -73,7 +74,7 @@ function normalizeOrigin(value: string): string | null {
 
 const configuredOrigins = new Set(
   [
-    process.env.PUBLIC_SITE_URL,
+    getPublicSiteUrl(),
     ...(process.env.CORS_ORIGINS ?? "").split(","),
   ]
     .map((value) => value?.trim())

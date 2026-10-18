@@ -19,7 +19,7 @@ jobs:
     env:
       APP_URL: ${{ vars.APP_URL }}
       PUBLIC_URL: ${{ vars.PUBLIC_URL }}
-      VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+      VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || secrets.CLERK_PUBLISHABLE_KEY }}
       VITE_CLERK_PROXY_URL: /api/__clerk
       BASE_PATH: /
 
@@ -40,14 +40,6 @@ jobs:
 
       - name: Build production files
         run: pnpm run deploy:plesk
-
-      - name: Save Plesk build for download
-        uses: actions/upload-artifact@v4
-        with:
-          name: sendflow-plesk-dist
-          path: dist/
-          if-no-files-found: error
-          retention-days: 30
 
       - name: Prepare SSH
         env:

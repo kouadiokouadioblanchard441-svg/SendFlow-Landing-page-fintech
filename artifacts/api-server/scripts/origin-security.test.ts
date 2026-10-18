@@ -3,10 +3,13 @@ import test from "node:test";
 
 const previousNodeEnv = process.env.NODE_ENV;
 const previousPublicSiteUrl = process.env.PUBLIC_SITE_URL;
+const previousAppUrl = process.env.APP_URL;
 process.env.NODE_ENV = "production";
-process.env.PUBLIC_SITE_URL = "https://sendflow.example";
+delete process.env.PUBLIC_SITE_URL;
+process.env.APP_URL = "https://sendflow.example";
 
-const { createRateLimiter, isAllowedMutationOrigin } = await import("../src/middlewares/security.ts");
+const { createRateLimiter, isAllowedMutationOrigin } =
+  await import("../src/middlewares/security.ts");
 
 test("unsafe admin requests require the configured public origin", () => {
   assert.equal(isAllowedMutationOrigin(undefined), false);
@@ -21,19 +24,21 @@ test("the per-IP limiter bounds its bucket map under many unique addresses", () 
   let nextCalls = 0;
   let lastStatus = 0;
   const response = {
-    setHeader() { return this; },
+    setHeader() {
+      return this;
+    },
     status(status: number) {
       lastStatus = status;
       return this;
     },
-    json() { return this; },
+    json() {
+      return this;
+    },
   };
   const send = (ip: string) => {
-    limit(
-      { ip } as never,
-      response as never,
-      () => { nextCalls += 1; },
-    );
+    limit({ ip } as never, response as never, () => {
+      nextCalls += 1;
+    });
   };
 
   send("client-first");
@@ -51,4 +56,6 @@ test.after(() => {
   else process.env.NODE_ENV = previousNodeEnv;
   if (previousPublicSiteUrl === undefined) delete process.env.PUBLIC_SITE_URL;
   else process.env.PUBLIC_SITE_URL = previousPublicSiteUrl;
+  if (previousAppUrl === undefined) delete process.env.APP_URL;
+  else process.env.APP_URL = previousAppUrl;
 });

@@ -39,7 +39,7 @@ Le répertoire de sortie `dist` est généré par le build et reste exclu du dé
 pnpm run deploy:plesk
 ```
 
-Le workflow `.github/workflows/deploy-plesk.yml` utilise pnpm 10.26.1 et Node 22, puis livre le build à Plesk sur un push vers `main` ou par lancement manuel dans GitHub Actions. Il conserve aussi `dist/` comme artefact téléchargeable nommé `sendflow-plesk-dist` pendant 30 jours : ouvrir l’exécution dans **Actions**, puis télécharger l’artefact en bas de la page. Cet artefact n’est pas ajouté à l’historique Git. Aucun push n’est effectué par l’agent. Il n’est pas nécessaire d’exécuter un build ou `pnpm install` dans Plesk : le serveur compilé et les fichiers publics sont déjà générés dans GitHub Actions.
+Le workflow `.github/workflows/deploy-plesk.yml` utilise pnpm 10.26.1 et Node 22, puis livre le build à Plesk sur un push vers `main` ou par lancement manuel dans GitHub Actions. Aucun push n’est effectué par l’agent. Il n’est pas nécessaire d’exécuter un build ou `pnpm install` dans Plesk : le serveur compilé et les fichiers publics sont déjà générés dans GitHub Actions.
 
 ## Réglages GitHub
 
@@ -55,7 +55,7 @@ Créer ces **Actions secrets** :
 - `PLESK_APP_ROOT` : chemin absolu du dossier `dist` qui sera l’Application root Plesk. Le workflow transfère directement le contenu compilé dans ce dossier.
 - `PLESK_SSH_PRIVATE_KEY` : clé privée dédiée au déploiement.
 - `PLESK_KNOWN_HOSTS` : clé d’hôte SSH vérifiée, au format `known_hosts`.
-- `VITE_CLERK_PUBLISHABLE_KEY` : clé publique Clerk de production employée pendant le build frontend.
+- `VITE_CLERK_PUBLISHABLE_KEY` **ou** `CLERK_PUBLISHABLE_KEY` : clé publique Clerk de production pour le build frontend. Le workflow accepte les deux noms.
 
 Le dossier `PLESK_APP_ROOT` doit exister ou pouvoir être créé par l’utilisateur SSH. Celui-ci doit également pouvoir créer le dossier de staging voisin et écrire dans `tmp/`.
 
@@ -66,10 +66,12 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 - `NODE_ENV` — `production`.
 - `PORT` — fourni par Plesk ; ne pas le remplacer par une valeur fixe.
 - `NEON_DATABASE_URL` — connexion PostgreSQL utilisée par l’application.
-- `CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` — authentification et proxy Clerk.
+- `CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` — authentification et proxy Clerk au démarrage.
 - `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
 - `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
-- `APP_URL` ou `PUBLIC_URL` — `https://sendflow.africa`. Pour mettre à jour le sitemap et les canonicals, la même origine doit aussi être définie dans les Actions variables GitHub avant le build.
+- `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine, le proxy Clerk et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias.
+- `VITE_CLERK_PUBLISHABLE_KEY` est une variable de **build** : elle doit être définie comme secret GitHub Actions, pas seulement dans Plesk. Elle peut aussi être fournie au build sous le nom `CLERK_PUBLISHABLE_KEY`. La clé secrète `CLERK_SECRET_KEY` reste uniquement dans l’environnement Node.js de Plesk.
+- `APP_URL` ou `PUBLIC_URL` dans les Actions variables GitHub — `https://sendflow.africa`, utilisées pour générer le sitemap et les canonicals.
 - `LOG_LEVEL` — optionnel.
 - `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
 

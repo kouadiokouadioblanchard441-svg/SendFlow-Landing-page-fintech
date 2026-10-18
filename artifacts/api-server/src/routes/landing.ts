@@ -30,6 +30,7 @@ import {
 } from "../lib/publicObjectStorage";
 import { filterPublicLandingBundle } from "../lib/landingVisibility";
 import { createRateLimiter } from "../middlewares/security";
+import { getPublicSiteUrl } from "../lib/publicSiteUrl";
 import {
   countryOperatorAssignmentSchema,
   founderProfileSchema,
@@ -302,7 +303,7 @@ function escapeHtml(value: string): string {
 }
 
 function configuredPublicOrigin(): string {
-  const configuredSite = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  const configuredSite = getPublicSiteUrl()?.replace(/\/+$/, "");
   if (!configuredSite) {
     throw new Error("PUBLIC_SITE_URL doit être configurée avant l’envoi d’une campagne.");
   }
@@ -319,7 +320,7 @@ function configuredPublicOrigin(): string {
 }
 
 function publicSiteAssetUrl(origin: string, assetName: string): string {
-  const configuredSite = process.env.PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  const configuredSite = getPublicSiteUrl()?.replace(/\/+$/, "");
   const basePath = process.env.BASE_PATH?.trim().replace(/\/+$/, "") || "";
   return `${configuredSite || origin}${basePath}/${assetName}`;
 }
