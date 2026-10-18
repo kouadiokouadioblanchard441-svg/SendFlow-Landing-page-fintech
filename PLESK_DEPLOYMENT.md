@@ -39,7 +39,7 @@ Le répertoire de sortie `dist` est généré par le build et reste exclu du dé
 pnpm run deploy:plesk
 ```
 
-Le workflow `.github/workflows/deploy-plesk.yml` utilise pnpm 10.26.1 et Node 22, puis livre le build à Plesk sur un push vers `main` ou par lancement manuel dans GitHub Actions. Aucun push n’est effectué par l’agent. Il n’est pas nécessaire d’exécuter un build ou `pnpm install` dans Plesk : le serveur compilé et les fichiers publics sont déjà générés dans GitHub Actions.
+Le workflow `.github/workflows/deploy-plesk.yml` utilise pnpm 10.26.1 et Node 22, puis livre le build à Plesk sur un push vers `main` ou par lancement manuel dans GitHub Actions. Il conserve aussi `dist/` comme artefact téléchargeable nommé `sendflow-plesk-dist` pendant 30 jours : ouvrir l’exécution dans **Actions**, puis télécharger l’artefact en bas de la page. Cet artefact n’est pas ajouté à l’historique Git. Aucun push n’est effectué par l’agent. Il n’est pas nécessaire d’exécuter un build ou `pnpm install` dans Plesk : le serveur compilé et les fichiers publics sont déjà générés dans GitHub Actions.
 
 ## Réglages GitHub
 
