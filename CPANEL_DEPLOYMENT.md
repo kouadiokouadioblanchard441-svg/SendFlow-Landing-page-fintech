@@ -23,6 +23,9 @@ workspace.
   using the actual path shown by cPanel).
 - **Startup file:** `index.cjs` at that root. It loads `dist/index.cjs`.
 - **Node.js:** Node 22, or Node 20.19 or newer.
+- **Package manager:** Corepack should be available so the hook uses the exact
+  pnpm version pinned in the root `package.json` (`pnpm@10.26.1`). The hook
+  rejects a mismatched global pnpm rather than silently using it.
 - **Environment:** set the app's production variables in cPanel's Node.js app
   configuration. `APP_URL` should be `https://sendflow.africa`. The build hook
   also uses this public origin (and defaults it to that value).

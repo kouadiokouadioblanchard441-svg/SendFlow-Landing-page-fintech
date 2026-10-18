@@ -24,12 +24,32 @@ if (!((major === 20 && minor >= 19) || major >= 22)) {
 }
 NODE
 
-if command -v pnpm >/dev/null 2>&1; then
-  PNPM=(pnpm)
-elif command -v corepack >/dev/null 2>&1; then
+EXPECTED_PNPM="$(
+  node -p 'require("./package.json").packageManager?.match(/^pnpm@(.+)$/)?.[1] ?? ""'
+)"
+if [[ -z "$EXPECTED_PNPM" ]]; then
+  echo "package.json must pin the pnpm version in packageManager." >&2
+  exit 1
+fi
+
+if command -v corepack >/dev/null 2>&1; then
   PNPM=(corepack pnpm)
+elif command -v pnpm >/dev/null 2>&1; then
+  INSTALLED_PNPM="$(pnpm --version)"
+  if [[ "$INSTALLED_PNPM" != "$EXPECTED_PNPM" ]]; then
+    echo "This project requires pnpm $EXPECTED_PNPM, but cPanel provides pnpm $INSTALLED_PNPM and Corepack is unavailable." >&2
+    echo "Enable Corepack for the selected Node.js version so it can use package.json's packageManager pin." >&2
+    exit 1
+  fi
+  PNPM=(pnpm)
 else
   echo "pnpm or Corepack is required in the cPanel Node.js environment." >&2
+  exit 1
+fi
+
+INSTALLED_PNPM="$("${PNPM[@]}" --version)"
+if [[ "$INSTALLED_PNPM" != "$EXPECTED_PNPM" ]]; then
+  echo "Corepack selected pnpm $INSTALLED_PNPM; this project requires pnpm $EXPECTED_PNPM." >&2
   exit 1
 fi
 
