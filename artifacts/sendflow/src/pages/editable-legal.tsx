@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import { ProtectedImage } from '@/components/protected-image';
-import { getLocaleFromPath, getLocalizedPath, navigateToLocale } from '@/lib/localized-routes';
+import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 
 type LegalPage = {
@@ -73,6 +73,7 @@ export function EditableLegalPage({
   sections: LegalSection[];
   settings: LegalSettings | null;
 }) {
+  const [, navigate] = useLocation();
   const [locale] = useState<'fr' | 'en'>(() => getLocaleFromPath(window.location.pathname));
   const isFrench = locale === 'fr';
   const companyName = settings?.companyName || 'Flow Digital SARL';
@@ -99,7 +100,7 @@ export function EditableLegalPage({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr')}
+              onClick={() => navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr'))}
               aria-label={isFrench ? 'Passer en anglais' : 'Passer en français'}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#1d1d1f]/15 bg-white px-2.5 py-2 text-[11px] font-bold transition-colors hover:border-[#7c3aed] hover:text-[#7c3aed] sm:px-3"
             >

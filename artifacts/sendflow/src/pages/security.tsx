@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronRight, Globe2, Menu, X } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import securityLockIcon from '@assets/generated_images/sendflow-security-lock-icon-clean.png';
@@ -9,7 +9,7 @@ import securityHeroArt from '@assets/generated_images/sendflow-security-hero-3d-
 import { SendFlowFooter, type FooterContentItem, type FooterSettings } from '@/components/sendflow-footer';
 import { ProtectedImage } from '@/components/protected-image';
 import { useSeo } from '@/lib/seo';
-import { getLocaleFromPath, getLocalizedPath, navigateToLocale } from '@/lib/localized-routes';
+import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 
 type Language = 'fr' | 'en';
 
@@ -81,6 +81,7 @@ function Brand() {
 }
 
 export default function SecurityPage() {
+  const [, navigate] = useLocation();
   const [language] = useState<Language>(() => getLocaleFromPath(window.location.pathname));
   const [menuOpen, setMenuOpen] = useState(false);
   const [settings, setSettings] = useState<FooterSettings | null>(null);
@@ -116,7 +117,7 @@ export default function SecurityPage() {
 
   const closeMenu = () => setMenuOpen(false);
   const toggleLanguage = () => {
-    navigateToLocale(window.location.pathname, language === 'fr' ? 'en' : 'fr');
+    navigate(getLocalizedPath(window.location.pathname, language === 'fr' ? 'en' : 'fr'));
     closeMenu();
   };
   const supportEmail = settings?.securityContactEmail?.trim() || settings?.supportEmail?.trim() || '';

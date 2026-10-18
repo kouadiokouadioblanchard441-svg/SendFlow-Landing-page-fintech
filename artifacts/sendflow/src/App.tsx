@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
-import { getLocaleFromPath, getLocalizedPath, navigateToLocale } from '@/lib/localized-routes';
+import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
 import NotFound from '@/pages/not-found';
@@ -572,7 +572,7 @@ function AboutRoute() {
       }}
       onBackHome={() => navigate(getLocalizedPath('/', language))}
       onDownload={() => navigate(getLocalizedPath('/download', language))}
-      onChangeLocale={(nextLocale) => navigateToLocale(window.location.pathname, nextLocale)}
+      onChangeLocale={(nextLocale) => navigate(getLocalizedPath(window.location.pathname, nextLocale))}
     />
   );
 }
@@ -752,6 +752,7 @@ function AdminLoginForm({ panelToken, adminEmail, panelEmail }: { panelToken: st
 
 function LandingPage() {
   // Editorial copy is loaded from the public landing bundle.
+  const [, navigate] = useLocation();
   const [language] = useState<Language>(() => getLocaleFromPath(window.location.pathname));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<LandingCountryView>(countries[0]);
@@ -902,7 +903,7 @@ function LandingPage() {
   const goTo = (id: string) => {
     setMobileOpen(false);
     if (id === 'security') {
-      window.location.assign(getLocalizedPath('/securite', language));
+      navigate(getLocalizedPath('/securite', language));
       return;
     }
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -933,10 +934,16 @@ function LandingPage() {
             <BrandLockup />
           </button>
           <div className="hidden items-center gap-7 md:flex">
-            {publicNavItems.map((item) => <a key={item.id} href={getLocalizedPath(publicNavHref(item.id), language)} onClick={() => setMobileOpen(false)} className="link-underline text-[13px] font-medium text-[#5e5766] transition-colors hover:text-[#6d35d8]" data-testid={`link-nav-${item.id}`}>{t(item.label, language)}</a>)}
+            {publicNavItems.map((item) => {
+              const href = getLocalizedPath(publicNavHref(item.id), language);
+              const className = "link-underline text-[13px] font-medium text-[#5e5766] transition-colors hover:text-[#6d35d8]";
+              return href.startsWith('#')
+                ? <a key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} data-testid={`link-nav-${item.id}`}>{t(item.label, language)}</a>
+                : <Link key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} data-testid={`link-nav-${item.id}`}>{t(item.label, language)}</Link>;
+            })}
           </div>
           <div className="hidden items-center gap-3 md:flex">
-            <button onClick={() => navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr')} className="flex items-center gap-1 rounded-full px-2 py-2 text-[12px] font-semibold text-[#5e5766] hover:text-[#6d35d8]" data-testid="button-language">{isFrench ? 'EN' : 'FR'} <Globe2 size={14} /></button>
+            <button onClick={() => navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr'))} className="flex items-center gap-1 rounded-full px-2 py-2 text-[12px] font-semibold text-[#5e5766] hover:text-[#6d35d8]" data-testid="button-language">{isFrench ? 'EN' : 'FR'} <Globe2 size={14} /></button>
              <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="rounded-full bg-[#211d2c] px-4 py-2.5 text-[12px] font-semibold !text-white transition-transform hover:-translate-y-0.5" data-testid="button-nav-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-1 inline" size={14} /></Link>
           </div>
           <button type="button" onClick={downloadBrief} className="hidden items-center gap-1 rounded-full px-2 py-2 text-[11px] font-semibold text-[#6d35d8] lg:flex" data-testid="button-download-brief">{isFrench ? 'Brief' : 'Brief'} <ArrowDownRight size={13} /></button>
@@ -951,9 +958,15 @@ function LandingPage() {
             <button onClick={() => setMobileOpen(false)} className="rounded-full border border-[#2d2535]/10 p-2" data-testid="button-close-menu"><X size={19} /></button>
           </div>
           <div className="mt-16 flex flex-col gap-6">
-            {publicNavItems.map((item) => <a key={item.id} href={getLocalizedPath(publicNavHref(item.id), language)} onClick={() => setMobileOpen(false)} className="flex items-center border-b border-[#2d2535]/10 pb-4 text-left text-2xl font-semibold tracking-[-.04em]" data-testid={`link-mobile-${item.id}`}>{t(item.label, language)}</a>)}
+            {publicNavItems.map((item) => {
+              const href = getLocalizedPath(publicNavHref(item.id), language);
+              const className = "flex items-center border-b border-[#2d2535]/10 pb-4 text-left text-2xl font-semibold tracking-[-.04em]";
+              return href.startsWith('#')
+                ? <a key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} data-testid={`link-mobile-${item.id}`}>{t(item.label, language)}</a>
+                : <Link key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} data-testid={`link-mobile-${item.id}`}>{t(item.label, language)}</Link>;
+            })}
           </div>
-          <button onClick={() => { navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr'); setMobileOpen(false); }} className="mt-12 flex items-center gap-2 text-sm font-semibold text-[#6d35d8]" data-testid="button-mobile-language"><span aria-hidden="true">{isFrench ? '🇬🇧' : '🇫🇷'}</span> {isFrench ? 'Passer en anglais' : 'Switch to French'}</button>
+          <button onClick={() => { navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr')); setMobileOpen(false); }} className="mt-12 flex items-center gap-2 text-sm font-semibold text-[#6d35d8]" data-testid="button-mobile-language"><span aria-hidden="true">{isFrench ? '🇬🇧' : '🇫🇷'}</span> {isFrench ? 'Passer en anglais' : 'Switch to French'}</button>
              <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="mt-5 block w-full rounded-full bg-[#6d35d8] px-5 py-4 text-center text-sm font-semibold !text-white" data-testid="button-mobile-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2 inline" size={16} /></Link>
         </div>
       </div>}
@@ -1166,7 +1179,7 @@ function LandingPage() {
            whatsapp: landingBundle?.settings?.homeContactWhatsapp,
          }}
        />
-      <footer className="bg-[#211d2c] px-5 py-12 text-[#fbf8ef] sm:px-8 sm:py-16"><div className="mx-auto max-w-[1240px]"><div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_.6fr_.6fr_.8fr]"><div><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8cd4d] text-[#211d2c]"><ArrowDownRight size={17} strokeWidth={2.5} /></span><span className="text-[17px] font-bold tracking-[-.045em]">sendflow<span className="text-[#e8cd4d]">.</span></span></div><p className="mt-6 max-w-[280px] text-[13px] leading-6 text-[#bcb6c5]">{isFrench ? 'Une vision plus calme des mouvements d’argent en Afrique.' : 'A calmer vision for moving money across Africa.'}</p></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Explorer' : 'Explore'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]">{navItems.slice(0, 3).map((item) => <button key={item.id} onClick={() => goTo(item.id)} className="w-fit transition-colors hover:text-[#e8cd4d]" data-testid={`link-footer-${item.id}`}>{t(item.label, language)}</button>)}</div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Projet' : 'Project'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]"><button onClick={() => goTo('security')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-security">{isFrench ? 'Notre approche' : 'Our approach'}</button><button onClick={() => goTo('faq')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-faq">{isFrench ? 'Questions' : 'Questions'}</button><button onClick={() => goTo('join')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-join">{isFrench ? 'Contact' : 'Contact'}</button></div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Statut' : 'Status'}</p><div className="mt-5 flex items-center gap-2 text-[13px] text-[#bcb6c5]"><span className="h-2 w-2 rounded-full bg-[#9adacb]" />{isFrench ? 'Démo en évolution' : 'Demo in progress'}</div><button onClick={() => navigateToLocale(window.location.pathname, isFrench ? 'en' : 'fr')} className="mt-5 flex items-center gap-2 text-[12px] font-semibold text-[#e8cd4d]" data-testid="button-footer-language"><Globe2 size={14} /> {isFrench ? 'English version' : 'Version française'}</button></div></div><div className="mt-14 flex flex-col justify-between gap-4 border-t border-[#fbf8ef]/15 pt-5 text-[10px] text-[#8d8792] sm:flex-row"><span>© 2026 SendFlow Studio. {isFrench ? 'Projet conceptuel.' : 'Concept project.'}</span><span className="flex gap-4"><span>{isFrench ? 'Confidentialité' : 'Privacy'}</span><span>{isFrench ? 'Mentions' : 'Legal'}</span></span></div></div></footer>
+      <footer className="bg-[#211d2c] px-5 py-12 text-[#fbf8ef] sm:px-8 sm:py-16"><div className="mx-auto max-w-[1240px]"><div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_.6fr_.6fr_.8fr]"><div><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8cd4d] text-[#211d2c]"><ArrowDownRight size={17} strokeWidth={2.5} /></span><span className="text-[17px] font-bold tracking-[-.045em]">sendflow<span className="text-[#e8cd4d]">.</span></span></div><p className="mt-6 max-w-[280px] text-[13px] leading-6 text-[#bcb6c5]">{isFrench ? 'Une vision plus calme des mouvements d’argent en Afrique.' : 'A calmer vision for moving money across Africa.'}</p></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Explorer' : 'Explore'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]">{navItems.slice(0, 3).map((item) => <button key={item.id} onClick={() => goTo(item.id)} className="w-fit transition-colors hover:text-[#e8cd4d]" data-testid={`link-footer-${item.id}`}>{t(item.label, language)}</button>)}</div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Projet' : 'Project'}</p><div className="mt-5 flex flex-col gap-3 text-[13px] text-[#bcb6c5]"><button onClick={() => goTo('security')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-security">{isFrench ? 'Notre approche' : 'Our approach'}</button><button onClick={() => goTo('faq')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-faq">{isFrench ? 'Questions' : 'Questions'}</button><button onClick={() => goTo('join')} className="w-fit hover:text-[#e8cd4d]" data-testid="link-footer-join">{isFrench ? 'Contact' : 'Contact'}</button></div></div><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#9adacb]">{isFrench ? 'Statut' : 'Status'}</p><div className="mt-5 flex items-center gap-2 text-[13px] text-[#bcb6c5]"><span className="h-2 w-2 rounded-full bg-[#9adacb]" />{isFrench ? 'Démo en évolution' : 'Demo in progress'}</div><button onClick={() => navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr'))} className="mt-5 flex items-center gap-2 text-[12px] font-semibold text-[#e8cd4d]" data-testid="button-footer-language"><Globe2 size={14} /> {isFrench ? 'English version' : 'Version française'}</button></div></div><div className="mt-14 flex flex-col justify-between gap-4 border-t border-[#fbf8ef]/15 pt-5 text-[10px] text-[#8d8792] sm:flex-row"><span>© 2026 SendFlow Studio. {isFrench ? 'Projet conceptuel.' : 'Concept project.'}</span><span className="flex gap-4"><span>{isFrench ? 'Confidentialité' : 'Privacy'}</span><span>{isFrench ? 'Mentions' : 'Legal'}</span></span></div></div></footer>
     </div>
   );
 }

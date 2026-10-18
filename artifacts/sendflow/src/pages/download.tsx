@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowDownToLine, ArrowRight, ChevronRight, Globe2, Headphones, Menu, X } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import androidMaterialIcon from '@assets/google-android-material-icon.svg';
@@ -16,7 +16,7 @@ import { SendFlowFooter } from '@/components/sendflow-footer';
 import { ProtectedImage } from '@/components/protected-image';
 import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 import { useSeo } from '@/lib/seo';
-import { getLocaleFromPath, getLocalizedPath, navigateToLocale } from '@/lib/localized-routes';
+import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 
 type Language = 'fr' | 'en';
 
@@ -261,6 +261,7 @@ function getSafeApkUrl(value?: string | null) {
 }
 
 export default function DownloadPage() {
+  const [, navigate] = useLocation();
   const [language] = useState<Language>(() => getLocaleFromPath(window.location.pathname));
   const [menuOpen, setMenuOpen] = useState(false);
   const [settings, setSettings] = useState<DownloadSettings | null>(null);
@@ -291,7 +292,7 @@ export default function DownloadPage() {
   }, []);
 
   const closeMenu = () => setMenuOpen(false);
-  const toggleLanguage = () => { navigateToLocale(window.location.pathname, language === 'fr' ? 'en' : 'fr'); closeMenu(); };
+  const toggleLanguage = () => { navigate(getLocalizedPath(window.location.pathname, language === 'fr' ? 'en' : 'fr')); closeMenu(); };
   const supportEmail = settings?.downloadContactEmail?.trim() || settings?.supportEmail?.trim() || '';
   const supportPhone = settings?.downloadContactPhone?.trim() || '';
   const whatsappHref = getWhatsAppHref(settings?.downloadContactWhatsapp);
