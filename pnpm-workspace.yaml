@@ -64,6 +64,12 @@ onlyBuiltDependencies:
   - msw
   - unrs-resolver
 
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+  msw: true
+  unrs-resolver: true
+
 overrides:
   # The runtime uses linux-x64 only, so other platform binaries can be excluded.
   "esbuild>@esbuild/darwin-arm64": "-"
