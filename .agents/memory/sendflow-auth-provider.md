@@ -1,10 +1,10 @@
 ---
 name: SendFlow authentication scope
-description: The user's standing decision about authentication providers and the admin panel.
+description: The user's standing decision to keep authentication app-owned.
 ---
 
-Do not use Clerk in SendFlow. The user explicitly requested removing the service everywhere. Preserve the existing independent admin login/session unless the user asks to change it.
+Keep SendFlow's authentication app-owned. Do not add a third-party identity provider. Preserve the existing independent admin login/session unless the user asks to change it.
 
-**Why:** Clerk caused confusion during the Plesk deployment discussion, and the user does not want SendFlow to depend on it.
+**Why:** The user explicitly wants SendFlow to manage its own user data and avoid external identity-provider dependencies.
 
-**How to apply:** Do not reintroduce Clerk packages, auth routes, proxy middleware, keys, or deployment requirements. Keep admin access protected by its current separate server-side authentication.
+**How to apply:** Keep credentials, sessions, and application data under SendFlow's control. Preserve server-side admin protection.

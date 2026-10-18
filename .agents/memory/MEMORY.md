@@ -10,4 +10,4 @@
 - [Newsletter campaign retries](newsletter-campaign-retries.md) — Keep failed sends read-only until per-recipient delivery tracking can prevent accidental duplicate campaigns.
 - [Empty CMS collections](empty-cms-collections.md) — A loaded empty public collection is authoritative; never resurrect defaults just because its length is zero.
 - [Admin content editability](admin-content-editability.md) — The user requires all SendFlow site information to be editable in the admin panel, with nothing hardcoded.
-- [SendFlow authentication scope](sendflow-auth-provider.md) — Do not use Clerk; preserve SendFlow's separate protected admin session.
+- [SendFlow authentication scope](sendflow-auth-provider.md) — Keep admin access app-owned and avoid external identity-provider dependencies.
