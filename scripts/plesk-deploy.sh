@@ -52,14 +52,7 @@ try {
 NODE
 )"
 
-export VITE_CLERK_PUBLISHABLE_KEY="${VITE_CLERK_PUBLISHABLE_KEY:-${CLERK_PUBLISHABLE_KEY:-}}"
-if [[ "$VITE_CLERK_PUBLISHABLE_KEY" != pk_live_* ]]; then
-  echo "Set the production Clerk publishable key (pk_live_...) in the production build environment." >&2
-  exit 1
-fi
-
 export BASE_PATH="${BASE_PATH:-/}"
-export VITE_CLERK_PROXY_URL="${VITE_CLERK_PROXY_URL:-/api/__clerk}"
 
 echo "Installing workspace dependencies..."
 pnpm install --frozen-lockfile --prod=false

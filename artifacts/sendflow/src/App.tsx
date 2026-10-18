@@ -2,9 +2,6 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import { ArrowDownRight, ArrowRight, Check, ChevronDown, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
@@ -78,8 +75,6 @@ import visibleDetailsIcon from './assets/sendflow-icon-visible-details.svg';
 import privateIcon from './assets/sendflow-icon-private.svg';
 
 const queryClient = new QueryClient();
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 function consumePanelCredentials(): PanelCredentials | null {
   const result = takePanelCredentialsFromUrl(new URL(window.location.href));
@@ -421,72 +416,27 @@ function StoreBadge({ store, icon, soonLabel, href, className = '' }: { store: s
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProvider
-        publishableKey={clerkPubKey}
-        proxyUrl={clerkProxyUrl}
-        signInUrl={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
-        appearance={{
-          theme: shadcn,
-          cssLayerName: 'clerk',
-          options: {
-            logoPlacement: 'inside',
-            logoLinkUrl: basePath || '/',
-            logoImageUrl: `${window.location.origin}${basePath}/sendflow-favicon.png`,
-          },
-          variables: {
-            colorPrimary: '#1769ff',
-            colorForeground: '#192231',
-            colorMutedForeground: '#667386',
-            colorBackground: '#ffffff',
-            colorInput: '#f6f8fb',
-            colorInputForeground: '#192231',
-            colorNeutral: '#e2e8ef',
-            colorDanger: '#c53b3b',
-            fontFamily: 'DM Sans',
-            borderRadius: '0.75rem',
-          },
-          elements: {
-            rootBox: 'w-full flex justify-center',
-            cardBox: 'bg-white rounded-2xl w-[440px] max-w-full overflow-hidden',
-            card: '!shadow-none !border-0 !bg-transparent',
-            footer: '!shadow-none !border-0 !bg-transparent',
-            headerTitle: 'text-[#192231]',
-            headerSubtitle: 'text-[#667386]',
-            socialButtonsBlockButtonText: 'text-[#192231]',
-            formFieldLabel: 'text-[#192231]',
-            footerActionLink: 'text-[#1769ff]',
-            footerActionText: 'text-[#667386]',
-            dividerText: 'text-[#667386]',
-            formButtonPrimary: 'bg-[#1769ff] hover:bg-[#0d55d6]',
-            formFieldInput: 'bg-[#f6f8fb] text-[#192231] border-[#e2e8ef]',
-          },
-        }}
-      >
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Switch>
-              <Route path="/" component={LandingPage} />
-              <Route path="/download" component={DownloadPage} />
-              <Route path="/fonctionnalites" component={FeaturesPage} />
-              <Route path="/securite" component={SecurityPage} />
-              <Route path="/a-propos" component={AboutRoute} />
-              <Route path="/sign-in/*?" component={SignInPage} />
-              <Route path="/sign-up/*?" component={SignUpPage} />
-              <Route path="/conditions-utilisation" component={() => <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />} />
-              <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
-              <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
-              <Route path="/france-senegal" component={CorridorGuidePage} />
-              <Route path="/en/*?" component={EnglishPublicRoute} />
-              <Route path="/admin" component={LegacyAdminRedirect} />
-              <Route path="/admin/*" component={LegacyAdminRedirect} />
-              <Route path="/panel" component={PanelRoute} />
-              <Route component={NotFoundRoute} />
-            </Switch>
-            <Toaster />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </ClerkProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Switch>
+            <Route path="/" component={LandingPage} />
+            <Route path="/download" component={DownloadPage} />
+            <Route path="/fonctionnalites" component={FeaturesPage} />
+            <Route path="/securite" component={SecurityPage} />
+            <Route path="/a-propos" component={AboutRoute} />
+            <Route path="/conditions-utilisation" component={() => <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />} />
+            <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
+            <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
+            <Route path="/france-senegal" component={CorridorGuidePage} />
+            <Route path="/en/*?" component={EnglishPublicRoute} />
+            <Route path="/admin" component={LegacyAdminRedirect} />
+            <Route path="/admin/*" component={LegacyAdminRedirect} />
+            <Route path="/panel" component={PanelRoute} />
+            <Route component={NotFoundRoute} />
+          </Switch>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
     </WouterRouter>
   );
 }
@@ -503,28 +453,6 @@ function EnglishPublicRoute() {
   if (path === '/en/legal-notice') return <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />;
   if (path === '/en/france-senegal') return <CorridorGuidePage />;
   return <NotFoundRoute />;
-}
-
-function SignInPage() {
-  useSeo({
-    path: '/sign-in',
-    locale: 'fr',
-    title: 'Connexion · SendFlow',
-    description: 'Espace de connexion SendFlow.',
-    robots: 'noindex,nofollow',
-  });
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f6f8fb] px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>;
-}
-
-function SignUpPage() {
-  useSeo({
-    path: '/sign-up',
-    locale: 'fr',
-    title: 'Créer un compte · SendFlow',
-    description: 'Espace de création de compte SendFlow.',
-    robots: 'noindex,nofollow',
-  });
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f6f8fb] px-4"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>;
 }
 
 function PublicLegalRoute({ page: Page, slug }: { page: (props: LegalPageProps) => ReactElement; slug: string }) {

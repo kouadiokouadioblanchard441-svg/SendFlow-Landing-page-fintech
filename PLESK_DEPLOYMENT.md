@@ -44,14 +44,12 @@ pnpm run deploy:plesk
 Le flux visé est : pousser le code sur GitHub, puis cliquer sur **Pull + Deploy Now** dans Plesk. Dans les actions de déploiement du dépôt Git Plesk, configure une seule fois la commande :
 
 ```sh
-PUBLIC_SITE_URL=https://sendflow.africa VITE_CLERK_PUBLISHABLE_KEY=pk_live_... bash scripts/plesk-git-deploy.sh
+PUBLIC_SITE_URL=https://sendflow.africa bash scripts/plesk-git-deploy.sh
 ```
-
-Remplace `pk_live_...` par la clé publique Clerk de production du projet. Ces deux valeurs sont injectées dans la commande de build ; la clé publique n’est pas la clé secrète Clerk.
 
 Cette commande installe les dépendances du workspace, exécute les tests, les vérifications TypeScript et le build de production, puis crée `dist/` avec l’application compilée et demande le redémarrage Passenger. Après **Pull + Deploy Now**, clique sur **Restart** dans Node.js si Plesk ne redémarre pas automatiquement.
 
-La commande reçoit une origine sous `PUBLIC_SITE_URL`, `APP_URL` ou `PUBLIC_URL`, ainsi que `VITE_CLERK_PUBLISHABLE_KEY`. Cette clé publique peut aussi être fournie sous le nom `CLERK_PUBLISHABLE_KEY`. Ces valeurs ne sont pas des secrets privés ; ne mets jamais `CLERK_SECRET_KEY` ni `NEON_DATABASE_URL` dans la commande de déploiement.
+La commande reçoit une origine sous `PUBLIC_SITE_URL`, `APP_URL` ou `PUBLIC_URL`. Ne mets pas les secrets de production dans la commande de déploiement.
 
 Node.js 22 LTS et pnpm 10.26.1 sont requis pour le build. Le script s’arrête avec une erreur explicite si une variable de build manque ou si sa valeur est invalide.
 
@@ -62,12 +60,10 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 - `NODE_ENV` — `production`.
 - `PORT` — fourni par Plesk ; ne pas le remplacer par une valeur fixe.
 - `NEON_DATABASE_URL` — connexion PostgreSQL utilisée par l’application.
-- `CLERK_PUBLISHABLE_KEY` et `CLERK_SECRET_KEY` — authentification et proxy Clerk au démarrage.
 - `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
 - `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
-- `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine, le proxy Clerk et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias.
+- `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias.
 - `APP_URL` — `https://sendflow.africa`, utilisée au build. Le serveur accepte également `APP_URL` ou `PUBLIC_URL` comme alias de `PUBLIC_SITE_URL`.
-- `VITE_CLERK_PUBLISHABLE_KEY` — clé publique Clerk `pk_live_...` fournie à l’action de build Plesk. Elle peut aussi être fournie au build sous le nom `CLERK_PUBLISHABLE_KEY`.
 - `LOG_LEVEL` — optionnel.
 - `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
 
@@ -80,7 +76,6 @@ Le build et `pnpm install` sont effectués par l’action post-déploiement Ples
 Après une livraison réussie, vérifier dans le File Manager que le dossier d’application contient `index.cjs`, les workers Pino et `public/index.html`. Tester :
 
 - `https://<domaine-configuré>/`
-- `https://<domaine-configuré>/sign-in`
 - `https://<domaine-configuré>/api/healthz`
 
 Les pages protégées nécessitant une authentification ne sont pas vérifiables sans session. Une réponse HTTP 200 à `/api/healthz` vérifie que le processus sert l’API, mais ne prouve pas à elle seule que chaque intégration tierce fonctionne.

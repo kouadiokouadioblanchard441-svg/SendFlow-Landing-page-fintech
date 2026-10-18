@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-SendFlow's web project serves public marketing, landing, download, and legal pages, plus an authenticated administration panel for site content and newsletter campaigns. It uses React/Vite, an Express API, PostgreSQL through Drizzle, Clerk for customer-facing identity flows, a separate custom admin session, and Resend for email campaigns. Plesk production is intended to run the bundled Express server, which serves `dist/public` and the API.
+SendFlow's web project serves public marketing, landing, download, and legal pages, plus an authenticated administration panel for site content and newsletter campaigns. It uses React/Vite, an Express API, PostgreSQL through Drizzle, a custom admin session, and Resend for email campaigns. Plesk production is intended to run the bundled Express server, which serves `dist/public` and the API.
 
 ## Assets
 
 - **Admin credentials and sessions** — password hashes, panel URL token/email, and admin session cookies. Their compromise could expose CMS data and permit newsletter sends or edits.
 - **Subscriber data** — email addresses, consent state, and unsubscribe tokens stored in PostgreSQL.
 - **Site and legal content** — CMS drafts, visibility state, founder/contact details, and uploaded media.
-- **Application secrets and database access** — Neon, Clerk, and Resend credentials; these must remain server-side and out of logs and client bundles.
+- **Application secrets and database access** — Neon and Resend credentials; these must remain server-side and out of logs and client bundles.
 - **Operational evidence** — logs and records needed to investigate admin changes and campaign sends, without recording credentials or private URL tokens.
 
 ## Trust Boundaries
@@ -17,7 +17,7 @@ SendFlow's web project serves public marketing, landing, download, and legal pag
 - **Visitor/browser to Express** — requests cross the hosting reverse proxy and enter public or authenticated API routes; all client data is untrusted.
 - **Public to admin** — public landing/newsletter endpoints are separate from CMS, subscriber, and campaign operations, which require the admin session.
 - **Express to PostgreSQL** — server routes read and modify content, subscriber records, campaign state, and admin sessions.
-- **Express to third parties** — Clerk authentication proxy and Resend API calls use server-side configuration and credentials.
+- **Express to third parties** — Resend API calls use server-side configuration and credentials.
 - **Application to object storage** — media uploads and public media reads cross a storage boundary. The current development-environment storage dependency is not a Plesk-compatible production storage design.
 - **Development to Plesk production** — build-time `VITE_*` values become public frontend configuration; runtime server credentials must only be configured on the server.
 
@@ -32,7 +32,7 @@ SendFlow's web project serves public marketing, landing, download, and legal pag
 
 ### Spoofing
 
-Admin authentication uses a scrypt password hash, random session tokens stored as hashes, and an HttpOnly/SameSite cookie; production cookies require HTTPS. Admin access must remain server-enforced, rate limits must identify real clients behind Plesk without trusting arbitrary forwarded headers, and the panel URL token must not be treated as a replacement for the password. Clerk must be verified with production keys and the actual Plesk domain before launch.
+Admin authentication uses a scrypt password hash, random session tokens stored as hashes, and an HttpOnly/SameSite cookie; production cookies require HTTPS. Admin access must remain server-enforced, rate limits must identify real clients behind Plesk without trusting arbitrary forwarded headers, and the panel URL token must not be treated as a replacement for the password.
 
 ### Tampering
 

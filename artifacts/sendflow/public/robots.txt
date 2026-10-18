@@ -3,6 +3,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /panel/
-Disallow: /sign-in
-Disallow: /sign-up
 Sitemap: /sitemap.xml
