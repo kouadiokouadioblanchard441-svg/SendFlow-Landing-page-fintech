@@ -14,3 +14,9 @@ For cPanel Git deployments, use `.cpanel.yml` to run the build after cPanel upda
 **Why:** The cPanel host used a newer global pnpm than the workspace pin and rejected esbuild's install script despite esbuild already being allowlisted for pnpm 10.
 
 **How to apply:** When a host reports ignored dependency build scripts, compare its pnpm version with the lockfile/workspace version; keep both pnpm config formats synchronized rather than broadening script trust.
+
+The control-panel screenshots for `sendflow.africa` identify Plesk, so its deployment must use the Plesk Git action rather than `.cpanel.yml`.
+
+**Why:** The hosted Node application is configured through Plesk Passenger; cPanel deployment tasks do not run in that panel.
+
+**How to apply:** Follow the Plesk deploy hook and restart-file location when deploying this domain; use `.cpanel.yml` only for a separate cPanel-hosted checkout.

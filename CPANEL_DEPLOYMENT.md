@@ -10,8 +10,8 @@ then:
 1. Installs the locked workspace dependencies with pnpm.
 2. Runs the full test, type-check, frontend, and server build.
 3. Verifies the production files in `dist/`.
-4. Touches `tmp/restart.txt` in the Node application root to request a Passenger
-   restart.
+4. Touches `dist/tmp/restart.txt` to request a Passenger restart. This matches
+   the configured Node application root `dist`.
 
 `dist/` remains ignored by Git intentionally. cPanel generates it after each
 deployment, so it does not need to be committed or uploaded from the Replit
@@ -44,5 +44,5 @@ bypass the Node application for page and API requests.
 The repository hook cannot change cPanel's Application Root, domain Document
 Root, Node.js version, or environment variables. Configure those once in cPanel.
 After a Git deployment, cPanel should run `.cpanel.yml`; if Passenger does not
-restart from `tmp/restart.txt`, use **Restart App** in the Node.js application
-dashboard.
+restart from `dist/tmp/restart.txt`, use **Restart App** in the Node.js
+application dashboard.

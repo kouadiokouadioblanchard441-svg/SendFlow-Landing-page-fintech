@@ -105,12 +105,13 @@ for file in "${required_files[@]}"; do
   fi
 done
 
-# Passenger watches this file to restart the application from its application root.
-mkdir -p tmp
-touch tmp/restart.txt
+# Passenger watches the restart file inside the configured Node application root.
+mkdir -p dist/tmp
+touch dist/tmp/restart.txt
 
 echo "cPanel deployment complete."
 echo "Application root: $ROOT_DIR"
 echo "Startup file: index.cjs"
 echo "Compiled server: dist/index.cjs"
 echo "Static files: dist/public"
+echo "Passenger restart marker: dist/tmp/restart.txt"
