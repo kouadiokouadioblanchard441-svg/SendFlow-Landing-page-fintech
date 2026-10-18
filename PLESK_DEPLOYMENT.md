@@ -12,6 +12,8 @@ Le build de production produit `dist/` sous le dépôt Plesk, avec un `package.j
 - **Mode** : `production`.
 - **Écoute réseau** : le serveur utilise le `PORT` fourni par Plesk et écoute sur `0.0.0.0`.
 
+Le build génère aussi `dist/public/.htaccess` : Apache renvoie les routes web inconnues vers `index.html` pour que le routeur React traite les accès directs et les actualisations. Les chemins `/api/*` restent transmis à Passenger.
+
 Le serveur recherche les fichiers du site dans `public/` relativement au dossier courant Plesk `dist`. L’arborescence attendue est :
 
 ```text

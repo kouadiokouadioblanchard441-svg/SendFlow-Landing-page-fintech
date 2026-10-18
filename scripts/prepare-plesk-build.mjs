@@ -24,4 +24,18 @@ await writeFile(
     2,
   )}\n`,
 );
+await writeFile(
+  path.join(outputDist, "public", ".htaccess"),
+  [
+    "<IfModule mod_rewrite.c>",
+    "RewriteEngine On",
+    "RewriteRule ^favicon\\.ico$ favicon.svg [L]",
+    "RewriteCond %{REQUEST_URI} !^/api(/|$) [NC]",
+    "RewriteCond %{REQUEST_FILENAME} !-f",
+    "RewriteCond %{REQUEST_FILENAME} !-d",
+    "RewriteRule ^ index.html [L]",
+    "</IfModule>",
+    "",
+  ].join("\n"),
+);
 console.log(`Plesk build ready: ${path.relative(repoRoot, path.join(outputDist, "index.cjs"))}`);
