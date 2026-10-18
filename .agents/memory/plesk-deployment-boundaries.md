@@ -20,3 +20,9 @@ The control-panel screenshots for `sendflow.africa` identify Plesk, so its deplo
 **Why:** The hosted Node application is configured through Plesk Passenger; cPanel deployment tasks do not run in that panel.
 
 **How to apply:** Follow the Plesk deploy hook and restart-file location when deploying this domain; use `.cpanel.yml` only for a separate cPanel-hosted checkout.
+
+Plesk is the production target for SendFlow; Replit is only the development environment. Do not suggest publishing the production app to Replit.
+
+**Why:** The user explicitly clarified that Plesk, not Replit, must serve the functioning production app.
+
+**How to apply:** Verify Plesk-compatible builds and runtime behavior, and distinguish workspace changes from what is actually deployed on Plesk.
