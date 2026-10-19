@@ -21,6 +21,7 @@ jobs:
       PUBLIC_URL: ${{ vars.PUBLIC_URL }}
       PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
       BASE_PATH: /
+      PUBLIC_CHECK_URL: ${{ vars.APP_URL || vars.PUBLIC_URL || vars.PUBLIC_SITE_URL || 'https://sendflow.africa' }}
 
     steps:
       - name: Check out the pushed commit
@@ -39,6 +40,51 @@ jobs:
 
       - name: Build production files
         run: pnpm run deploy:plesk
+
+      - name: Smoke-test the Plesk runtime bundle
+        run: |
+          set -euo pipefail
+          port=4179
+          log_file="$(mktemp)"
+          (
+            cd dist
+            exec env NODE_ENV=production PORT="$port" PUBLIC_SITE_URL="$APP_URL" node ./index.cjs
+          ) >"$log_file" 2>&1 &
+          server_pid=$!
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
+            rm -f "$log_file"
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl --silent --show-error --fail "http://127.0.0.1:$port/api/healthz" >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat "$log_file"
+              echo "::error::The production bundle exited before becoming healthy."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != 1 ]]; then
+            cat "$log_file"
+            echo "::error::The production bundle did not become healthy within 30 seconds."
+            exit 1
+          fi
+
+          for route in / /fonctionnalites/ /en/; do
+            status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+              "http://127.0.0.1:$port$route")"
+            if [[ "$status" != 200 ]]; then
+              echo "::error::Local production route $route returned HTTP $status."
+              exit 1
+            fi
+          done
 
       - name: Prepare SSH
         env:
@@ -102,3 +148,28 @@ jobs:
           mkdir -p "$app_root/tmp"
           touch "$app_root/tmp/restart.txt"
           REMOTE
+
+      - name: Verify the public Plesk deployment
+        run: |
+          set -euo pipefail
+          base_url="${PUBLIC_CHECK_URL%/}"
+
+          check_url() {
+            local path="$1"
+            local output_file
+            output_file="$(mktemp)"
+            if ! curl --silent --show-error --fail \
+              --retry 12 --retry-delay 5 --retry-all-errors --max-time 15 \
+              --output "$output_file" "${base_url}${path}"; then
+              echo "::error::Production check failed for ${base_url}${path}."
+              sed -n '1,25p' "$output_file" >&2
+              rm -f "$output_file"
+              return 1
+            fi
+            rm -f "$output_file"
+          }
+
+          check_url /api/healthz
+          check_url /
+          check_url /fonctionnalites/
+          check_url /en/
