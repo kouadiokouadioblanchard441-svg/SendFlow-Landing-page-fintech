@@ -2,7 +2,7 @@
 
 ## Structure livrée
 
-Le build de production produit `dist/` dans GitHub Actions, avec un `package.json` minimal pour le gestionnaire Node.js. Le workflow transfère ensuite le contenu de `dist/` vers la racine de l’application Node.js dans Plesk. Configure :
+Le build de production produit `dist/` dans le dépôt Plesk après l’action de déploiement Git, avec un `package.json` minimal pour le gestionnaire Node.js. GitHub Actions vérifie séparément que ce paquet se construit et démarre correctement. Configure :
 
 - **Application root** : le sous-dossier `dist` généré sous la racine du dépôt Plesk. Le dépôt Git doit rester dans le dossier parent.
 - **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
@@ -31,7 +31,7 @@ dist/
     robots.txt
 ```
 
-Le répertoire `dist/` reste exclu du dépôt Git. Le workflow le transfère depuis GitHub Actions vers Plesk après avoir vérifié le build. Le déploiement ne lance aucune migration de base de données. Il demande le redémarrage Passenger via `tmp/restart.txt`.
+Le répertoire `dist/` reste exclu du dépôt Git. Après un pull, l’action de déploiement Plesk le régénère dans le dossier du dépôt. Le déploiement ne lance aucune migration de base de données. Il demande le redémarrage Passenger via `dist/tmp/restart.txt`.
 
 ## Build et livraison
 
@@ -41,13 +41,17 @@ Le répertoire `dist/` reste exclu du dépôt Git. Le workflow le transfère dep
 pnpm run deploy:plesk
 ```
 
-## Déploiement automatique vers Plesk
+## Déploiement depuis Plesk Git
 
-Le workflow `.github/workflows/deploy-plesk.yml` reconstruit l’application après chaque push sur `main`, transfère `dist/` vers le dossier d’application Plesk configuré, vérifie les fichiers livrés et demande le redémarrage Passenger. Il peut aussi être lancé manuellement depuis l’onglet **Actions** de GitHub. **Aucune commande de build n’est à saisir dans les actions Git Plesk.**
+Le dépôt Git doit être placé dans le dossier parent de `dist`, sur la branche `main`. Dans les paramètres du dépôt Git Plesk, garde la racine du dépôt comme dossier de déploiement et configure une seule action de déploiement après le pull :
 
-Le workflow utilise Node.js 22 et pnpm 10.26.1. Il exige les secrets GitHub `PLESK_HOST`, `PLESK_PORT`, `PLESK_USER`, `PLESK_APP_ROOT`, `PLESK_SSH_PRIVATE_KEY` et `PLESK_KNOWN_HOSTS`. `PLESK_APP_ROOT` doit correspondre au dossier Application root Node.js, par exemple le dossier `dist` configuré dans Plesk. L’origine de production est `APP_URL` (par défaut `https://sendflow.africa`), ou la variable `PUBLIC_URL` / `PUBLIC_SITE_URL`.
+```sh
+bash scripts/plesk-git-deploy.sh
+```
 
-Après un push, vérifier que l’exécution **Build and deploy SendFlow to Plesk** est réussie dans GitHub Actions. Le workflow transfère lui-même le build et marque Passenger pour redémarrage ; il n’est pas nécessaire de lancer un second build depuis Plesk.
+Cette action installe les dépendances avec le lockfile, exécute les tests et les vérifications TypeScript, construit le frontend et l’API, vérifie les fichiers attendus et marque Passenger pour redémarrage. Elle ne lance aucune migration de base de données. Ensuite, le flux est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now** dans Plesk, vérifier que l’action de déploiement réussit, puis cliquer **Restart** dans Plesk.
+
+Le workflow `.github/workflows/validate-plesk-build.yml` ne déploie pas sur Plesk et n’a besoin d’aucun secret SSH : il vérifie le build sur GitHub à chaque push sur `main`. Le déploiement de production est effectué par Plesk lorsque tu cliques **Deploy Now**.
 
 ## Variables d’environnement Plesk
 
@@ -67,7 +71,7 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 
 ## Commandes et vérifications
 
-Le build et le transfert sont effectués par GitHub Actions. Le bouton Plesk **Restart** reste disponible si Passenger ne redémarre pas après la livraison.
+Le build est effectué par l’action de déploiement Plesk. Après **Deploy Now**, utiliser **Restart** dans Plesk pour redémarrer Passenger.
 
 Après une livraison réussie, vérifier dans le File Manager que le dossier d’application contient `index.cjs`, les workers Pino et `public/index.html`. Tester :
 

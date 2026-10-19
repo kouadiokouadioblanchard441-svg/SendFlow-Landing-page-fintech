@@ -1,0 +1,86 @@
+name: Validate SendFlow Plesk build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sendflow-plesk-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: ${{ vars.APP_URL || 'https://sendflow.africa' }}
+      PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+      PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+      BASE_PATH: /
+
+    steps:
+      - name: Check out the pushed commit
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Build production files
+        run: pnpm run deploy:plesk
+
+      - name: Smoke-test the Plesk runtime bundle
+        run: |
+          set -euo pipefail
+          port=4179
+          log_file="$(mktemp)"
+          (
+            cd dist
+            exec env NODE_ENV=production PORT="$port" PUBLIC_SITE_URL="$APP_URL" node ./index.cjs
+          ) >"$log_file" 2>&1 &
+          server_pid=$!
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
+            rm -f "$log_file"
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl --silent --show-error --fail "http://127.0.0.1:$port/api/healthz" >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat "$log_file"
+              echo "::error::The production bundle exited before becoming healthy."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != 1 ]]; then
+            cat "$log_file"
+            echo "::error::The production bundle did not become healthy within 30 seconds."
+            exit 1
+          fi
+
+          for route in / /fonctionnalites/ /en/; do
+            status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+              "http://127.0.0.1:$port$route")"
+            if [[ "$status" != 200 ]]; then
+              echo "::error::Local production route $route returned HTTP $status."
+              exit 1
+            fi
+          done
