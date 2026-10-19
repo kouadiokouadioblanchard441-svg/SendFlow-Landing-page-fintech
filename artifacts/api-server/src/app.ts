@@ -35,12 +35,16 @@ app.use(
           /(\/api\/newsletter\/unsubscribe)\/[^/]+\/?$/i,
           "$1/[redacted]",
         );
+        const confirmationPath = unsubscribePath.replace(
+          /(\/api\/newsletter\/confirm)\/[^/]+\/?$/i,
+          "$1/[redacted]",
+        );
         return {
           id: req.id,
           method: req.method,
           url: path.startsWith("/api/admin/auth/panel/")
             ? "/api/admin/auth/panel/[redacted]"
-            : unsubscribePath,
+            : confirmationPath,
         };
       },
       res(res) {

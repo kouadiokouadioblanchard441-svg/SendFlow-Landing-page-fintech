@@ -342,6 +342,7 @@ export const newsletterSubscribers = pgTable(
     source: varchar("source", { length: 40 }).default("landing").notNull(),
     unsubscribeToken: varchar("unsubscribe_token", { length: 80 }).notNull(),
     confirmationToken: varchar("confirmation_token", { length: 80 }),
+    confirmationExpiresAt: timestamp("confirmation_expires_at", { withTimezone: true }),
     consentedAt: timestamp("consented_at", { withTimezone: true }),
     consentTextVersion: varchar("consent_text_version", { length: 32 }),
     subscribedAt: timestamp("subscribed_at", { withTimezone: true }).defaultNow().notNull(),

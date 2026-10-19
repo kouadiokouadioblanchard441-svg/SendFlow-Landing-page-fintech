@@ -1,5 +1,5 @@
 import express, { Router, type IRouter } from "express";
-import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import {
@@ -32,7 +32,13 @@ import { filterPublicLandingBundle } from "../lib/landingVisibility";
 import { createRateLimiter } from "../middlewares/security";
 import { getPublicSiteUrl } from "../lib/publicSiteUrl";
 import { parseNewsletterToken } from "../lib/newsletterToken";
-import { NEWSLETTER_ACTIVE_STATUS, NEWSLETTER_CONSENT_TEXT_VERSION } from "../lib/newsletterPolicy";
+import {
+  getNewsletterConfirmationExpiry,
+  getNewsletterConfirmationUrl,
+  isNewsletterConfirmationUsable,
+  NEWSLETTER_ACTIVE_STATUS,
+  NEWSLETTER_CONSENT_TEXT_VERSION,
+} from "../lib/newsletterPolicy";
 import {
   countryOperatorAssignmentSchema,
   founderProfileSchema,
@@ -372,12 +378,14 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
   }
   const token = randomUUID();
   const now = new Date();
+  const confirmationExpiresAt = getNewsletterConfirmationExpiry(now);
   const [pending] = await db.insert(newsletterSubscribers).values({
     email,
     status: "pending",
     source: "landing",
     unsubscribeToken: randomUUID(),
     confirmationToken: token,
+    confirmationExpiresAt,
     consentedAt: now,
     consentTextVersion: NEWSLETTER_CONSENT_TEXT_VERSION,
     subscribedAt: now,
@@ -387,6 +395,7 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
     set: {
       status: "pending",
       confirmationToken: token,
+      confirmationExpiresAt,
       consentedAt: now,
       consentTextVersion: NEWSLETTER_CONSENT_TEXT_VERSION,
       subscribedAt: now,
@@ -398,7 +407,8 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
 
   if (pending) {
     try {
-      const confirmationUrl = `${origin}/api/newsletter/confirm/${encodeURIComponent(token)}`;
+      // Keep the bearer token in the URL fragment; fragments are not sent to or logged by the server.
+      const confirmationUrl = getNewsletterConfirmationUrl(origin, token);
       await sendResendBatch([{
         from,
         to: [email],
@@ -417,23 +427,7 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
   });
 });
 
-router.get("/newsletter/confirm/:token", async (req, res): Promise<void> => {
-  const token = parseNewsletterToken(req.params.token);
-  if (!token) {
-    res.status(400).type("html").send("<h1>Lien de confirmation invalide.</h1>");
-    return;
-  }
-  const [pending] = await db.select({ id: newsletterSubscribers.id })
-    .from(newsletterSubscribers)
-    .where(and(
-      eq(newsletterSubscribers.confirmationToken, token),
-      eq(newsletterSubscribers.status, "pending"),
-    ))
-    .limit(1);
-  if (!pending) {
-    res.status(404).type("html").send("<h1>Lien de confirmation invalide ou déjà utilisé.</h1>");
-    return;
-  }
+router.get("/newsletter/confirm", async (_req, res): Promise<void> => {
   res
     .set({
       "Cache-Control": "no-store",
@@ -447,23 +441,46 @@ router.get("/newsletter/confirm/:token", async (req, res): Promise<void> => {
 <body style="font-family:Arial,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#192231">
   <h1>Confirmer l’inscription</h1>
   <p>Confirmez votre adresse pour recevoir les nouvelles de SendFlow.</p>
-  <form method="post" action="/api/newsletter/confirm/${encodeURIComponent(token)}">
+  <form method="post" action="/api/newsletter/confirm">
+    <input type="hidden" name="token" value="">
     <button type="submit">Confirmer mon inscription</button>
   </form>
+  <script>
+    const token = location.hash.slice(1);
+    history.replaceState(null, "", location.pathname);
+    document.querySelector('input[name="token"]').value = token;
+  </script>
 </body>
 </html>`);
 });
 
-router.post("/newsletter/confirm/:token", async (req, res): Promise<void> => {
-  const token = parseNewsletterToken(req.params.token);
+router.post("/newsletter/confirm", async (req, res): Promise<void> => {
+  const token = parseNewsletterToken(req.body?.token);
   if (!token) {
     res.status(400).type("html").send("<h1>Lien de confirmation invalide.</h1>");
     return;
   }
   const now = new Date();
+  const [pending] = await db.select({
+    status: newsletterSubscribers.status,
+    confirmationToken: newsletterSubscribers.confirmationToken,
+    confirmationExpiresAt: newsletterSubscribers.confirmationExpiresAt,
+  }).from(newsletterSubscribers)
+    .where(eq(newsletterSubscribers.confirmationToken, token))
+    .limit(1);
+  if (!pending || !isNewsletterConfirmationUsable(
+    pending.status,
+    pending.confirmationToken,
+    pending.confirmationExpiresAt,
+    now,
+  )) {
+    res.status(410).type("html").send("<h1>Lien de confirmation invalide ou expiré.</h1>");
+    return;
+  }
   const [confirmed] = await db.update(newsletterSubscribers).set({
     status: "subscribed",
     confirmationToken: null,
+    confirmationExpiresAt: null,
     unsubscribeToken: randomUUID(),
     subscribedAt: now,
     unsubscribedAt: null,
@@ -471,9 +488,10 @@ router.post("/newsletter/confirm/:token", async (req, res): Promise<void> => {
   }).where(and(
     eq(newsletterSubscribers.confirmationToken, token),
     eq(newsletterSubscribers.status, "pending"),
+    gt(newsletterSubscribers.confirmationExpiresAt, now),
   )).returning({ id: newsletterSubscribers.id });
   if (!confirmed) {
-    res.status(404).type("html").send("<h1>Lien de confirmation invalide ou déjà utilisé.</h1>");
+    res.status(410).type("html").send("<h1>Lien de confirmation invalide ou expiré.</h1>");
     return;
   }
   res
@@ -527,7 +545,13 @@ router.post("/newsletter/unsubscribe/:token", async (req, res): Promise<void> =>
     return;
   }
   const [updated] = await db.update(newsletterSubscribers)
-    .set({ status: "unsubscribed", confirmationToken: null, unsubscribedAt: new Date(), updatedAt: new Date() })
+    .set({
+      status: "unsubscribed",
+      confirmationToken: null,
+      confirmationExpiresAt: null,
+      unsubscribedAt: new Date(),
+      updatedAt: new Date(),
+    })
     .where(eq(newsletterSubscribers.unsubscribeToken, token))
     .returning({ id: newsletterSubscribers.id });
   if (!updated) {
