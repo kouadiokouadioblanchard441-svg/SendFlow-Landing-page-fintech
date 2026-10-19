@@ -8,6 +8,7 @@ import { logger } from "./lib/logger";
 import { isAllowedOrigin } from "./middlewares/security";
 
 const app: Express = express();
+app.set("trust proxy", false);
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
