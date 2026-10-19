@@ -37,4 +37,4 @@ When diagnosing a Plesk 500, distinguish access-log entries from server error lo
 
 **Why:** The Plesk screenshots supplied for SendFlow showed 500 access entries, not Passenger or Apache error details, and repeating that request delays diagnosis.
 
-**How to apply:** Use the supplied access entries as evidence of the outage. Request only the missing Apache/Passenger error output (or GitHub Actions deployment log) when needed to identify the cause.
+**How to apply:** Correlate all evidence already supplied before asking anything. Never ask for the same screenshots again. If the exact startup cause remains unknown, request one distinct missing error-log source; if it is unavailable, continue with code, build, and runtime-configuration checks and clearly separate confirmed facts from hypotheses.
