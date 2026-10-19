@@ -70,6 +70,23 @@ required_files=(
   "dist/public/index.html"
   "dist/public/sitemap.xml"
   "dist/public/robots.txt"
+  "dist/public/download/index.html"
+  "dist/public/fonctionnalites/index.html"
+  "dist/public/securite/index.html"
+  "dist/public/a-propos/index.html"
+  "dist/public/conditions-utilisation/index.html"
+  "dist/public/confidentialite/index.html"
+  "dist/public/mentions-legales/index.html"
+  "dist/public/france-senegal/index.html"
+  "dist/public/en/index.html"
+  "dist/public/en/features/index.html"
+  "dist/public/en/security/index.html"
+  "dist/public/en/download/index.html"
+  "dist/public/en/about/index.html"
+  "dist/public/en/terms/index.html"
+  "dist/public/en/privacy/index.html"
+  "dist/public/en/legal-notice/index.html"
+  "dist/public/en/france-senegal/index.html"
 )
 
 for file in "${required_files[@]}"; do

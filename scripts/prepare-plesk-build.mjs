@@ -38,4 +38,30 @@ await writeFile(
     "",
   ].join("\n"),
 );
+
+const publicRoutePaths = [
+  "download",
+  "fonctionnalites",
+  "securite",
+  "a-propos",
+  "conditions-utilisation",
+  "confidentialite",
+  "mentions-legales",
+  "france-senegal",
+  "en",
+  "en/features",
+  "en/security",
+  "en/download",
+  "en/about",
+  "en/terms",
+  "en/privacy",
+  "en/legal-notice",
+  "en/france-senegal",
+];
+const publicIndexPath = path.join(outputDist, "public", "index.html");
+for (const routePath of publicRoutePaths) {
+  const routeDirectory = path.join(outputDist, "public", routePath);
+  await mkdir(routeDirectory, { recursive: true });
+  await cp(publicIndexPath, path.join(routeDirectory, "index.html"));
+}
 console.log(`Plesk build ready: ${path.relative(repoRoot, path.join(outputDist, "index.cjs"))}`);
