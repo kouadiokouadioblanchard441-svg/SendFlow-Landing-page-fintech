@@ -35,6 +35,12 @@ await writeFile(
     "RewriteCond %{REQUEST_FILENAME} !-d",
     "RewriteRule ^ index.html [L]",
     "</IfModule>",
+    "<IfModule mod_headers.c>",
+    "Header always set X-Content-Type-Options \"nosniff\"",
+    "Header always set Referrer-Policy \"strict-origin-when-cross-origin\"",
+    "Header always set X-Frame-Options \"DENY\"",
+    "Header always set Content-Security-Policy \"frame-ancestors 'none'\"",
+    "</IfModule>",
     "",
   ].join("\n"),
 );
