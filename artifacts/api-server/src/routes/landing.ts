@@ -1,5 +1,5 @@
 import express, { Router, type IRouter } from "express";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import {
@@ -31,6 +31,8 @@ import {
 import { filterPublicLandingBundle } from "../lib/landingVisibility";
 import { createRateLimiter } from "../middlewares/security";
 import { getPublicSiteUrl } from "../lib/publicSiteUrl";
+import { parseNewsletterToken } from "../lib/newsletterToken";
+import { NEWSLETTER_ACTIVE_STATUS, NEWSLETTER_CONSENT_TEXT_VERSION } from "../lib/newsletterPolicy";
 import {
   countryOperatorAssignmentSchema,
   founderProfileSchema,
@@ -344,7 +346,7 @@ async function getNewsletterAdminBundle() {
     campaigns,
     stats: {
       totalSubscribers: subscribers.length,
-      activeSubscribers: subscribers.filter((subscriber) => subscriber.status === "subscribed").length,
+      activeSubscribers: subscribers.filter((subscriber) => subscriber.status === NEWSLETTER_ACTIVE_STATUS).length,
       totalCampaigns: campaigns.length,
       sentCampaigns: campaigns.filter((campaign) => campaign.status === "sent").length,
     },
@@ -354,41 +356,138 @@ async function getNewsletterAdminBundle() {
 router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, res): Promise<void> => {
   const parsed = newsletterSubscribeSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Saisis une adresse email valide." });
+    res.status(400).json({ error: "Saisis une adresse email valide et confirme ton consentement." });
     return;
   }
   const email = parsed.data.email;
+  const from = process.env.RESEND_FROM_EMAIL?.trim();
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  let origin: string;
+  try {
+    if (!from || !apiKey) throw new Error("Newsletter sender is not configured.");
+    origin = configuredPublicOrigin();
+  } catch {
+    res.status(503).json({ error: "L’inscription à la newsletter est temporairement indisponible." });
+    return;
+  }
   const token = randomUUID();
-  await db.insert(newsletterSubscribers).values({
+  const now = new Date();
+  const [pending] = await db.insert(newsletterSubscribers).values({
     email,
-    status: "subscribed",
+    status: "pending",
     source: "landing",
-    unsubscribeToken: token,
-    subscribedAt: new Date(),
-    unsubscribedAt: null,
-    updatedAt: new Date(),
+    unsubscribeToken: randomUUID(),
+    confirmationToken: token,
+    consentedAt: now,
+    consentTextVersion: NEWSLETTER_CONSENT_TEXT_VERSION,
+    subscribedAt: now,
+    updatedAt: now,
   }).onConflictDoUpdate({
     target: newsletterSubscribers.email,
     set: {
-      status: "subscribed",
-      unsubscribeToken: token,
-      subscribedAt: new Date(),
-      unsubscribedAt: null,
-      updatedAt: new Date(),
+      status: "pending",
+      confirmationToken: token,
+      consentedAt: now,
+      consentTextVersion: NEWSLETTER_CONSENT_TEXT_VERSION,
+      subscribedAt: now,
+      updatedAt: now,
     },
+    // An active subscriber is a no-op: keep their existing unsubscribe links valid.
+    where: ne(newsletterSubscribers.status, "subscribed"),
+  }).returning({ id: newsletterSubscribers.id });
+
+  if (pending) {
+    try {
+      const confirmationUrl = `${origin}/api/newsletter/confirm/${encodeURIComponent(token)}`;
+      await sendResendBatch([{
+        from,
+        to: [email],
+        subject: "Confirmez votre inscription à la newsletter SendFlow",
+        html: `<p>Vous avez demandé à recevoir les nouvelles de SendFlow.</p><p><a href="${escapeHtml(confirmationUrl)}">Confirmer mon inscription</a></p><p>Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.</p>`,
+      }]);
+    } catch (error) {
+      // Keep responses identical for active, new, and previously unsubscribed addresses.
+      req.log.warn({ errorType: error instanceof Error ? error.name : "UnknownError" }, "Newsletter confirmation email could not be sent");
+    }
+  }
+
+  res.status(202).json({
+    ok: true,
+    message: "Si cette adresse peut recevoir les actualités, vous pourrez confirmer depuis le message reçu.",
   });
-  res.status(201).json({ ok: true });
 });
 
-function parseNewsletterUnsubscribeToken(value: unknown): string | null {
-  const token = typeof value === "string" ? value.trim() : "";
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)
-    ? token
-    : null;
-}
+router.get("/newsletter/confirm/:token", async (req, res): Promise<void> => {
+  const token = parseNewsletterToken(req.params.token);
+  if (!token) {
+    res.status(400).type("html").send("<h1>Lien de confirmation invalide.</h1>");
+    return;
+  }
+  const [pending] = await db.select({ id: newsletterSubscribers.id })
+    .from(newsletterSubscribers)
+    .where(and(
+      eq(newsletterSubscribers.confirmationToken, token),
+      eq(newsletterSubscribers.status, "pending"),
+    ))
+    .limit(1);
+  if (!pending) {
+    res.status(404).type("html").send("<h1>Lien de confirmation invalide ou déjà utilisé.</h1>");
+    return;
+  }
+  res
+    .set({
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "X-Robots-Tag": "noindex, nofollow",
+    })
+    .type("html")
+    .send(`<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Confirmer l’inscription · SendFlow</title></head>
+<body style="font-family:Arial,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#192231">
+  <h1>Confirmer l’inscription</h1>
+  <p>Confirmez votre adresse pour recevoir les nouvelles de SendFlow.</p>
+  <form method="post" action="/api/newsletter/confirm/${encodeURIComponent(token)}">
+    <button type="submit">Confirmer mon inscription</button>
+  </form>
+</body>
+</html>`);
+});
+
+router.post("/newsletter/confirm/:token", async (req, res): Promise<void> => {
+  const token = parseNewsletterToken(req.params.token);
+  if (!token) {
+    res.status(400).type("html").send("<h1>Lien de confirmation invalide.</h1>");
+    return;
+  }
+  const now = new Date();
+  const [confirmed] = await db.update(newsletterSubscribers).set({
+    status: "subscribed",
+    confirmationToken: null,
+    unsubscribeToken: randomUUID(),
+    subscribedAt: now,
+    unsubscribedAt: null,
+    updatedAt: now,
+  }).where(and(
+    eq(newsletterSubscribers.confirmationToken, token),
+    eq(newsletterSubscribers.status, "pending"),
+  )).returning({ id: newsletterSubscribers.id });
+  if (!confirmed) {
+    res.status(404).type("html").send("<h1>Lien de confirmation invalide ou déjà utilisé.</h1>");
+    return;
+  }
+  res
+    .set({
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+      "X-Robots-Tag": "noindex, nofollow",
+    })
+    .type("html")
+    .send("<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><title>Inscription confirmée · SendFlow</title></head><body style=\"font-family:Arial,sans-serif;max-width:560px;margin:80px auto;padding:24px;color:#192231\"><h1>Inscription confirmée</h1><p>Vous recevrez les prochaines nouvelles de SendFlow.</p></body></html>");
+});
 
 router.get("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => {
-  const token = parseNewsletterUnsubscribeToken(req.params.token);
+  const token = parseNewsletterToken(req.params.token);
   if (!token) {
     res.status(400).type("html").send("<h1>Lien de désabonnement invalide.</h1>");
     return;
@@ -422,13 +521,13 @@ router.get("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => 
 });
 
 router.post("/newsletter/unsubscribe/:token", async (req, res): Promise<void> => {
-  const token = parseNewsletterUnsubscribeToken(req.params.token);
+  const token = parseNewsletterToken(req.params.token);
   if (!token) {
     res.status(400).type("html").send("<h1>Lien de désabonnement invalide.</h1>");
     return;
   }
   const [updated] = await db.update(newsletterSubscribers)
-    .set({ status: "unsubscribed", unsubscribedAt: new Date(), updatedAt: new Date() })
+    .set({ status: "unsubscribed", confirmationToken: null, unsubscribedAt: new Date(), updatedAt: new Date() })
     .where(eq(newsletterSubscribers.unsubscribeToken, token))
     .returning({ id: newsletterSubscribers.id });
   if (!updated) {
@@ -464,10 +563,13 @@ router.patch("/admin/newsletter/subscribers/:id", requireAdmin, async (req, res)
     return;
   }
   const status = parsed.data.status;
+  if (status === "subscribed") {
+    res.status(400).json({ error: "Une adresse doit confirmer son inscription avant son activation." });
+    return;
+  }
   const [updated] = await db.update(newsletterSubscribers).set({
     status,
-    subscribedAt: status === "subscribed" ? new Date() : undefined,
-    unsubscribedAt: status === "unsubscribed" ? new Date() : null,
+    unsubscribedAt: new Date(),
     updatedAt: new Date(),
   }).where(eq(newsletterSubscribers.id, id)).returning({
     id: newsletterSubscribers.id,
@@ -586,7 +688,7 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
   const subscribers = await db.select({
     email: newsletterSubscribers.email,
     unsubscribeToken: newsletterSubscribers.unsubscribeToken,
-  }).from(newsletterSubscribers).where(eq(newsletterSubscribers.status, "subscribed"));
+  }).from(newsletterSubscribers).where(eq(newsletterSubscribers.status, NEWSLETTER_ACTIVE_STATUS));
   if (subscribers.length === 0) {
     res.status(400).json({ error: "Aucun abonné actif ne peut recevoir cette campagne." });
     return;

@@ -55,7 +55,7 @@ type Bundle = {
 type NewsletterSubscriber = {
   id: number;
   email: string;
-  status: 'subscribed' | 'unsubscribed';
+  status: 'subscribed' | 'unsubscribed' | 'pending';
   source: string;
   subscribedAt: string;
   unsubscribedAt: string | null;
@@ -1097,9 +1097,9 @@ function NewsletterManager({
             <div className="sendflow-admin-newsletter-list">
               {filteredSubscribers.map((subscriber) => (
                 <div className="sendflow-admin-newsletter-row" key={subscriber.id}>
-                  <div><strong>{subscriber.email}</strong><small>Inscrit le {formatNewsletterDate(subscriber.subscribedAt)}</small></div>
-                  <button className={`sendflow-admin-pill ${subscriber.status === 'subscribed' ? 'is-published' : 'is-muted'}`} onClick={() => void toggleSubscriber(subscriber)} title="Modifier le statut">
-                    <span />{subscriber.status === 'subscribed' ? 'Actif' : 'Désabonné'}
+                  <div><strong>{subscriber.email}</strong><small>{subscriber.status === 'pending' ? 'Demande reçue le' : 'Inscrit le'} {formatNewsletterDate(subscriber.subscribedAt)}</small></div>
+                  <button className={`sendflow-admin-pill ${subscriber.status === 'subscribed' ? 'is-published' : 'is-muted'}`} onClick={() => void toggleSubscriber(subscriber)} disabled={subscriber.status !== 'subscribed'} title={subscriber.status === 'subscribed' ? 'Désabonner' : 'Une confirmation est nécessaire pour activer cette adresse'}>
+                    <span />{subscriber.status === 'subscribed' ? 'Actif' : subscriber.status === 'pending' ? 'En attente' : 'Désabonné'}
                   </button>
                 </div>
               ))}

@@ -2976,3 +2976,8 @@ section#faq .reveal.space-y-2 > div {
     border-radius: 20px;
   }
 }
+
+#join form > label,
+#join form > label span {
+  color: #fbf8ef !important;
+}

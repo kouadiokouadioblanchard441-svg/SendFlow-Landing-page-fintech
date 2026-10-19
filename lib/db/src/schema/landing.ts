@@ -341,6 +341,9 @@ export const newsletterSubscribers = pgTable(
     status: varchar("status", { length: 24 }).default("subscribed").notNull(),
     source: varchar("source", { length: 40 }).default("landing").notNull(),
     unsubscribeToken: varchar("unsubscribe_token", { length: 80 }).notNull(),
+    confirmationToken: varchar("confirmation_token", { length: 80 }),
+    consentedAt: timestamp("consented_at", { withTimezone: true }),
+    consentTextVersion: varchar("consent_text_version", { length: 32 }),
     subscribedAt: timestamp("subscribed_at", { withTimezone: true }).defaultNow().notNull(),
     unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
     ...timestamps,
@@ -348,6 +351,7 @@ export const newsletterSubscribers = pgTable(
   (table) => ({
     emailUnique: uniqueIndex("newsletter_subscribers_email_unique").on(table.email),
     unsubscribeTokenUnique: uniqueIndex("newsletter_subscribers_token_unique").on(table.unsubscribeToken),
+    confirmationTokenUnique: uniqueIndex("newsletter_subscribers_confirmation_token_unique").on(table.confirmationToken),
   }),
 );
 

@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:resend": "tsx --test scripts/resend.test.ts",
     "test:request-validation": "tsx --test scripts/requestValidation.test.ts",
+    "test:newsletter": "tsx --test scripts/newsletter.test.ts",
     "test:landing-visibility": "tsx --test scripts/landing-visibility.test.ts",
     "test:public-storage": "tsx --test scripts/public-object-storage.test.ts",
     "test:origin-security": "tsx --test scripts/origin-security.test.ts"
