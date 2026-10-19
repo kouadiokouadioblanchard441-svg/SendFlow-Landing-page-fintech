@@ -26,3 +26,9 @@ Plesk is the production target for SendFlow; Replit is only the development envi
 **Why:** The user explicitly clarified that Plesk, not Replit, must serve the functioning production app.
 
 **How to apply:** Verify Plesk-compatible builds and runtime behavior, and distinguish workspace changes from what is actually deployed on Plesk.
+
+When diagnosing a Plesk 500, distinguish access-log entries from server error logs. Access-log screenshots confirm the failing URL and status, but do not identify the crash cause; do not ask the user to resend those same screenshots.
+
+**Why:** The Plesk screenshots supplied for SendFlow showed 500 access entries, not Passenger or Apache error details, and repeating that request delays diagnosis.
+
+**How to apply:** Use the supplied access entries as evidence of the outage. Request only the missing Apache/Passenger error output (or GitHub Actions deployment log) when needed to identify the cause.
