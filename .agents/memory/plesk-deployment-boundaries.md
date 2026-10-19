@@ -27,6 +27,12 @@ Plesk is the production target for SendFlow; Replit is only the development envi
 
 **How to apply:** Verify Plesk-compatible builds and runtime behavior, and distinguish workspace changes from what is actually deployed on Plesk.
 
+Never use Replit workflow or preview health as evidence that production works. Replit is only the development environment; sendflow.africa production runs on Plesk.
+
+**Why:** The user has repeatedly corrected this distinction after development checks were presented as if they established production health.
+
+**How to apply:** Report production status only from live sendflow.africa checks and the Plesk/GitHub deployment run that transfers to Plesk.
+
 When diagnosing a Plesk 500, distinguish access-log entries from server error logs. Access-log screenshots confirm the failing URL and status, but do not identify the crash cause; do not ask the user to resend those same screenshots.
 
 **Why:** The Plesk screenshots supplied for SendFlow showed 500 access entries, not Passenger or Apache error details, and repeating that request delays diagnosis.
