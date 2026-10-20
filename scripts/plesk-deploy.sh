@@ -25,9 +25,9 @@ if (!supported) {
 }
 NODE
 
-PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-${PUBLIC_SITE_URL:-}}}"
+PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-${PUBLIC_SITE_URL:-${VITE_PUBLIC_SITE_URL:-}}}}"
 if [[ -z "$PUBLIC_SITE_URL" ]]; then
-  echo "Set APP_URL, PUBLIC_URL, or PUBLIC_SITE_URL in the production build environment." >&2
+  echo "Set APP_URL, PUBLIC_URL, PUBLIC_SITE_URL, or VITE_PUBLIC_SITE_URL in the production build environment." >&2
   exit 1
 fi
 export VITE_PUBLIC_SITE_URL="$(

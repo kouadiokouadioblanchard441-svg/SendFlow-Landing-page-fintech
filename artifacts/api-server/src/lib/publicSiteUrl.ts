@@ -3,6 +3,7 @@ export function getPublicSiteUrl(): string | undefined {
     process.env.PUBLIC_SITE_URL,
     process.env.APP_URL,
     process.env.PUBLIC_URL,
+    process.env.VITE_PUBLIC_SITE_URL,
   ]) {
     const configured = value?.trim();
     if (configured) return configured;

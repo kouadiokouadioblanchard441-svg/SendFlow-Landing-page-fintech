@@ -62,8 +62,8 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 - `NEON_DATABASE_URL` — connexion PostgreSQL utilisée par l’application.
 - `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
 - `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
-- `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias.
-- `APP_URL` — `https://sendflow.africa`, utilisée au build. Le serveur accepte également `APP_URL` ou `PUBLIC_URL` comme alias de `PUBLIC_SITE_URL`.
+- `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias; `VITE_PUBLIC_SITE_URL` est reconnue en dernier recours pour les configurations Plesk existantes.
+- `APP_URL` — `https://sendflow.africa`, utilisée au build. Le script Plesk accepte aussi `PUBLIC_URL`, `PUBLIC_SITE_URL` ou, en dernier recours, `VITE_PUBLIC_SITE_URL`.
 - `LOG_LEVEL` — optionnel.
 - `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
 
