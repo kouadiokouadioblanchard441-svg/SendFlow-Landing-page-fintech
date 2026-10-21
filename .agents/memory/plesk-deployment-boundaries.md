@@ -37,4 +37,4 @@ When diagnosing a Plesk 500, distinguish access-log entries from server error lo
 
 **Why:** The Plesk screenshots supplied for SendFlow showed 500 access entries, not Passenger or Apache error details, and repeating that request delays diagnosis.
 
-**How to apply:** Correlate all evidence already supplied before asking anything. Never ask for the same screenshots again. If the exact startup cause remains unknown, request one distinct missing error-log source; if it is unavailable, continue with code, build, and runtime-configuration checks and clearly separate confirmed facts from hypotheses.
+**How to apply:** Correlate all evidence already supplied before asking anything. Never ask for the same screenshots again. If the exact startup cause remains unknown, request one distinct missing error-log source; if it is unavailable, continue with code, build, and runtime-configuration checks and clearly separate confirmed facts from hypotheses. When the user replies « Il faut regarder les captures fournies, tout est dedans », do not repeat the log request; continue the independent checks without claiming the captures establish a specific crash cause.
