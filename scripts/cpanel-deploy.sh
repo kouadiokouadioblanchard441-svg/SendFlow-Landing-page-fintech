@@ -10,19 +10,11 @@ if [[ ! -f package.json || ! -f pnpm-lock.yaml || ! -f index.cjs ]]; then
 fi
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "Node.js is required. Select Node.js 22 (or 20.19+) in cPanel." >&2
+  echo "Node.js is required. Select Node.js 24 if available, or a compatible host runtime (20.19.x+ in 20.x, or 22.12.0+)." >&2
   exit 1
 fi
 
-node --input-type=commonjs <<'NODE'
-const [major, minor] = process.versions.node.split(".").map(Number);
-if (!((major === 20 && minor >= 19) || major >= 22)) {
-  console.error(
-    `Unsupported Node.js ${process.versions.node}. Use Node.js 20.19+ or 22+.`,
-  );
-  process.exit(1);
-}
-NODE
+node scripts/check-deploy-node.cjs
 
 EXPECTED_PNPM="$(
   node -p 'require("./package.json").packageManager?.match(/^pnpm@(.+)$/)?.[1] ?? ""'

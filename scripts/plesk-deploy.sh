@@ -5,25 +5,16 @@ ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "Node.js is required to build SendFlow for Plesk." >&2
+  echo "Node.js is required to build SendFlow for Plesk. Use Node.js 24, or a compatible host runtime (20.19.x+ in 20.x, or 22.12.0+)." >&2
   exit 1
 fi
+
+node scripts/check-deploy-node.cjs
 
 if ! command -v pnpm >/dev/null 2>&1; then
   echo "pnpm is required. Select pnpm as the package manager in Plesk." >&2
   exit 1
 fi
-
-node --input-type=commonjs <<'NODE'
-const [major, minor] = process.versions.node.split(".").map(Number);
-const supported = (major === 20 && minor >= 19) || major >= 22;
-if (!supported) {
-  console.error(
-    `Unsupported Node.js ${process.versions.node}. Use Node.js 20.19+ or 22+.`,
-  );
-  process.exit(1);
-}
-NODE
 
 PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-${PUBLIC_SITE_URL:-${VITE_PUBLIC_SITE_URL:-}}}}"
 if [[ -z "$PUBLIC_SITE_URL" ]]; then
