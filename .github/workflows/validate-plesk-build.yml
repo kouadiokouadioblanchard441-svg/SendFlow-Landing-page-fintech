@@ -16,6 +16,20 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sendflow_ci
+          POSTGRES_PASSWORD: sendflow_ci
+          POSTGRES_DB: sendflow_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sendflow_ci -d sendflow_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       APP_URL: ${{ vars.APP_URL || 'https://sendflow.africa' }}
       PUBLIC_URL: ${{ vars.PUBLIC_URL }}
@@ -34,13 +48,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '24'
           cache: pnpm
 
       - name: Build production files
         run: pnpm run deploy:plesk
 
       - name: Smoke-test the Plesk runtime bundle
+        env:
+          NEON_DATABASE_URL: postgresql://sendflow_ci:sendflow_ci@127.0.0.1:5432/sendflow_ci
         run: |
           set -euo pipefail
           port=4179

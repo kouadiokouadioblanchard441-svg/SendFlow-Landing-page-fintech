@@ -30,6 +30,14 @@ _Replace the heading above with the project's name, and this line with one sente
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
 
+### Version Node.js des contrôles CI
+
+- Le workflow `.github/workflows/validate-plesk-build.yml` valide Node.js 24, comme le workspace Replit, avec pnpm 10.26.1 (version fixée dans `package.json`).
+- Ce choix évite de valider uniquement Node.js 22 alors que le développement utilise Node.js 24. La CI ne constitue pas une matrice de compatibilité avec les anciennes versions.
+- `pnpm run deploy:plesk` installe les dépendances avec `--frozen-lockfile --prod=false`, puis exécute les tests, le contrôle des types et la compilation de production. Le workflow démarre ensuite le bundle et vérifie `/api/healthz`, `/`, `/fonctionnalites/` et `/en/`.
+- Le démarrage en CI utilise un service PostgreSQL 16 éphémère avec des identifiants locaux de test, sans secret de production. Ce smoke-test ne vérifie ni le schéma ni les requêtes métier : `/api/healthz` contrôle uniquement que le serveur répond.
+- Les versions acceptées par les scripts Plesk et cPanel restent inchangées ; leur harmonisation relève de la politique de déploiement, distincte de cet alignement CI.
+
 ## Where things live
 
 _Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
