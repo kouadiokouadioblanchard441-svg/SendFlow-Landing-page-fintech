@@ -8,6 +8,7 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:server-listener": "tsx --test scripts/server-listener.test.ts",
     "test:resend": "tsx --test scripts/resend.test.ts",
     "test:request-validation": "tsx --test scripts/requestValidation.test.ts",
     "test:newsletter": "tsx --test scripts/newsletter.test.ts",

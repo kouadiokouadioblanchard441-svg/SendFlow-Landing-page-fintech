@@ -10,7 +10,7 @@ Le build de production produit `dist/` dans le dépôt Plesk après l’action d
 - **Node.js** : Node 24 si disponible (référence de développement et de CI), sinon Node 22.12+ dans la branche 22. La compatibilité de build avec Node 20.19+ dans la branche 20 est conservée pour les hébergements existants ; préférer une branche LTS encore maintenue.
 - **Gestionnaire Plesk** : pnpm (comme le projet). Le manifeste runtime ne déclare aucune dépendance à installer ; le build du dépôt utilise pnpm 10.26.1.
 - **Mode** : `production`.
-- **Écoute réseau** : le serveur utilise le `PORT` fourni par Plesk et écoute sur `0.0.0.0`.
+- **Écoute réseau** : sous Plesk, le serveur détecte `PhusionPassenger` et utilise son socket avec `listen("passenger")`. Aucun `PORT` numérique n’est exigé sous Passenger. En exécution Node directe seulement, `PORT` reste obligatoire et le serveur écoute sur `0.0.0.0`.
 
 Le build génère aussi `dist/public/.htaccess` : Apache renvoie les routes web inconnues vers `index.html` pour que le routeur React traite les accès directs et les actualisations. Les chemins `/api/*` restent transmis à Passenger.
 
@@ -100,7 +100,7 @@ Le workflow `.github/workflows/validate-plesk-build.yml` ne déploie pas sur Ple
 Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les placer dans Git :
 
 - `NODE_ENV` — `production`.
-- `PORT` — fourni par Plesk ; ne pas le remplacer par une valeur fixe.
+- `PORT` — non requis sous Passenger ; ne pas ajouter de port fixe dans Plesk. Obligatoire uniquement pour lancer le serveur directement avec Node hors Passenger.
 - `NEON_DATABASE_URL` — connexion PostgreSQL utilisée par l’application.
 - `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
 - `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.

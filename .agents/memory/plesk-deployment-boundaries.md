@@ -33,6 +33,12 @@ Never use Replit workflow or preview health as evidence that production works. R
 
 **How to apply:** Report production status only from live sendflow.africa checks and the Plesk/GitHub deployment run that transfers to Plesk.
 
+Do not treat a successful standalone TCP smoke test as evidence of Passenger-compatible startup. Test the socket-managed Passenger path without a numeric `PORT` separately.
+
+**Why:** Earlier successful builds and HTTP checks always injected a numeric port, so they did not detect a startup requirement that can prevent Passenger from reaching `listen()`. Official Passenger documentation specifies reverse port binding rather than an application-selected TCP port.
+
+**How to apply:** Keep no-PORT Passenger regression checks alongside standalone checks. Label a simulated Passenger hook as a simulation, not as verification on the actual Plesk host.
+
 When diagnosing a Plesk 500, distinguish access-log entries from server error logs. Access-log screenshots confirm the failing URL and status, but do not identify the crash cause; do not ask the user to resend those same screenshots.
 
 **Why:** The Plesk screenshots supplied for SendFlow showed 500 access entries, not Passenger or Apache error details, and repeating that request delays diagnosis.

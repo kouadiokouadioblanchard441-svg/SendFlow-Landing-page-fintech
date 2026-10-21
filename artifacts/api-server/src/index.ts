@@ -1,25 +1,21 @@
+import { createServer } from "node:http";
 import app from "./app";
 import { logger } from "./lib/logger";
+import { listenForRequests, type PassengerRuntime } from "./lib/serverListener";
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
-const server = app.listen(port, "0.0.0.0", () => {
-  logger.info({ port }, "Server listening");
-});
+const passenger = (
+  globalThis as typeof globalThis & { PhusionPassenger?: PassengerRuntime }
+).PhusionPassenger;
+const server = createServer(app);
 
 server.on("error", (err) => {
-  logger.error({ err, port }, "Error listening on port");
+  logger.error({ err }, "Error starting HTTP listener");
   process.exit(1);
+});
+
+listenForRequests(server, process.env.PORT, passenger, () => {
+  logger.info(
+    { transport: passenger ? "passenger" : "tcp" },
+    "Server listening",
+  );
 });
