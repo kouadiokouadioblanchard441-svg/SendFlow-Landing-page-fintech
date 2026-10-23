@@ -52,12 +52,14 @@ echo "Running tests, type checks, and the Plesk production build..."
 pnpm run build
 
 required_files=(
+  "dist/build-info.json"
   "dist/package.json"
   "dist/index.cjs"
   "dist/pino-worker.cjs"
   "dist/pino-file.cjs"
   "dist/pino-pretty.cjs"
   "dist/thread-stream-worker.cjs"
+  "dist/public/.htaccess"
   "dist/public/index.html"
   "dist/public/sitemap.xml"
   "dist/public/robots.txt"

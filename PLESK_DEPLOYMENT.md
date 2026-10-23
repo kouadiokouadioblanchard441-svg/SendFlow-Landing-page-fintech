@@ -2,11 +2,11 @@
 
 ## Structure livrée
 
-Le build de production produit `dist/` dans le dépôt Plesk après l’action de déploiement Git, avec un `package.json` minimal pour le gestionnaire Node.js. GitHub Actions vérifie séparément que ce paquet se construit et démarre correctement. Configure :
+Le build de production produit `dist/` dans le checkout Git Plesk après l’action de déploiement, avec un `package.json` minimal pour le gestionnaire Node.js. GitHub Actions vérifie séparément que ce paquet se construit et démarre correctement. Le checkout Git et la racine de l’application Node.js sont deux chemins distincts. Configure :
 
-- **Application root** : le sous-dossier `dist` généré sous la racine du dépôt Plesk. Le dépôt Git doit rester dans le dossier parent.
+- **Application root** : le `dist` généré sous le checkout Git Plesk. Résous le chemin à partir du vrai dossier du dépôt affiché par Plesk ; ne suppose pas que ce chemin est `/httpdocs`.
 - **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
-- **Document root** : le dossier `public` sous l’application root, soit `<racine-du-projet>/dist/public`.
+- **Document root** : `public` sous l’application root, soit le chemin réel `<checkout-git>/dist/public`.
 - **Node.js** : Node 24 si disponible (référence de développement et de CI), sinon Node 22.12+ dans la branche 22. La compatibilité de build avec Node 20.19+ dans la branche 20 est conservée pour les hébergements existants ; préférer une branche LTS encore maintenue.
 - **Gestionnaire Plesk** : pnpm (comme le projet). Le manifeste runtime ne déclare aucune dépendance à installer ; le build du dépôt utilise pnpm 10.26.1.
 - **Mode** : `production`.
@@ -14,12 +14,15 @@ Le build de production produit `dist/` dans le dépôt Plesk après l’action d
 
 Le build génère aussi `dist/public/.htaccess` : Apache renvoie les routes web inconnues vers `index.html` pour que le routeur React traite les accès directs et les actualisations. Les chemins `/api/*` restent transmis à Passenger.
 
-Le serveur recherche les fichiers du site dans `public/` relativement au dossier courant Plesk `dist`. L’arborescence attendue est :
+Plesk doit démarrer le bundle avec `dist` comme répertoire courant : le serveur y cherche `build-info.json` et `public/`. Le fichier `index.cjs` à la racine du checkout est un wrapper de build ; ne le sélectionne pas comme fichier de démarrage si l’application root reste le checkout. Il laisse le répertoire courant au checkout, ce qui fait perdre l’ID du build et ne correspond pas au paquet runtime isolé.
+
+L’arborescence attendue dans l’application root Plesk est :
 
 ```text
 dist/
   package.json
   index.cjs
+  build-info.json
   pino-worker.cjs
   pino-file.cjs
   pino-pretty.cjs
@@ -91,13 +94,34 @@ pnpm run deploy:plesk
 
 ## Déploiement depuis Plesk Git
 
-Le dépôt Git doit être placé dans le dossier parent de `dist`, sur la branche `main`. Dans les paramètres du dépôt Git Plesk, garde la racine du dépôt comme dossier de déploiement et configure une seule action de déploiement après le pull :
+Le checkout du dépôt Git doit rester dans son propre dossier, sur la branche `main`; l’action de déploiement s’exécute depuis ce checkout et crée `dist/` à l’intérieur. Dans les paramètres du dépôt Git Plesk, garde la racine du dépôt comme dossier de déploiement et configure une seule action après le pull :
 
 ```sh
 bash scripts/plesk-git-deploy.sh
 ```
 
 Cette action installe les dépendances avec le lockfile, exécute les tests et les vérifications TypeScript, construit le frontend et l’API, vérifie les fichiers attendus et marque Passenger pour redémarrage. Elle ne lance aucune migration de base de données. Ensuite, le flux est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now** dans Plesk, vérifier que l’action de déploiement réussit, puis cliquer **Restart** dans Plesk.
+
+### Première livraison et réglages Node.js
+
+Si `dist/` n’existe pas encore sur le serveur, il est normal qu’il soit absent
+dans le sélecteur de dossiers Plesk. Ce sélecteur **Document Root** choisit un
+dossier, pas le fichier de démarrage. Procède dans cet ordre :
+
+1. Configure l’action Git ci-dessus depuis le checkout du dépôt.
+2. Exécute **Pull**, puis **Deploy Now**. Vérifie que le hook réussit et crée
+   `dist/index.cjs`, `dist/build-info.json` et `dist/public/index.html`.
+3. Dans les réglages Node.js, sélectionne comme Application Root le chemin
+   absolu réel du dossier `dist` généré sous le checkout. Le fichier de
+   démarrage est `index.cjs`, relatif à cette racine.
+4. Sélectionne comme Document Root le dossier `public` de cette même racine
+   d’application (`<checkout-git>/dist/public`).
+5. Garde une version Node compatible avec le build et le mode `production`,
+   puis clique **Restart**.
+
+Ne configure pas `/httpdocs` ou un autre chemin absolu sans confirmer que le
+checkout Plesk se trouve réellement à cet emplacement. Le hook de build et les
+réglages Node.js sont deux configurations différentes.
 
 Le workflow `.github/workflows/validate-plesk-build.yml` ne déploie pas sur Plesk et n’a besoin d’aucun secret SSH : il vérifie le build sur GitHub à chaque push sur `main`. Le déploiement de production est effectué par Plesk lorsque tu cliques **Deploy Now**.
 
@@ -121,7 +145,9 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 
 Le build est effectué par l’action de déploiement Plesk. Après **Deploy Now**, utiliser **Restart** dans Plesk pour redémarrer Passenger.
 
-Après une livraison réussie, vérifier dans le File Manager que le dossier d’application contient `index.cjs`, les workers Pino et `public/index.html`. Tester :
+Après une livraison réussie, vérifier dans le File Manager que l’Application
+Root Node.js contient `index.cjs`, `build-info.json`, les workers Pino et
+`public/index.html`. Tester :
 
 - `https://<domaine-configuré>/`
 - `https://<domaine-configuré>/api/healthz`

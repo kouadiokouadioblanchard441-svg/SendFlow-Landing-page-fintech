@@ -99,6 +99,15 @@ jobs:
             exit 1
           fi
 
+          health_json="$(curl --silent --show-error --fail "http://127.0.0.1:$port/api/healthz")"
+          expected_build_id="$(node -p "require('./dist/build-info.json').buildId")"
+          actual_build_id="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).buildId ?? "")' "$health_json")"
+          if [[ -z "$expected_build_id" || "$actual_build_id" != "$expected_build_id" ]]; then
+            echo "::error::The server did not load build-info.json from the Plesk application root (dist)."
+            exit 1
+          fi
+          echo "Verified health endpoint uses Plesk package build ID $expected_build_id."
+
           smoke_dir="$(mktemp -d)"
 
           while IFS='|' read -r route locale marker; do
