@@ -1,4 +1,5 @@
 import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,6 +24,11 @@ await writeFile(
     null,
     2,
   )}\n`,
+);
+const buildId = randomUUID();
+await writeFile(
+  path.join(outputDist, "build-info.json"),
+  `${JSON.stringify({ buildId }, null, 2)}\n`,
 );
 await writeFile(
   path.join(outputDist, "public", ".htaccess"),
@@ -76,4 +82,6 @@ for (const routePath of publicRoutePaths) {
   await mkdir(routeDirectory, { recursive: true });
   await cp(publicIndexPath, path.join(routeDirectory, "index.html"));
 }
-console.log(`Plesk build ready: ${path.relative(repoRoot, path.join(outputDist, "index.cjs"))}`);
+console.log(
+  `Plesk build ready: ${path.relative(repoRoot, path.join(outputDist, "index.cjs"))} (build ID: ${buildId})`,
+);

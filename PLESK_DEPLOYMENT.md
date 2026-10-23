@@ -33,6 +33,12 @@ dist/
 
 Le répertoire `dist/` reste exclu du dépôt Git. Après un pull, l’action de déploiement Plesk le régénère dans le dossier du dépôt. Le déploiement ne lance aucune migration de base de données. Il demande le redémarrage Passenger via `dist/tmp/restart.txt`.
 
+Chaque paquet contient un `build-info.json` qui ne stocke qu’un UUID aléatoire
+non sensible. Le script affiche cet identifiant dans la sortie de l’action de
+déploiement. L’API renvoie le même identifiant dans `buildId` sur
+`/api/healthz`; elle ne renvoie ni variables d’environnement, ni secrets, ni
+chemins, ni données d’administration.
+
 ## Build et livraison
 
 ### Versions Node.js : disponibilité, build et validation
@@ -119,5 +125,18 @@ Après une livraison réussie, vérifier dans le File Manager que le dossier d�
 
 - `https://<domaine-configuré>/`
 - `https://<domaine-configuré>/api/healthz`
+
+Pour confirmer quel paquet est réellement servi après **Deploy Now** et
+**Restart** :
+
+1. Dans la sortie de l’action Plesk, relever la valeur `build ID` de la ligne
+   `Plesk build ready`.
+2. Interroger publiquement `https://<domaine-configuré>/api/healthz` et relever
+   le champ `buildId` de la réponse JSON.
+3. Comparer les deux UUID : s’ils sont identiques, le serveur répond avec le
+   paquet préparé par cette action. S’ils diffèrent, ou si `buildId` vaut
+   `null`/est absent, le paquet servi n’est pas celui attendu (ou le paquet
+   préparé n’inclut pas encore les métadonnées). Vérifier le résultat de
+   **Deploy Now**, puis redémarrer Passenger et refaire le contrôle.
 
 Les pages protégées nécessitant une authentification ne sont pas vérifiables sans session. Une réponse HTTP 200 à `/api/healthz` vérifie que le processus sert l’API, mais ne prouve pas à elle seule que chaque intégration tierce fonctionne.

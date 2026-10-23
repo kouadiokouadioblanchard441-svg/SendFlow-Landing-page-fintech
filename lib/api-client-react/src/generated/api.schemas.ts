@@ -7,6 +7,7 @@
  */
 export interface HealthStatus {
   status: string;
+  buildId: string | null;
 }
 
 export interface ErrorEnvelope {

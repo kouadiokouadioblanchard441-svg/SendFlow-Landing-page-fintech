@@ -9,11 +9,12 @@ import * as zod from 'zod';
 
 
 /**
- * Returns server health status
+ * Returns server health status and the non-sensitive build ID, or null when no packaged build metadata is available.
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  "status": zod.string()
+  "status": zod.string(),
+  "buildId": zod.string().nullable()
 })
 
 
