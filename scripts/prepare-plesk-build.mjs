@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -77,10 +77,14 @@ const publicRoutePaths = [
   "en/france-senegal",
 ];
 const publicIndexPath = path.join(outputDist, "public", "index.html");
+const defaultRouteHtml = await readFile(publicIndexPath, "utf8");
 for (const routePath of publicRoutePaths) {
   const routeDirectory = path.join(outputDist, "public", routePath);
   await mkdir(routeDirectory, { recursive: true });
-  await cp(publicIndexPath, path.join(routeDirectory, "index.html"));
+  const localizedHtml = routePath === "en" || routePath.startsWith("en/")
+    ? defaultRouteHtml.replace('<html lang="fr">', '<html lang="en">')
+    : defaultRouteHtml;
+  await writeFile(path.join(routeDirectory, "index.html"), localizedHtml);
 }
 console.log(
   `Plesk build ready: ${path.relative(repoRoot, path.join(outputDist, "index.cjs"))} (build ID: ${buildId})`,

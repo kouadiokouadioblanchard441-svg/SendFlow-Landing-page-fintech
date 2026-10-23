@@ -64,6 +64,7 @@ jobs:
           set -euo pipefail
           port=4179
           log_file="$(mktemp)"
+          smoke_dir=""
           (
             cd dist
             exec env NODE_ENV=production PORT="$port" PUBLIC_SITE_URL="$APP_URL" node ./index.cjs
@@ -72,6 +73,9 @@ jobs:
           cleanup() {
             kill "$server_pid" 2>/dev/null || true
             wait "$server_pid" 2>/dev/null || true
+            if [[ -n "$smoke_dir" ]]; then
+              rm -rf "$smoke_dir"
+            fi
             rm -f "$log_file"
           }
           trap cleanup EXIT
@@ -95,14 +99,65 @@ jobs:
             exit 1
           fi
 
-          for route in / /fonctionnalites/ /en/; do
-            status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+          smoke_dir="$(mktemp -d)"
+
+          while IFS='|' read -r route locale marker; do
+            page_file="$smoke_dir/page.html"
+            status="$(curl --silent --show-error --output "$page_file" --write-out '%{http_code}' \
               "http://127.0.0.1:$port$route")"
             if [[ "$status" != 200 ]]; then
               echo "::error::Local production route $route returned HTTP $status."
               exit 1
             fi
-          done
+
+            if ! grep -Fq "<html lang=\"$locale\">" "$page_file"; then
+              echo "::error::Local production route $route did not serve the expected $locale document."
+              exit 1
+            fi
+
+            js_path="$(grep -oE 'src="[^"]+\.js"' "$page_file" | head -n 1 | cut -d '"' -f 2)"
+            css_path="$(grep -oE 'href="[^"]+\.css"' "$page_file" | head -n 1 | cut -d '"' -f 2)"
+            if [[ -z "$js_path" || -z "$css_path" ]]; then
+              echo "::error::Local production route $route does not reference the expected JavaScript and CSS bundles."
+              exit 1
+            fi
+
+            js_type="$(curl --silent --show-error --fail --output "$smoke_dir/app.js" --write-out '%{content_type}' \
+              "http://127.0.0.1:$port$js_path")"
+            css_type="$(curl --silent --show-error --fail --output "$smoke_dir/app.css" --write-out '%{content_type}' \
+              "http://127.0.0.1:$port$css_path")"
+            if [[ ! -s "$smoke_dir/app.js" || "$js_type" != *javascript* ]]; then
+              echo "::error::The JavaScript bundle referenced by $route did not load as a JavaScript resource."
+              exit 1
+            fi
+            if [[ ! -s "$smoke_dir/app.css" || "$css_type" != *text/css* ]]; then
+              echo "::error::The stylesheet referenced by $route did not load as a CSS resource."
+              exit 1
+            fi
+            if ! grep -Fq "$marker" "$smoke_dir/app.js"; then
+              echo "::error::The production bundle for $route is missing its expected localized content marker: $marker"
+              exit 1
+            fi
+
+            echo "Verified localized marker and compiled assets for $route."
+          done <<'ROUTES'
+          /|fr|L’argent circule.
+          /fonctionnalites/|fr|Tout ce dont vous avez besoin pour envoyer
+          /en/|en|Money moves.
+          /en/features/|en|Everything you need to send and receive money simply
+          ROUTES
+
+          favicon_path="$(grep -oE 'href="[^"]*sendflow-favicon\.png"' "$smoke_dir/page.html" | head -n 1 | cut -d '"' -f 2)"
+          if [[ -z "$favicon_path" ]]; then
+            echo "::error::The production HTML does not reference the expected SendFlow favicon."
+            exit 1
+          fi
+          favicon_type="$(curl --silent --show-error --fail --output "$smoke_dir/favicon.png" --write-out '%{content_type}' \
+            "http://127.0.0.1:$port$favicon_path")"
+          if [[ ! -s "$smoke_dir/favicon.png" || "$favicon_type" != *image/png* ]]; then
+            echo "::error::The SendFlow favicon did not load as a PNG resource."
+            exit 1
+          fi
 
       - name: Simulate the Passenger hook without PORT
         env:

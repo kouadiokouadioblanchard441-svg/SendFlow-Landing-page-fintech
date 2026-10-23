@@ -75,11 +75,19 @@ app.use(express.static(webDistDir, { index: false }));
 app.use((req, res, next) => {
   const isPageRequest = req.method === "GET" || req.method === "HEAD";
   const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
-  const indexPath = path.join(webDistDir, "index.html");
-  if (!isPageRequest || isApiRequest || !existsSync(indexPath)) {
+  const defaultIndexPath = path.join(webDistDir, "index.html");
+  if (!isPageRequest || isApiRequest || !existsSync(defaultIndexPath)) {
     next();
     return;
   }
+
+  const routeDirectory = path.resolve(webDistDir, `.${req.path}`);
+  const routeIndexPath = path.join(routeDirectory, "index.html");
+  const webRootPrefix = `${webDistDir}${path.sep}`;
+  const indexPath =
+    routeIndexPath.startsWith(webRootPrefix) && existsSync(routeIndexPath)
+      ? routeIndexPath
+      : defaultIndexPath;
   res.sendFile(indexPath);
 });
 
