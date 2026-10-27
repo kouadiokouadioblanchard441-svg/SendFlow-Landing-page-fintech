@@ -1079,7 +1079,19 @@ function LandingPage() {
           </div>
           <div className="hidden items-center gap-3 min-[1280px]:flex">
             <button onClick={() => navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr'))} className="flex items-center gap-1 rounded-full px-2 py-2 text-[12px] font-semibold text-[#5e5766] hover:text-[#6d35d8]" data-testid="button-language">{isFrench ? 'EN' : 'FR'} <Globe2 size={14} /></button>
-             <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="rounded-full bg-[#211d2c] px-4 py-2.5 text-[12px] font-semibold !text-white transition-transform hover:-translate-y-0.5" data-testid="button-nav-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-1 inline" size={14} /></Link>
+            <a
+              href={registrationUrl ?? undefined}
+              onClick={(event) => {
+                if (!registrationUrl) event.preventDefault();
+              }}
+              aria-disabled={!registrationUrl}
+              role={registrationUrl ? undefined : 'link'}
+              title={!registrationUrl ? 'Configurez l’URL d’inscription dans le panneau admin.' : undefined}
+              className="rounded-full bg-[#211d2c] px-4 py-2.5 text-[12px] font-semibold !text-white transition-transform hover:-translate-y-0.5"
+              data-testid="button-nav-register"
+            >
+              {registrationLabel} <ArrowRight className="ml-1 inline" size={14} />
+            </a>
           </div>
           <button type="button" onClick={downloadBrief} className="hidden items-center gap-1 rounded-full px-2 py-2 text-[11px] font-semibold text-[#6d35d8] min-[1280px]:flex" data-testid="button-download-brief">{isFrench ? 'Brief' : 'Brief'} <ArrowDownRight size={13} /></button>
           <button
@@ -1163,15 +1175,24 @@ function LandingPage() {
                 <span>{isFrench ? 'Langue' : 'Language'}</span>
                 <strong><Globe2 size={15} aria-hidden="true" />{isFrench ? 'English' : 'Français'}</strong>
               </button>
-              <Link
-                href={getLocalizedPath('/download', language)}
-                onClick={() => setMobileOpen(false)}
+              <a
+                href={registrationUrl ?? undefined}
+                onClick={(event) => {
+                  if (!registrationUrl) {
+                    event.preventDefault();
+                    return;
+                  }
+                  setMobileOpen(false);
+                }}
+                aria-disabled={!registrationUrl}
+                role={registrationUrl ? undefined : 'link'}
+                title={!registrationUrl ? 'Configurez l’URL d’inscription dans le panneau admin.' : undefined}
                 className="sf-public-nav-download"
-                data-testid="button-mobile-download"
+                data-testid="button-mobile-register"
               >
-                {t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)}
+                {registrationLabel}
                 <ArrowRight aria-hidden="true" size={16} />
-              </Link>
+              </a>
             </div>
           </aside>
         </div>
