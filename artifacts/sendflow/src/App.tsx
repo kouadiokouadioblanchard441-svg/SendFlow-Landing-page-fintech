@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
-import { ArrowDownRight, ArrowRight, Check, ChevronDown, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, Check, ChevronDown, ChevronRight, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -854,6 +854,21 @@ function LandingPage() {
   const { data: landingBundle } = usePublicLandingBundle();
   activePublicContent = landingBundle?.content;
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobileOpen]);
+
   const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNewsletterError(null);
@@ -1038,29 +1053,100 @@ function LandingPage() {
              <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="rounded-full bg-[#211d2c] px-4 py-2.5 text-[12px] font-semibold !text-white transition-transform hover:-translate-y-0.5" data-testid="button-nav-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-1 inline" size={14} /></Link>
           </div>
           <button type="button" onClick={downloadBrief} className="hidden items-center gap-1 rounded-full px-2 py-2 text-[11px] font-semibold text-[#6d35d8] lg:flex" data-testid="button-download-brief">{isFrench ? 'Brief' : 'Brief'} <ArrowDownRight size={13} /></button>
-          <button className="rounded-full p-2 md:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu" data-testid="button-open-menu"><Menu size={21} /></button>
+          <button
+            className="sf-public-nav-trigger md:hidden"
+            onClick={() => setMobileOpen(true)}
+            aria-label={isFrench ? 'Ouvrir le menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="sf-public-mobile-navigation"
+            data-testid="button-open-menu"
+            type="button"
+          >
+            <Menu size={20} />
+          </button>
         </nav>
       </header>
 
-      {mobileOpen && <div className="fixed inset-0 z-50 bg-[#211d2c]/20 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)}>
-        <div className="ml-auto min-h-full w-[min(88%,380px)] bg-[#f7f3e9] p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-          <div className="flex items-center justify-between">
-            <BrandLockup />
-            <button onClick={() => setMobileOpen(false)} className="rounded-full border border-[#2d2535]/10 p-2" data-testid="button-close-menu"><X size={19} /></button>
-          </div>
-          <div className="mt-16 flex flex-col gap-6">
-            {publicNavItems.map((item) => {
-              const href = getLocalizedPath(publicNavHref(item.id), language);
-              const className = "flex items-center border-b border-[#2d2535]/10 pb-4 text-left text-2xl font-semibold tracking-[-.04em]";
-              return href.startsWith('#')
-                ? <a key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} data-testid={`link-mobile-${item.id}`}>{t(item.label, language)}</a>
-                : <Link key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} data-testid={`link-mobile-${item.id}`}>{t(item.label, language)}</Link>;
-            })}
-          </div>
-          <button onClick={() => { navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr')); setMobileOpen(false); }} className="mt-12 flex items-center gap-2 text-sm font-semibold text-[#6d35d8]" data-testid="button-mobile-language"><span aria-hidden="true">{isFrench ? '🇬🇧' : '🇫🇷'}</span> {isFrench ? 'Passer en anglais' : 'Switch to French'}</button>
-             <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="mt-5 block w-full rounded-full bg-[#6d35d8] px-5 py-4 text-center text-sm font-semibold !text-white" data-testid="button-mobile-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2 inline" size={16} /></Link>
+      {mobileOpen && (
+        <div
+          className="sf-public-nav-backdrop md:hidden"
+          onClick={() => setMobileOpen(false)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setMobileOpen(false);
+          }}
+          role="presentation"
+        >
+          <aside
+            id="sf-public-mobile-navigation"
+            className="sf-public-nav-panel"
+            onClick={(event) => event.stopPropagation()}
+            aria-label={isFrench ? 'Menu principal' : 'Main menu'}
+            aria-modal="true"
+            role="dialog"
+          >
+            <div className="sf-public-nav-top">
+              <BrandLockup />
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="sf-public-nav-close"
+                aria-label={isFrench ? 'Fermer le menu' : 'Close menu'}
+                data-testid="button-close-menu"
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="sf-public-nav-intro">
+              <p>{isFrench ? 'Navigation' : 'Navigation'}</p>
+              <h2>{isFrench ? 'Explorer SendFlow' : 'Explore SendFlow'}</h2>
+            </div>
+
+            <nav
+              className="sf-public-nav-links"
+              aria-label={isFrench ? 'Navigation principale' : 'Main navigation'}
+            >
+              {publicNavItems.map((item) => {
+                const href = getLocalizedPath(publicNavHref(item.id), language);
+                const className = 'sf-public-nav-link';
+                const content = (
+                  <>
+                    <span>{t(item.label, language)}</span>
+                    <ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+                  </>
+                );
+                return href.startsWith('#')
+                  ? <a key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} aria-current={item.id === 'top' ? 'page' : undefined} data-testid={`link-mobile-${item.id}`}>{content}</a>
+                  : <Link key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} aria-current={item.id === 'top' ? 'page' : undefined} data-testid={`link-mobile-${item.id}`}>{content}</Link>;
+              })}
+            </nav>
+
+            <div className="sf-public-nav-footer">
+              <button
+                onClick={() => {
+                  navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr'));
+                  setMobileOpen(false);
+                }}
+                className="sf-public-nav-language"
+                data-testid="button-mobile-language"
+                type="button"
+              >
+                <span>{isFrench ? 'Langue' : 'Language'}</span>
+                <strong><Globe2 size={15} aria-hidden="true" />{isFrench ? 'English' : 'Français'}</strong>
+              </button>
+              <Link
+                href={getLocalizedPath('/download', language)}
+                onClick={() => setMobileOpen(false)}
+                className="sf-public-nav-download"
+                data-testid="button-mobile-download"
+              >
+                {t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)}
+                <ArrowRight aria-hidden="true" size={16} />
+              </Link>
+            </div>
+          </aside>
         </div>
-      </div>}
+      )}
 
       <main id="top">
         <section className="relative overflow-hidden px-5 pb-10 pt-36 sm:px-8 sm:pb-16 sm:pt-44">
