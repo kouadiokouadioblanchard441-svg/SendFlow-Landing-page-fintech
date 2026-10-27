@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
-import { ArrowDownRight, ArrowRight, Check, ChevronDown, ChevronRight, Code2, Globe2, Link2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, Check, ChevronDown, ChevronRight, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
+import publicSeoRoutes from '@/lib/public-seo-routes.json';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
@@ -20,6 +21,8 @@ import SecurityPage from '@/pages/security';
 import CorridorGuidePage from '@/pages/corridor-guide';
 import { SendFlowFooter } from '@/components/sendflow-footer';
 import DeveloperApiCard from '@/components/DeveloperApiCard';
+import FeatureActionCards from '@/components/FeatureActionCards';
+import { developerApiExample } from '@/lib/developer-api-example';
 import { ProtectedImage } from '@/components/protected-image';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
@@ -127,12 +130,6 @@ const contentCopy = (
   fr: content?.find((item) => item.contentKey === key && item.locale === 'fr' && item.isVisible)?.value ?? fallback.fr,
   en: content?.find((item) => item.contentKey === key && item.locale === 'en' && item.isVisible)?.value ?? fallback.en,
 });
-const safeLandingHref = (candidate: string, fallback: string) => {
-  const value = candidate.trim();
-  if (/^#[A-Za-z0-9_-]+$/.test(value)) return value;
-  if (value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') && !/\s/.test(value)) return value;
-  return fallback;
-};
 type PublicLandingBundle = {
   content: Array<{ contentKey: string; locale: string; value: string; isVisible: boolean }>;
   sections: Array<{ slug: string; kind: string; orderIndex: number; titleFr: string; titleEn: string; bodyFr: string | null; bodyEn: string | null; imageKey: string | null; isVisible: boolean }>;
@@ -374,43 +371,9 @@ const faqs: { q: Copy; a: Copy }[] = [
   { q: { fr: 'Quels réseaux sont disponibles ?', en: 'Which networks are available?' }, a: { fr: 'La couverture SendFlow réunit les principaux opérateurs disponibles dans les pays couverts. Sélectionnez un pays pour découvrir ses réseaux.', en: 'SendFlow coverage brings together the main operators available in supported countries. Select a country to explore its networks.' } },
   { q: { fr: 'Puis-je transférer vers un autre pays ?', en: 'Can I transfer to another country?' }, a: { fr: 'Oui. SendFlow est conçu pour relier les réseaux locaux et faciliter les transferts internationaux lorsque les conditions locales le permettent.', en: 'Yes. SendFlow is designed to connect local networks and simplify international transfers where local conditions allow.' } },
   { q: { fr: 'Comment suivre un transfert ?', en: 'How do I track a transfer?' }, a: { fr: 'SendFlow affiche chaque étape, de la vérification à la confirmation, avec un statut lisible pour le bénéficiaire et l’expéditeur.', en: 'SendFlow shows every step from review to confirmation, with a clear status for sender and recipient.' } },
-  { q: { fr: 'SendFlow possède-t-il un wallet ?', en: 'Does SendFlow have a wallet?' }, a: { fr: 'Non. SendFlow agit comme une couche de connexion entre réseaux, et non comme un wallet ou un compte financier.', en: 'No. SendFlow acts as a connection layer between networks, not as a wallet or financial account.' } },
+  { q: { fr: 'SendFlow possède-t-il un wallet ?', en: 'Does SendFlow have a wallet?' }, a: { fr: 'Oui. SendFlow possède un wallet.', en: 'Yes. SendFlow has a wallet.' } },
   { q: { fr: 'L’API développeur SendFlow est-elle disponible ?', en: 'Is the SendFlow developer API available?' }, a: { fr: 'Oui. Les développeurs peuvent connecter leurs applications aux services SendFlow grâce à l’API.', en: 'Yes. Developers can connect their applications to SendFlow services through the API.' } },
 ];
-
-const developerApiCode: Copy = {
-  fr: [
-    'POST https://sendflow.africa/v2/payin/initiate',
-    'Content-Type: application/json',
-    '',
-    '{',
-    '  "amount": 5000,',
-    '  "currency": "XOF",',
-    '  "country_code": "CI",',
-    '  "operator": "orange",',
-    '  "phone": "+2250700000000",',
-    '  "order_id": "ORDER-20260711-001",',
-    '  "operator_otp": "123456",',
-    '  "webhook_url": "https://yourapp.com/webhooks/drimpay"',
-    '}',
-  ].join('\n'),
-  en: [
-    'POST https://sendflow.africa/v2/payin/initiate',
-    'Content-Type: application/json',
-    '',
-    '{',
-    '  "amount": 5000,',
-    '  "currency": "XOF",',
-    '  "country_code": "CI",',
-    '  "operator": "orange",',
-    '  "phone": "+2250700000000",',
-    '  "order_id": "ORDER-20260711-001",',
-    '  "operator_otp": "123456",',
-    '  "webhook_url": "https://yourapp.com/webhooks/drimpay"',
-    '}',
-  ].join('\n'),
-};
-
 
 function StoreLogo({ icon }: { icon: 'play' | 'apple' }) {
   if (icon === 'play') {
@@ -1016,25 +979,18 @@ function LandingPage() {
   const googlePlayUrl = landingBundle?.settings?.googlePlayUrl?.trim() || null;
   const appStoreUrl = landingBundle?.settings?.appStoreUrl?.trim() || null;
   const hasStoreLink = Boolean(googlePlayUrl || appStoreUrl);
-  const paymentLinkHref = safeLandingHref(
-    t(contentCopy(landingBundle?.content, 'feature.payment-link.href', { fr: '/download', en: '/en/download' }), language),
-    getLocalizedPath('/download', language),
-  );
-  const developerApiHref = safeLandingHref(
-    t(contentCopy(landingBundle?.content, 'feature.api-integration.href', { fr: '#developer-api', en: '#developer-api' }), language),
-    '#developer-api',
-  );
+  const homeServiceDefaults = publicSeoRoutes.home.service[language];
   useSeo({
     path: '/',
     locale: language,
-    title: isFrench ? 'Transfert Mobile Money en Afrique | SendFlow' : 'Mobile Money transfers in Africa | SendFlow',
-    description: isFrench
-      ? hasStoreLink
-        ? 'Découvrez SendFlow et téléchargez l’application pour préparer, vérifier et suivre des transferts entre réseaux Mobile Money disponibles en Afrique.'
-        : 'Découvrez SendFlow pour préparer, vérifier et suivre des transferts entre réseaux Mobile Money en Afrique, selon la disponibilité des pays et opérateurs.'
-      : hasStoreLink
-        ? 'Discover SendFlow and download the app to prepare, review and track transfers across supported Mobile Money networks in Africa.'
-        : 'Discover SendFlow to prepare, review and track transfers across Mobile Money networks in Africa, where countries and operators are supported.',
+    title: t(contentCopy(landingBundle?.content, 'seo.home.title', {
+      fr: publicSeoRoutes.home.fr.title,
+      en: publicSeoRoutes.home.en.title,
+    }), language),
+    description: t(contentCopy(landingBundle?.content, 'seo.home.description', {
+      fr: publicSeoRoutes.home.fr.description,
+      en: publicSeoRoutes.home.en.description,
+    }), language),
     breadcrumbs: [{ name: isFrench ? 'Accueil' : 'Home', path: '/' }],
     faqItems: activeFaqs.map((faq) => ({ question: faq.q[language], answer: faq.a[language] })),
     application: {
@@ -1044,8 +1000,11 @@ function LandingPage() {
       downloadUrls: [googlePlayUrl, appStoreUrl].filter((url): url is string => Boolean(url)),
     },
     service: {
-      name: 'SendFlow money transfer service',
-      serviceType: 'Digital money transfer and payment-network routing',
+      name: homeServiceDefaults.name,
+      serviceType: homeServiceDefaults.serviceType,
+      areaServed: landingBundle?.countries
+        .filter((country) => country.isVisible)
+        .map((country) => isFrench ? country.nameFr : country.nameEn) ?? [],
     },
   });
   useEffect(() => {
@@ -1276,44 +1235,7 @@ function LandingPage() {
               <div className="reveal mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {remoteFeatures.map((feature) => <div key={feature.title.fr} className="group min-h-[360px] rounded-[24px] border border-[#dbe5f2] bg-white p-5 shadow-[0_18px_48px_rgba(35,76,135,.08)] transition-transform hover:-translate-y-1 sm:p-6"><div className="flex h-36 items-center justify-between gap-2 overflow-hidden rounded-[18px] bg-[#f4f7fc] px-3 sm:h-40 sm:px-4"><ProtectedImage src={feature.icon} alt="" className="h-full min-w-0 flex-1 object-contain p-2 transition-transform duration-300 group-hover:scale-105 sm:p-3" /><span className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#6d35d8]/15 bg-white px-2 py-1.5 shadow-[0_6px_14px_rgba(58,38,83,.08)]" aria-label="SendFlow"><ProtectedImage src={sendflowMark} alt="" className="h-5 w-5 object-contain" /><ProtectedImage src={sendflowWordmark} alt="SendFlow" className="h-3.5 w-auto object-contain" /></span></div><h3 className="mt-6 text-[18px] font-extrabold tracking-[-.035em] text-[#17131f]">{t(feature.title, language)}</h3><p className="mt-3 max-w-[270px] text-[14px] font-medium leading-6 text-[#3d4654]">{t(feature.text, language)}</p></div>)}
              </div>
-              <div id="feature-action-cards" className="reveal mt-8 grid gap-5 sm:grid-cols-2">
-                <article className="flex min-h-[360px] flex-col items-center rounded-[24px] border border-[#e4e3eb] bg-white px-7 py-8 text-center shadow-[0_14px_36px_rgba(35,40,60,.08)] transition-transform hover:-translate-y-1 sm:px-10">
-                  <div className="grid h-[72px] w-[72px] place-items-center rounded-[18px] bg-[#f1edfa] text-[#6d35d8]">
-                    <Link2 size={32} strokeWidth={2} aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-6 text-[20px] font-extrabold tracking-[-.035em] text-[#17131f]">
-                    {t(contentCopy(landingBundle?.content, 'feature.payment-link.title', { fr: 'Créer un lien de paiement', en: 'Create a payment link' }), language)}
-                  </h3>
-                  <p className="mt-3 max-w-[360px] text-[16px] font-medium leading-7 text-[#5d5965]">
-                    {t(contentCopy(landingBundle?.content, 'feature.payment-link.body', { fr: 'Aucun code. Sans tracas. Partagez votre lien de paiement pour faciliter l’encaissement.', en: 'No code. No hassle. Share your payment link to make collecting payments easier.' }), language)}
-                  </p>
-                  <Link
-                    href={paymentLinkHref}
-                    className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#4c0fa8] px-6 py-3 text-[14px] font-bold !text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
-                  >
-                    {t(contentCopy(landingBundle?.content, 'feature.payment-link.cta', { fr: 'Créer un lien', en: 'Create a link' }), language)}
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </Link>
-                </article>
-                <article className="flex min-h-[360px] flex-col items-center rounded-[24px] border border-[#e4e3eb] bg-white px-7 py-8 text-center shadow-[0_14px_36px_rgba(35,40,60,.08)] transition-transform hover:-translate-y-1 sm:px-10">
-                  <div className="grid h-[72px] w-[72px] place-items-center rounded-[18px] bg-[#f1edfa] text-[#6d35d8]">
-                    <Code2 size={32} strokeWidth={2} aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-6 text-[20px] font-extrabold tracking-[-.035em] text-[#17131f]">
-                    {t(contentCopy(landingBundle?.content, 'feature.api-integration.title', { fr: 'Intégration via API', en: 'API integration' }), language)}
-                  </h3>
-                  <p className="mt-3 max-w-[360px] text-[16px] font-medium leading-7 text-[#5d5965]">
-                    {t(contentCopy(landingBundle?.content, 'feature.api-integration.body', { fr: 'Connectez vos applications aux services SendFlow grâce à l’API développeur.', en: 'Connect your applications to SendFlow services through the developer API.' }), language)}
-                  </p>
-                  <a
-                    href={developerApiHref}
-                    className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#4c0fa8] px-6 py-3 text-[14px] font-bold !text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
-                  >
-                    {t(contentCopy(landingBundle?.content, 'feature.api-integration.cta', { fr: 'Voir la documentation', en: 'View the documentation' }), language)}
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </a>
-                </article>
-              </div>
+              <FeatureActionCards content={landingBundle?.content ?? []} language={language} />
               <div className="reveal mt-16 rounded-[28px] border-2 border-[#dbe5f2] bg-[#eef5ff] p-6 shadow-[0_18px_50px_rgba(35,76,135,.08)] sm:p-8">
                  <p className="text-[11px] font-extrabold uppercase tracking-[.17em] text-[#5b21b6]">{t(contentCopy(landingBundle?.content, 'features.principles.kicker', { fr: 'Une expérience, trois repères', en: 'One experience, three principles' }), language)}</p>
                  <h3 className="mt-4 max-w-[620px] text-3xl font-extrabold leading-tight tracking-[-.05em] text-[#17131f] sm:text-4xl">{t(contentCopy(landingBundle?.content, 'features.principles.title', { fr: 'Pensé pour une Afrique connectée.', en: 'Built for a connected Africa.' }), language)}</h3>
@@ -1397,7 +1319,7 @@ function LandingPage() {
           title={t(contentCopy(landingBundle?.content, 'developer.api.title', { fr: 'Initiez un paiement avec l’API SendFlow.', en: 'Initiate a payment with the SendFlow API.' }), language)}
           body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Exemple de requête JSON vers l’endpoint de paiement entrant.', en: 'Example JSON request to the pay-in endpoint.' }), language)}
           codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Requête JSON · Paiement entrant', en: 'JSON request · Pay-in' }), language)}
-          code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiCode), language)}
+          code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiExample), language)}
         />
 
         <section id="security" className="overflow-hidden px-5 py-12 sm:px-8 sm:py-20">

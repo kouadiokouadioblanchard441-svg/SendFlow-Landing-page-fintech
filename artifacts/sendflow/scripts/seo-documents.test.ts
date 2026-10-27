@@ -6,11 +6,12 @@ import { absoluteSeoUrl, renderSeoDocuments } from './seo-documents.ts';
 import { getLocaleFromPath, getLocalizedAlternates, getLocalizedPath } from '../src/lib/localized-routes.ts';
 
 const root = new URL('../', import.meta.url);
-const [html, sitemap, robots] = await Promise.all(
-  ['index.html', 'public/sitemap.xml', 'public/robots.txt'].map(file =>
+const [html, sitemap, robots, routeSeoJson] = await Promise.all(
+  ['index.html', 'public/sitemap.xml', 'public/robots.txt', 'src/lib/public-seo-routes.json'].map(file =>
     fs.readFile(new URL(file, root), 'utf8'),
   ),
 );
+const publicSeoRoutes = JSON.parse(routeSeoJson);
 // Reserved example domain used only in tests, never configured for the application.
 const origin = 'https://sendflow.example';
 
@@ -34,7 +35,21 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(schema['@graph'][0]['@id'], `${origin}/#organization`);
   assert.equal(schema['@graph'][0].logo, `${origin}/sendflow-favicon.png`);
   assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').url, `${origin}/`);
+  assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').name, 'API de paiement Mobile Money en Afrique | SendFlow');
+  assert.ok(schema['@graph'].some((item: { '@type': string; serviceType?: string }) =>
+    item['@type'] === 'Service' && item.serviceType?.includes('API développeur'),
+  ));
   assert.equal(schema['@context'], 'https://schema.org');
+});
+
+test('home and feature SEO target developer payments in both languages', () => {
+  assert.match(publicSeoRoutes.home.fr.title, /API.*Mobile Money.*Afrique/);
+  assert.match(publicSeoRoutes.home.fr.description, /tarifs compétitifs/);
+  assert.match(publicSeoRoutes.home.en.title, /Mobile Money.*API.*Africa/);
+  assert.match(publicSeoRoutes.features.fr.description, /API de paiement.*développeurs/);
+  assert.match(publicSeoRoutes.features.en.description, /payment API for developers/);
+  assert.equal(publicSeoRoutes.home.fr.path, '/');
+  assert.equal(publicSeoRoutes.home.en.path, '/en/');
 });
 
 test('public routes have stable reciprocal French and English URLs', () => {

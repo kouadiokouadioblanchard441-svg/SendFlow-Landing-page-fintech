@@ -12,8 +12,12 @@ import crossNetworkIcon from '../assets/sendflow-icon-cross-network.svg';
 import internationalIcon from '../assets/sendflow-icon-international-transfer.svg';
 import { SendFlowFooter, type FooterContentItem, type FooterSettings } from '@/components/sendflow-footer';
 import { ProtectedImage } from '@/components/protected-image';
+import DeveloperApiCard from '@/components/DeveloperApiCard';
+import FeatureActionCards from '@/components/FeatureActionCards';
+import { developerApiExample } from '@/lib/developer-api-example';
 import { useSeo } from '@/lib/seo';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
+import publicSeoRoutes from '@/lib/public-seo-routes.json';
 
 type Language = 'fr' | 'en';
 
@@ -21,6 +25,10 @@ type LandingResponse = {
   settings?: FooterSettings | null;
   content?: FooterContentItem[];
 };
+
+function publicContentValue(content: FooterContentItem[], key: string, locale: Language, fallback: string) {
+  return content.find((item) => item.contentKey === key && item.locale === locale && item.isVisible)?.value ?? fallback;
+}
 
 const copy = {
   fr: {
@@ -129,15 +137,19 @@ export default function FeaturesPage() {
   const [settings, setSettings] = useState<FooterSettings | null>(null);
   const [content, setContent] = useState<FooterContentItem[]>([]);
   const t = copy[language];
+  const featureSeoDefaults = publicSeoRoutes.features[language];
+  const featureServiceDefaults = publicSeoRoutes.features.service[language];
 
   useSeo({
     path: '/fonctionnalites',
     locale: language,
-    title: language === 'fr' ? 'Transfert inter-réseaux et international | SendFlow' : 'Cross-network and international transfers | SendFlow',
-    description: language === 'fr'
-      ? 'Découvrez les fonctionnalités SendFlow pour envoyer de l’argent entre réseaux de paiement et au-delà des frontières.'
-      : 'Discover SendFlow features for sending money across payment networks and across borders.',
+    title: publicContentValue(content, 'seo.features.title', language, featureSeoDefaults.title),
+    description: publicContentValue(content, 'seo.features.description', language, featureSeoDefaults.description),
     breadcrumbs: [{ name: language === 'fr' ? 'Accueil' : 'Home', path: '/' }, { name: t.features, path: '/fonctionnalites' }],
+    service: {
+      name: featureServiceDefaults.name,
+      serviceType: featureServiceDefaults.serviceType,
+    },
   });
 
   useEffect(() => {
@@ -163,6 +175,7 @@ export default function FeaturesPage() {
     closeMenu();
   };
   const supportEmail = settings?.featuresContactEmail?.trim() || settings?.supportEmail?.trim() || '';
+  const publicContent = (key: string, fallback: string) => publicContentValue(content, key, language, fallback);
   const pageContact = {
     email: settings?.featuresContactEmail,
     phone: settings?.featuresContactPhone,
@@ -251,6 +264,8 @@ export default function FeaturesPage() {
             </article>
           </div>
 
+          <FeatureActionCards content={content} language={language} animated={false} />
+
           <section className="sf-features-security">
             <div>
               <p className="sf-features-kicker">{t.features}</p>
@@ -262,6 +277,15 @@ export default function FeaturesPage() {
             </ul>
           </section>
         </section>
+
+        <DeveloperApiCard
+          reveal={false}
+          eyebrow={publicContent('developer.api.eyebrow', language === 'fr' ? 'API pour les développeurs' : 'Developer API')}
+          title={publicContent('developer.api.title', language === 'fr' ? 'Initiez un paiement avec l’API SendFlow.' : 'Initiate a payment with the SendFlow API.')}
+          body={publicContent('developer.api.body', language === 'fr' ? 'Exemple de requête JSON vers l’endpoint de paiement entrant.' : 'Example JSON request to the pay-in endpoint.')}
+          codeLabel={publicContent('developer.api.codeLabel', language === 'fr' ? 'Requête JSON · Paiement entrant' : 'JSON request · Pay-in')}
+          code={publicContent('developer.api.code', developerApiExample[language])}
+        />
 
         <section className="sf-features-cta">
           <div>

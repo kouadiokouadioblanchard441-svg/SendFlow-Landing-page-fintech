@@ -1,0 +1,148 @@
+{
+  "home": {
+    "fr": {
+      "path": "/",
+      "name": "Accueil",
+      "title": "API de paiement Mobile Money en Afrique | SendFlow",
+      "description": "Intégrez les paiements Mobile Money inter-réseaux avec l’API développeur SendFlow. Découvrez des tarifs compétitifs dans les pays africains couverts."
+    },
+    "en": {
+      "path": "/en/",
+      "name": "Home",
+      "title": "Mobile Money Payment API for Africa | SendFlow",
+      "description": "Integrate Mobile Money and cross-network payments with the SendFlow developer API, with competitive rates in supported African countries."
+    },
+    "service": {
+      "fr": {
+        "name": "API de paiement Mobile Money SendFlow",
+        "serviceType": "API développeur pour les paiements Mobile Money inter-réseaux en Afrique"
+      },
+      "en": {
+        "name": "SendFlow Mobile Money payment API",
+        "serviceType": "Developer API for cross-network Mobile Money payments in Africa"
+      }
+    }
+  },
+  "features": {
+    "fr": {
+      "path": "/fonctionnalites",
+      "name": "Fonctionnalités",
+      "title": "API développeur et paiements Mobile Money | SendFlow",
+      "description": "Découvrez l’API de paiement SendFlow pour les développeurs en Afrique : exemple d’intégration, paiements inter-réseaux et tarifs compétitifs dans les pays couverts."
+    },
+    "en": {
+      "path": "/en/features",
+      "name": "Features",
+      "title": "Developer API and Mobile Money Payments | SendFlow",
+      "description": "Explore the SendFlow payment API for developers in Africa, with an integration example, cross-network payments, and competitive rates in supported countries."
+    },
+    "service": {
+      "fr": {
+        "name": "API développeur SendFlow",
+        "serviceType": "Intégration de paiements Mobile Money et inter-réseaux"
+      },
+      "en": {
+        "name": "SendFlow developer API",
+        "serviceType": "Mobile Money and cross-network payment integration"
+      }
+    }
+  },
+  "security": {
+    "fr": {
+      "path": "/securite",
+      "name": "Sécurité",
+      "title": "Sécurité des paiements Mobile Money | SendFlow",
+      "description": "Découvrez comment SendFlow protège les informations et clarifie les étapes des transferts Mobile Money dans les pays couverts."
+    },
+    "en": {
+      "path": "/en/security",
+      "name": "Security",
+      "title": "Mobile Money Payment Security | SendFlow",
+      "description": "Learn how SendFlow protects information and clarifies each step of Mobile Money transfers in supported countries."
+    }
+  },
+  "download": {
+    "fr": {
+      "path": "/download",
+      "name": "Télécharger",
+      "title": "Application SendFlow pour Mobile Money | SendFlow",
+      "description": "Découvrez l’application SendFlow pour préparer et suivre des transferts Mobile Money entre réseaux pris en charge."
+    },
+    "en": {
+      "path": "/en/download",
+      "name": "Download",
+      "title": "SendFlow Mobile Money Transfer App | SendFlow",
+      "description": "Discover the SendFlow app for preparing and tracking transfers across supported Mobile Money networks."
+    }
+  },
+  "about": {
+    "fr": {
+      "path": "/a-propos",
+      "name": "À propos",
+      "title": "À propos de SendFlow | Paiements et API en Afrique",
+      "description": "Découvrez la mission de SendFlow : simplifier les paiements entre réseaux et aider les développeurs à intégrer le Mobile Money en Afrique."
+    },
+    "en": {
+      "path": "/en/about",
+      "name": "About",
+      "title": "About SendFlow | Payments and API in Africa",
+      "description": "Discover SendFlow’s mission to simplify cross-network payments and help developers integrate Mobile Money in Africa."
+    }
+  },
+  "terms": {
+    "fr": {
+      "path": "/conditions-utilisation",
+      "name": "Conditions d’utilisation",
+      "title": "Conditions d’utilisation | SendFlow",
+      "description": "Consultez les conditions d’utilisation des services et fonctionnalités SendFlow."
+    },
+    "en": {
+      "path": "/en/terms",
+      "name": "Terms of Use",
+      "title": "Terms of Use | SendFlow",
+      "description": "Read the terms governing SendFlow services and features."
+    }
+  },
+  "privacy": {
+    "fr": {
+      "path": "/confidentialite",
+      "name": "Confidentialité",
+      "title": "Politique de confidentialité | SendFlow",
+      "description": "Découvrez comment SendFlow traite et protège les informations personnelles."
+    },
+    "en": {
+      "path": "/en/privacy",
+      "name": "Privacy",
+      "title": "Privacy Policy | SendFlow",
+      "description": "Learn how SendFlow handles and protects personal information."
+    }
+  },
+  "legalNotice": {
+    "fr": {
+      "path": "/mentions-legales",
+      "name": "Mentions légales",
+      "title": "Mentions légales | SendFlow",
+      "description": "Consultez les informations légales relatives à SendFlow et à son éditeur."
+    },
+    "en": {
+      "path": "/en/legal-notice",
+      "name": "Legal Notice",
+      "title": "Legal Notice | SendFlow",
+      "description": "Read legal information about SendFlow and its publisher."
+    }
+  },
+  "franceSenegal": {
+    "fr": {
+      "path": "/france-senegal",
+      "name": "France–Sénégal",
+      "title": "Envoyer de l’argent de France au Sénégal | SendFlow",
+      "description": "Guide des transferts France–Sénégal : frais, délais, réseaux Mobile Money disponibles et vérifications avant confirmation."
+    },
+    "en": {
+      "path": "/en/france-senegal",
+      "name": "France–Senegal",
+      "title": "Send Money from France to Senegal | SendFlow",
+      "description": "France-to-Senegal transfer guide: fees, timing, available Mobile Money networks, and checks before confirmation."
+    }
+  }
+}

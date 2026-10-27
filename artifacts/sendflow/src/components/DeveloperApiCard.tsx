@@ -4,6 +4,7 @@ type DeveloperApiCardProps = {
   body: string;
   codeLabel: string;
   code: string;
+  reveal?: boolean;
 };
 
 export default function DeveloperApiCard({
@@ -12,6 +13,7 @@ export default function DeveloperApiCard({
   body,
   codeLabel,
   code,
+  reveal = true,
 }: DeveloperApiCardProps) {
   return (
     <section
@@ -20,7 +22,7 @@ export default function DeveloperApiCard({
       className="scroll-mt-28 px-5 pb-12 sm:px-8 sm:pb-16"
       data-testid="section-developer-api"
     >
-      <div className="reveal mx-auto max-w-[1240px]">
+      <div className={`${reveal ? 'reveal ' : ''}mx-auto max-w-[1240px]`}>
         <article className="grid overflow-hidden rounded-[28px] border border-[#d6c8e9] bg-[#fbf8ef] shadow-[0_18px_50px_rgba(58,38,83,.08)] lg:grid-cols-[.82fr_1.18fr]">
           <div className="order-2 flex flex-col justify-center p-6 sm:p-10 lg:order-1">
             <span className="w-fit rounded-full border border-[#6d35d8]/15 bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.15em] text-[#5b21b6]">
@@ -54,7 +56,7 @@ export default function DeveloperApiCard({
               </div>
               <div className="max-h-[390px] overflow-auto">
                 <pre
-                  className="min-w-max px-4 py-5 font-mono text-[12px] leading-[1.8] text-[#e9e2f4] sm:px-6 sm:py-6 sm:text-[14px]"
+                  className="whitespace-pre-wrap break-words px-4 py-5 font-mono text-[12px] leading-[1.8] text-[#e9e2f4] [overflow-wrap:anywhere] sm:px-6 sm:py-6 sm:text-[14px]"
                   data-testid="text-developer-api-code"
                 >
                   <code>{code}</code>
