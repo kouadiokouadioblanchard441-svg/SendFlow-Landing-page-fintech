@@ -22,7 +22,9 @@ import CorridorGuidePage from '@/pages/corridor-guide';
 import { SendFlowFooter } from '@/components/sendflow-footer';
 import DeveloperApiCard from '@/components/DeveloperApiCard';
 import FeatureActionCards from '@/components/FeatureActionCards';
+import OperatorFeesSection from '@/components/OperatorFeesSection';
 import { developerApiExample } from '@/lib/developer-api-example';
+import { OPERATOR_FEES_CONTENT_KEY, parseOperatorFeesConfig } from '@/lib/operator-fees';
 import {
   getRegistrationUrl,
   REGISTRATION_CTA_DEFAULT_LABELS,
@@ -345,6 +347,57 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   Free: { mark: 'Free', background: '#111827', foreground: '#ffffff', image: freeOperatorLogo },
   'M-Pesa': { mark: 'M-Pesa', background: '#f2f2f2', foreground: '#17131f', image: mpesaOperatorLogo },
 };
+
+function PublicOperatorFees({
+  bundle,
+  language,
+}: {
+  bundle: PublicLandingBundle | undefined;
+  language: 'fr' | 'en';
+}) {
+  if (!bundle) return null;
+
+  const feeContent = bundle.content.find((item) =>
+    item.contentKey === OPERATOR_FEES_CONTENT_KEY && item.locale === 'fr' && item.isVisible,
+  );
+  const feeConfig = parseOperatorFeesConfig(feeContent?.value);
+  if (!feeConfig) return null;
+
+  const ratesBySlug = new Map(feeConfig.operators.map((operator) => [operator.slug, operator]));
+  const visibleOperators = bundle.operators.filter((operator) => operator.isVisible);
+  if (visibleOperators.some((operator) => !ratesBySlug.has(operator.slug))) return null;
+
+  const operators = visibleOperators
+    .map((operator) => {
+      const rate = ratesBySlug.get(operator.slug);
+      const logo = operator.logoKey
+        ? bundle.media.find((item) => item.slug === operator.logoKey && item.isVisible)
+        : undefined;
+      return {
+        slug: operator.slug,
+        name: operator.name,
+        logoUrl: logo?.publicUrl ?? null,
+        background: operator.background ?? null,
+        foreground: operator.foreground ?? null,
+        collectionPercent: rate?.collectionPercent ?? 0,
+        transferPercent: rate?.transferPercent ?? 0,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, language));
+
+  return (
+    <OperatorFeesSection
+      language={language}
+      config={{
+        collectionTitle: language === 'fr' ? feeConfig.collectionTitleFr : feeConfig.collectionTitleEn,
+        transferTitle: language === 'fr' ? feeConfig.transferTitleFr : feeConfig.transferTitleEn,
+        bankTransferLabel: language === 'fr' ? feeConfig.bankTransferLabelFr : feeConfig.bankTransferLabelEn,
+        bankTransferAmountXof: feeConfig.bankTransferAmountXof,
+        operators,
+      }}
+    />
+  );
+}
 
 function OperatorRow({
   network,
@@ -1374,6 +1427,8 @@ function LandingPage() {
           codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Requête JSON · Paiement entrant', en: 'JSON request · Pay-in' }), language)}
           code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiExample), language)}
         />
+
+        <PublicOperatorFees bundle={landingBundle} language={language} />
 
         <section id="security" className="overflow-hidden px-5 py-12 sm:px-8 sm:py-20">
           <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[.9fr_1.1fr]">

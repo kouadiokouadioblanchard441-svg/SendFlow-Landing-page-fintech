@@ -139,7 +139,48 @@ const landingContentSchema = z.object({
   isVisible: visibility,
 }).strict();
 
+export const OPERATOR_FEES_CONTENT_KEY = "pricing.operator-fees";
+const operatorFeePercent = z.number().min(0).max(100)
+  .refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-8);
+const operatorFeeRateSchema = z.object({
+  slug: nonEmptyKey(80),
+  collectionPercent: operatorFeePercent,
+  transferPercent: operatorFeePercent,
+}).strict();
+
+export const operatorFeesSchema = z.object({
+  collectionTitleFr: meaningfulText(120),
+  collectionTitleEn: meaningfulText(120),
+  transferTitleFr: meaningfulText(120),
+  transferTitleEn: meaningfulText(120),
+  bankTransferLabelFr: meaningfulText(120),
+  bankTransferLabelEn: meaningfulText(120),
+  bankTransferAmountXof: z.number().int().min(0).max(100_000_000),
+  operators: z.array(operatorFeeRateSchema).max(100),
+}).strict().superRefine((value, context) => {
+  const slugs = value.operators.map((operator) => operator.slug);
+  if (new Set(slugs).size !== slugs.length) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Chaque opérateur doit apparaître une seule fois.",
+      path: ["operators"],
+    });
+  }
+});
+
+export function hasExactOperatorFeeCoverage(
+  submittedSlugs: readonly string[],
+  currentOperatorSlugs: readonly string[],
+): boolean {
+  const submitted = new Set(submittedSlugs);
+  const current = new Set(currentOperatorSlugs);
+  return submitted.size === submittedSlugs.length &&
+    current.size === submitted.size &&
+    [...current].every((slug) => submitted.has(slug));
+}
+
 export function isSafeRegistrationCtaContent(item: Record<string, unknown>): boolean {
+  if (item.contentKey === OPERATOR_FEES_CONTENT_KEY) return false;
   if (item.contentKey === "cta.signup.url") {
     return item.locale === "fr" &&
       item.contentType === "url" &&

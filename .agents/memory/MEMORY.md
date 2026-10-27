@@ -16,3 +16,4 @@
 - [SendFlow payment links](sendflow-payment-links.md) — Payment links are available; do not invent a creation route when linking public CTAs.
 - [SendFlow wallet positioning](sendflow-wallet-positioning.md) — The public FAQ should say SendFlow has a wallet; do not infer custody or autonomy details.
 - [SendFlow page titles](sendflow-page-titles.md) — Keep every public route’s localized browser title distinct and aligned between runtime and Plesk HTML.
+- [SendFlow fee configuration](sendflow-fee-configuration.md) — Keep operator fees persisted and editable in the CMS; do not silently fall back to public hardcoded rates.

@@ -42,12 +42,15 @@ import {
 import {
   countryOperatorAssignmentSchema,
   founderProfileSchema,
+  hasExactOperatorFeeCoverage,
   imageBytesMatchMimeType,
   isSafeRegistrationCtaContent,
   mediaUploadHeadersSchema,
   newsletterCampaignSchema,
   newsletterSubscriberStatusSchema,
   newsletterSubscribeSchema,
+  OPERATOR_FEES_CONTENT_KEY,
+  operatorFeesSchema,
   parseLandingResourcePayload,
   parsePositivePathId,
   registrationCtaSchema,
@@ -995,6 +998,44 @@ router.post("/admin/landing/media/upload", requireAdmin, mediaUploadRateLimit, m
   }
 });
 
+router.put("/admin/landing/operator-fees", requireAdmin, async (req, res): Promise<void> => {
+  const parsed = operatorFeesSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Les paramètres des frais sont invalides." });
+    return;
+  }
+
+  const currentOperators = await db.select({ slug: landingOperators.slug }).from(landingOperators);
+  if (!hasExactOperatorFeeCoverage(
+    parsed.data.operators.map((operator) => operator.slug),
+    currentOperators.map((operator) => operator.slug),
+  )) {
+    res.status(400).json({ error: "Enregistre un tarif pour chaque opérateur du panneau d’administration." });
+    return;
+  }
+
+  const [saved] = await db.insert(landingContent).values({
+    contentKey: OPERATOR_FEES_CONTENT_KEY,
+    locale: "fr",
+    group: "pricing",
+    contentType: "text",
+    value: JSON.stringify(parsed.data),
+    orderIndex: 0,
+    isVisible: true,
+  }).onConflictDoUpdate({
+    target: [landingContent.contentKey, landingContent.locale],
+    set: {
+      group: "pricing",
+      contentType: "text",
+      value: JSON.stringify(parsed.data),
+      orderIndex: 0,
+      isVisible: true,
+    },
+  }).returning();
+
+  res.json(saved);
+});
+
 router.patch("/admin/landing/:resource/:id", requireAdmin, async (req, res): Promise<void> => {
   const name = req.params.resource as string;
   const config = resourceConfig(name);
@@ -1024,6 +1065,10 @@ router.patch("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pro
     : [];
   if ((name === "sections" && !currentSection) || (name === "media" && !currentMedia)) {
     res.status(404).json({ error: "Resource not found" });
+    return;
+  }
+  if (name === "content" && currentContent?.contentKey === OPERATOR_FEES_CONTENT_KEY) {
+    res.status(409).json({ error: "Modifie les frais depuis l’éditeur dédié du panneau d’administration." });
     return;
   }
   if (name === "content" && !isSafeRegistrationCtaContent({ ...currentContent, ...values })) {
@@ -1096,6 +1141,10 @@ router.post("/admin/landing/:resource", requireAdmin, async (req, res): Promise<
     res.status(400).json({ error: "No editable fields supplied" });
     return;
   }
+  if (name === "content" && values.contentKey === OPERATOR_FEES_CONTENT_KEY) {
+    res.status(409).json({ error: "Modifie les frais depuis l’éditeur dédié du panneau d’administration." });
+    return;
+  }
   if (name === "content" && !isSafeRegistrationCtaContent(values)) {
     res.status(400).json({ error: "Le lien ou le libellé d’inscription est invalide." });
     return;
@@ -1130,8 +1179,15 @@ router.delete("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pr
   const [currentMedia] = name === "media"
     ? await db.select().from(landingMedia).where(eq(landingMedia.id, id)).limit(1)
     : [];
-  if ((name === "sections" && !currentSection) || (name === "media" && !currentMedia)) {
+  const [currentContent] = name === "content"
+    ? await db.select().from(landingContent).where(eq(landingContent.id, id)).limit(1)
+    : [];
+  if ((name === "sections" && !currentSection) || (name === "media" && !currentMedia) || (name === "content" && !currentContent)) {
     res.status(404).json({ error: "Resource not found" });
+    return;
+  }
+  if (name === "content" && currentContent?.contentKey === OPERATOR_FEES_CONTENT_KEY) {
+    res.status(409).json({ error: "Modifie les frais depuis l’éditeur dédié du panneau d’administration." });
     return;
   }
   if (name === "media" && currentMedia && await hasVisibleCarouselReference(currentMedia.slug)) {

@@ -36,6 +36,11 @@ import {
   REGISTRATION_CTA_LABEL_KEY,
   REGISTRATION_CTA_URL_KEY,
 } from '@/lib/registration-cta';
+import OperatorFeesAdminEditor, {
+  type AdminFeeOperator,
+  type EditableFeeConfig,
+} from '@/components/OperatorFeesAdminEditor';
+import { OPERATOR_FEES_CONTENT_KEY, parseOperatorFeesConfig } from '@/lib/operator-fees';
 
 type Primitive = string | number | boolean | null | undefined;
 type RecordItem = { id?: number; [key: string]: Primitive };
@@ -1191,6 +1196,7 @@ export default function AdminPage() {
   const [assignmentSaving, setAssignmentSaving] = useState(false);
   const [founderSaving, setFounderSaving] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
+  const [feesSaving, setFeesSaving] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<number | undefined>();
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -1222,12 +1228,46 @@ export default function AdminPage() {
   }, [notice]);
 
   const config = resourceConfigs[activeResource];
+  const operatorFeeOperators = useMemo<AdminFeeOperator[]>(() => {
+    return bundle.operators.reduce<AdminFeeOperator[]>((result, item) => {
+      if (typeof item.slug === 'string' && typeof item.name === 'string') {
+        result.push({ slug: item.slug, name: item.name });
+      }
+      return result;
+    }, []).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  }, [bundle.operators]);
+  const operatorFeesValue = useMemo<EditableFeeConfig>(() => {
+    const savedRow = bundle.content.find((item) =>
+      item.contentKey === OPERATOR_FEES_CONTENT_KEY && item.locale === 'fr',
+    );
+    const saved = parseOperatorFeesConfig(savedRow?.value);
+    const savedRates = new Map(saved?.operators.map((operator) => [operator.slug, operator]) ?? []);
+    return {
+      collectionTitleFr: saved?.collectionTitleFr ?? "Frais à l'encaissement",
+      collectionTitleEn: saved?.collectionTitleEn ?? 'Collection fees',
+      transferTitleFr: saved?.transferTitleFr ?? 'Frais de transfert',
+      transferTitleEn: saved?.transferTitleEn ?? 'Transfer fees',
+      bankTransferLabelFr: saved?.bankTransferLabelFr ?? 'Banque',
+      bankTransferLabelEn: saved?.bankTransferLabelEn ?? 'Bank',
+      bankTransferAmountXof: saved?.bankTransferAmountXof ?? 1000,
+      operators: operatorFeeOperators.map((operator) => {
+        const existing = savedRates.get(operator.slug);
+        return {
+          slug: operator.slug,
+          collectionPercent: existing?.collectionPercent ?? 3,
+          transferPercent: existing?.transferPercent ?? 2.6,
+        };
+      }),
+    };
+  }, [bundle.content, operatorFeeOperators]);
   const visibleItems = useMemo(() => {
     const query = search.trim().toLowerCase();
     const storedResource: StoredResourceKey = activeResource === 'aboutCarousel' ? 'sections' : activeResource;
     const allRows = bundle[storedResource] ?? [];
     const rows = activeResource === 'aboutCarousel'
       ? allRows.filter((row) => row.kind === 'about-hero-slide')
+      : activeResource === 'content'
+        ? allRows.filter((row) => row.contentKey !== OPERATOR_FEES_CONTENT_KEY)
       : allRows;
     if (!query) return rows;
     return rows.filter((row) => Object.values(row).some((value) => String(value ?? '').toLowerCase().includes(query)));
@@ -1363,6 +1403,28 @@ export default function AdminPage() {
     }
   };
 
+  const saveOperatorFees = async (values: EditableFeeConfig) => {
+    setFeesSaving(true);
+    try {
+      const saved = await apiRequest<RecordItem>('/api/admin/landing/operator-fees', {
+        method: 'PUT',
+        body: JSON.stringify(values),
+      });
+      setBundle((current) => ({
+        ...current,
+        content: [
+          ...current.content.filter((item) => item.contentKey !== OPERATOR_FEES_CONTENT_KEY),
+          saved,
+        ],
+      }));
+      setNotice({ tone: 'success', text: 'Les tarifs des opérateurs sont publiés.' });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible d’enregistrer les tarifs.' });
+    } finally {
+      setFeesSaving(false);
+    }
+  };
+
   if (error?.status === 401 || error?.status === 403 || error?.status === 503) {
     return <UnauthorizedState status={error.status} onRetry={() => void loadBundle()} />;
   }
@@ -1414,7 +1476,7 @@ export default function AdminPage() {
               <button className="sendflow-admin-button sendflow-admin-button-primary" onClick={() => setEditor({ resource: activeResource, item: null })} disabled={loading || Boolean(error)} data-testid="button-add-resource"><Plus size={16} /> Ajouter</button>
             </div>
             {activeResource === 'countries' && !loading && bundle.countries.length > 0 && <AssignmentEditor bundle={bundle} selectedCountry={selectedCountry ?? bundle.countries[0].id} saving={assignmentSaving} onCountryChange={setSelectedCountry} onSave={saveAssignments} />}
-            {activeResource === 'content' && !loading && <><FounderEditor bundle={bundle} saving={founderSaving} onSave={saveFounder} /><SiteSettingsEditor bundle={bundle} saving={settingsSaving} onSave={saveSiteSettings} /></>}
+            {activeResource === 'content' && !loading && <><FounderEditor bundle={bundle} saving={founderSaving} onSave={saveFounder} /><SiteSettingsEditor bundle={bundle} saving={settingsSaving} onSave={saveSiteSettings} /><OperatorFeesAdminEditor operators={operatorFeeOperators} value={operatorFeesValue} saving={feesSaving} onSave={saveOperatorFees} /></>}
             {!loading && !error && (activeResource === 'media' || activeResource === 'operators') && <AssetStrip bundle={bundle} resource={activeResource} />}
             <div className="sendflow-admin-toolbar">
               <label className="sendflow-admin-search"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Rechercher dans ${config.label.toLowerCase()}`} data-testid="input-resource-search" /></label>

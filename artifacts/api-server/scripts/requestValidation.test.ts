@@ -3,11 +3,13 @@ import test from "node:test";
 import {
   adminLoginSchema,
   countryOperatorAssignmentSchema,
+  hasExactOperatorFeeCoverage,
   imageBytesMatchMimeType,
   isSafeRegistrationCtaContent,
   landingResourceSchemas,
   mediaUploadHeadersSchema,
   newsletterCampaignSchema,
+  operatorFeesSchema,
   parseLandingResourcePayload,
   registrationCtaSchema,
 } from "../src/lib/requestValidation.ts";
@@ -78,6 +80,45 @@ test("CMS content type is restricted to the supported values", () => {
     locale: "en",
     value: "https://signup.example.org",
   }), false);
+  assert.equal(isSafeRegistrationCtaContent({
+    contentKey: "pricing.operator-fees",
+    locale: "fr",
+    contentType: "text",
+    value: "{}",
+  }), false);
+});
+
+test("operator fees are bounded, unique, and cover the current operator catalog", () => {
+  const config = {
+    collectionTitleFr: "Frais à l'encaissement",
+    collectionTitleEn: "Collection fees",
+    transferTitleFr: "Frais de transfert",
+    transferTitleEn: "Transfer fees",
+    bankTransferLabelFr: "Banque",
+    bankTransferLabelEn: "Bank",
+    bankTransferAmountXof: 1000,
+    operators: [
+      { slug: "wave", collectionPercent: 3, transferPercent: 2.6 },
+      { slug: "orange-money", collectionPercent: 3, transferPercent: 2.6 },
+    ],
+  };
+
+  assert.equal(operatorFeesSchema.safeParse(config).success, true);
+  assert.equal(operatorFeesSchema.safeParse({
+    ...config,
+    operators: [config.operators[0], config.operators[0]],
+  }).success, false);
+  assert.equal(operatorFeesSchema.safeParse({
+    ...config,
+    operators: [{ ...config.operators[0], transferPercent: 2.666 }],
+  }).success, false);
+  assert.equal(operatorFeesSchema.safeParse({
+    ...config,
+    bankTransferAmountXof: -1,
+  }).success, false);
+  assert.equal(hasExactOperatorFeeCoverage(["wave", "orange-money"], ["wave", "orange-money"]), true);
+  assert.equal(hasExactOperatorFeeCoverage(["wave"], ["wave", "orange-money"]), false);
+  assert.equal(hasExactOperatorFeeCoverage(["wave", "wave"], ["wave"]), false);
 });
 
 test("registration CTA accepts an empty destination but requires HTTPS when set", () => {
