@@ -19,6 +19,7 @@ import FeaturesPage from '@/pages/features';
 import SecurityPage from '@/pages/security';
 import CorridorGuidePage from '@/pages/corridor-guide';
 import { SendFlowFooter } from '@/components/sendflow-footer';
+import DeveloperApiCard from '@/components/DeveloperApiCard';
 import { ProtectedImage } from '@/components/protected-image';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
@@ -369,6 +370,39 @@ const faqs: { q: Copy; a: Copy }[] = [
   { q: { fr: 'SendFlow possède-t-il un wallet ?', en: 'Does SendFlow have a wallet?' }, a: { fr: 'Non. SendFlow agit comme une couche de connexion entre réseaux, et non comme un wallet ou un compte financier.', en: 'No. SendFlow acts as a connection layer between networks, not as a wallet or financial account.' } },
   { q: { fr: 'L’API développeur SendFlow est-elle disponible ?', en: 'Is the SendFlow developer API available?' }, a: { fr: 'Oui. Les développeurs peuvent connecter leurs applications aux services SendFlow grâce à l’API.', en: 'Yes. Developers can connect their applications to SendFlow services through the API.' } },
 ];
+
+const developerApiCode: Copy = {
+  fr: [
+    'const url = API_BASE_URL + "/<route-officielle>";',
+    'const headers = {',
+    '  ...AUTH_HEADERS, // définis dans la documentation',
+    '  "Content-Type": "application/json",',
+    '};',
+    '',
+    'const response = await fetch(url, {',
+    '  method: "POST",',
+    '  headers,',
+    '  body: JSON.stringify(payload),',
+    '});',
+    '',
+    'if (!response.ok) throw new Error("API request failed");',
+  ].join('\n'),
+  en: [
+    'const url = API_BASE_URL + "/<official-endpoint>";',
+    'const headers = {',
+    '  ...AUTH_HEADERS, // define these per the documentation',
+    '  "Content-Type": "application/json",',
+    '};',
+    '',
+    'const response = await fetch(url, {',
+    '  method: "POST",',
+    '  headers,',
+    '  body: JSON.stringify(payload),',
+    '});',
+    '',
+    'if (!response.ok) throw new Error("API request failed");',
+  ].join('\n'),
+};
 
 
 function StoreLogo({ icon }: { icon: 'play' | 'apple' }) {
@@ -1257,7 +1291,7 @@ function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="px-5 py-24 sm:px-8 sm:py-32">
+        <section id="features" className="px-5 pt-24 pb-10 sm:px-8 sm:pt-32 sm:pb-14">
           <div className="mx-auto max-w-[1240px]">
             <div className="reveal flex flex-col justify-between gap-7 sm:flex-row sm:items-end">
               <div>
@@ -1303,6 +1337,14 @@ function LandingPage() {
             </div>
           </div>
         </section>
+
+        <DeveloperApiCard
+          eyebrow={t(contentCopy(landingBundle?.content, 'developer.api.eyebrow', { fr: 'API pour les développeurs', en: 'Developer API' }), language)}
+          title={t(contentCopy(landingBundle?.content, 'developer.api.title', { fr: 'Connectez vos services à SendFlow.', en: 'Connect your services to SendFlow.' }), language)}
+          body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Intégrez l’API développeur à vos applications et créez des parcours adaptés à vos utilisateurs.', en: 'Integrate the developer API into your applications and build journeys for your users.' }), language)}
+          codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Exemple Node.js · Fetch', en: 'Node.js · Fetch example' }), language)}
+          code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiCode), language)}
+        />
 
         <section id="security" className="overflow-hidden px-5 py-12 sm:px-8 sm:py-20">
           <div className="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[.9fr_1.1fr]">

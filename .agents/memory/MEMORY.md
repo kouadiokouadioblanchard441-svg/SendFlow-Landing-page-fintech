@@ -12,3 +12,4 @@
 - [Empty CMS collections](empty-cms-collections.md) — A loaded empty public collection is authoritative; never resurrect defaults just because its length is zero.
 - [Admin content editability](admin-content-editability.md) — The user requires all SendFlow site information to be editable in the admin panel, with nothing hardcoded.
 - [SendFlow authentication scope](sendflow-auth-provider.md) — Keep admin access app-owned and avoid external identity-provider dependencies.
+- [SendFlow developer API](sendflow-developer-api.md) — The user confirms the API is available; do not infer its endpoints or authentication details from this repository.
