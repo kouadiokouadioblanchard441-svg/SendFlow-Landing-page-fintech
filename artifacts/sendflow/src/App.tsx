@@ -1317,7 +1317,7 @@ function LandingPage() {
                     href={developerApiHref}
                     className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#4c0fa8] px-6 py-3 text-[14px] font-bold !text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
                   >
-                    {t(contentCopy(landingBundle?.content, 'feature.api-integration.cta', { fr: 'Voir l’exemple API', en: 'View the API example' }), language)}
+                    {t(contentCopy(landingBundle?.content, 'feature.api-integration.cta', { fr: 'Voir la documentation', en: 'View the documentation' }), language)}
                     <ArrowRight size={16} aria-hidden="true" />
                   </a>
                 </article>
