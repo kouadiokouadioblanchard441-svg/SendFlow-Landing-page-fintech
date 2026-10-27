@@ -1187,7 +1187,7 @@ function LandingPage() {
                 aria-disabled={!registrationUrl}
                 role={registrationUrl ? undefined : 'link'}
                 title={!registrationUrl ? 'Configurez l’URL d’inscription dans le panneau admin.' : undefined}
-                className="sf-public-nav-download"
+                className="sf-public-nav-cta"
                 data-testid="button-mobile-register"
               >
                 {registrationLabel}

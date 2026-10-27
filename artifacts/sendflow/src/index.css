@@ -1563,54 +1563,6 @@ section#faq .reveal.space-y-2 > div {
   color: var(--sf-features-ink);
   cursor: pointer;
 }
-.sf-features-menu-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: rgba(19, 28, 78, .28);
-}
-.sf-features-menu {
-  min-height: 100dvh;
-  width: min(88%, 390px);
-  margin-left: auto;
-  background: #fff;
-  padding: 25px 24px;
-  box-shadow: -15px 0 45px rgba(11, 22, 91, .16);
-}
-.sf-features-menu-top { display: flex; align-items: center; justify-content: space-between; }
-.sf-features-menu-top button {
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: transparent;
-  color: var(--sf-features-ink);
-  cursor: pointer;
-}
-.sf-features-menu nav { display: grid; gap: 0; margin-top: 62px; }
-.sf-features-menu nav a {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #e6e8ee;
-  padding: 18px 0;
-  color: var(--sf-features-ink);
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -.04em;
-}
-.sf-features-menu-language {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-top: 36px;
-  border: 0;
-  background: transparent;
-  color: var(--sf-features-blue);
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 700;
-}
 .sf-features-hero {
   display: flex;
   min-height: 304px;
@@ -3167,7 +3119,7 @@ section#faq .reveal.space-y-2 > div {
   color: #6d35d8;
 }
 
-.sf-public-nav-download {
+.sf-public-nav-cta {
   display: flex;
   min-height: 52px;
   align-items: center;
@@ -3184,7 +3136,7 @@ section#faq .reveal.space-y-2 > div {
   transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
 }
 
-.sf-public-nav-download:hover {
+.sf-public-nav-cta:hover {
   transform: translateY(-1px);
   background: #5822c3;
   color: #fff;
@@ -3195,7 +3147,7 @@ section#faq .reveal.space-y-2 > div {
 .sf-public-nav-close:focus-visible,
 .sf-public-nav-link:focus-visible,
 .sf-public-nav-language:focus-visible,
-.sf-public-nav-download:focus-visible {
+  .sf-public-nav-cta:focus-visible {
   outline: 3px solid rgba(109, 53, 216, .5);
   outline-offset: 3px;
 }
@@ -3226,7 +3178,7 @@ section#faq .reveal.space-y-2 > div {
   .sf-public-nav-close,
   .sf-public-nav-link,
   .sf-public-nav-language,
-  .sf-public-nav-download {
+  .sf-public-nav-cta {
     transition: none;
   }
 }

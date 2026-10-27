@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Globe2, Menu, X } from 'lucide-react';
+import { ArrowRight, ChevronRight, Globe2, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
@@ -11,6 +11,12 @@ import { ProtectedImage } from '@/components/protected-image';
 import { useSeo } from '@/lib/seo';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import publicSeoRoutes from '@/lib/public-seo-routes.json';
+import {
+  getRegistrationUrl,
+  REGISTRATION_CTA_DEFAULT_LABELS,
+  REGISTRATION_CTA_LABEL_KEY,
+  REGISTRATION_CTA_URL_KEY,
+} from '@/lib/registration-cta';
 
 type Language = 'fr' | 'en';
 
@@ -19,17 +25,18 @@ type LandingResponse = {
   content?: FooterContentItem[];
 };
 
+function publicContentValue(content: FooterContentItem[], key: string, locale: Language, fallback: string) {
+  return content.find((item) => item.contentKey === key && item.locale === locale && item.isVisible)?.value ?? fallback;
+}
+
 const copy = {
   fr: {
     home: 'Accueil',
     features: 'Fonctionnalités',
     security: 'Sécurité',
-    download: 'Télécharger',
-    support: 'Assistance',
     language: 'EN',
     menuOpen: 'Ouvrir le menu',
     menuClose: 'Fermer le menu',
-    switchLanguage: 'Passer en anglais',
     heroLead: 'Votre',
     heroAccent: 'Sécurité',
     heroEnd: 'notre priorité',
@@ -49,12 +56,9 @@ const copy = {
     home: 'Home',
     features: 'Features',
     security: 'Security',
-    download: 'Download',
-    support: 'Support',
     language: 'FR',
     menuOpen: 'Open menu',
     menuClose: 'Close menu',
-    switchLanguage: 'Switch to French',
     heroLead: 'Your',
     heroAccent: 'Security',
     heroEnd: 'our priority',
@@ -119,7 +123,13 @@ export default function SecurityPage() {
     navigate(getLocalizedPath(window.location.pathname, language === 'fr' ? 'en' : 'fr'));
     closeMenu();
   };
-  const supportEmail = settings?.securityContactEmail?.trim() || settings?.supportEmail?.trim() || '';
+  const registrationUrl = getRegistrationUrl(publicContentValue(content, REGISTRATION_CTA_URL_KEY, 'fr', ''));
+  const registrationLabel = publicContentValue(
+    content,
+    REGISTRATION_CTA_LABEL_KEY,
+    language,
+    REGISTRATION_CTA_DEFAULT_LABELS[language],
+  );
   const pageContact = {
     email: settings?.securityContactEmail,
     phone: settings?.securityContactPhone,
@@ -135,34 +145,86 @@ export default function SecurityPage() {
             <Link href={getLocalizedPath('/', language)}>{t.home}</Link>
             <Link href={getLocalizedPath('/fonctionnalites', language)}>{t.features}</Link>
             <Link href={getLocalizedPath('/securite', language)} className="is-active">{t.security}</Link>
-            <Link href={getLocalizedPath('/download', language)}>{t.download}</Link>
-            {supportEmail && <a href={`mailto:${supportEmail}`}>{t.support}</a>}
+            <a
+              href={registrationUrl ?? undefined}
+              onClick={(event) => {
+                if (!registrationUrl) event.preventDefault();
+              }}
+              aria-disabled={!registrationUrl}
+              role={registrationUrl ? undefined : 'link'}
+              title={!registrationUrl ? 'Configurez l’URL d’inscription dans le panneau admin.' : undefined}
+            >
+              {registrationLabel}
+            </a>
             <button type="button" onClick={toggleLanguage}><Globe2 size={15} />{t.language}</button>
           </nav>
-          <button type="button" className="sf-features-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen}>
+          <button type="button" className="sf-features-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen} aria-controls="sf-public-mobile-navigation">
             <Menu size={26} />
           </button>
         </div>
       </header>
 
       {menuOpen && (
-        <div className="sf-features-menu-backdrop" onClick={closeMenu}>
-          <aside className="sf-features-menu" onClick={(event) => event.stopPropagation()}>
-            <div className="sf-features-menu-top">
+        <div
+          className="sf-public-nav-backdrop"
+          onClick={closeMenu}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') closeMenu();
+          }}
+          role="presentation"
+        >
+          <aside
+            id="sf-public-mobile-navigation"
+            className="sf-public-nav-panel"
+            onClick={(event) => event.stopPropagation()}
+            aria-label={language === 'fr' ? 'Menu principal' : 'Main menu'}
+            aria-modal="true"
+            role="dialog"
+          >
+            <div className="sf-public-nav-top">
               <Brand />
-              <button type="button" onClick={closeMenu} aria-label={t.menuClose}><X size={24} /></button>
+              <button type="button" className="sf-public-nav-close" onClick={closeMenu} aria-label={t.menuClose}>
+                <X size={18} />
+              </button>
             </div>
-            <nav>
-              <Link href={getLocalizedPath('/', language)} onClick={closeMenu}>{t.home}<ChevronRight size={18} /></Link>
-              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu}>{t.features}<ChevronRight size={18} /></Link>
-              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu}>{t.security}<ChevronRight size={18} /></Link>
-              <Link href={getLocalizedPath('/download', language)} onClick={closeMenu}>{t.download}<ChevronRight size={18} /></Link>
-              {supportEmail && <a href={`mailto:${supportEmail}`} onClick={closeMenu}>{t.support}<ChevronRight size={18} /></a>}
+            <div className="sf-public-nav-intro">
+              <p>Navigation</p>
+              <h2>{language === 'fr' ? 'Explorer SendFlow' : 'Explore SendFlow'}</h2>
+            </div>
+            <nav className="sf-public-nav-links" aria-label={language === 'fr' ? 'Navigation principale' : 'Main navigation'}>
+              <Link href={getLocalizedPath('/', language)} onClick={closeMenu} className="sf-public-nav-link">
+                <span>{t.home}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+              </Link>
+              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu} className="sf-public-nav-link">
+                <span>{t.features}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+              </Link>
+              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu} className="sf-public-nav-link" aria-current="page">
+                <span>{t.security}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+              </Link>
             </nav>
-            <button type="button" className="sf-features-menu-language" onClick={toggleLanguage}>
-              <span aria-hidden="true">{language === 'fr' ? '🇬🇧' : '🇫🇷'}</span>
-              {t.switchLanguage}
-            </button>
+            <div className="sf-public-nav-footer">
+              <button type="button" className="sf-public-nav-language" onClick={toggleLanguage}>
+                <span>{language === 'fr' ? 'Langue' : 'Language'}</span>
+                <strong><Globe2 size={15} aria-hidden="true" />{language === 'fr' ? 'English' : 'Français'}</strong>
+              </button>
+              <a
+                href={registrationUrl ?? undefined}
+                onClick={(event) => {
+                  if (!registrationUrl) {
+                    event.preventDefault();
+                    return;
+                  }
+                  closeMenu();
+                }}
+                aria-disabled={!registrationUrl}
+                role={registrationUrl ? undefined : 'link'}
+                title={!registrationUrl ? 'Configurez l’URL d’inscription dans le panneau admin.' : undefined}
+                className="sf-public-nav-cta"
+                data-testid="button-security-register"
+              >
+                {registrationLabel}<ArrowRight aria-hidden="true" size={16} />
+              </a>
+            </div>
           </aside>
         </div>
       )}
