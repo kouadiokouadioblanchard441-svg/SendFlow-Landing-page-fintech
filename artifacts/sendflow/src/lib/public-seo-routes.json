@@ -2,14 +2,14 @@
   "home": {
     "fr": {
       "path": "/",
-      "name": "Accueil",
-      "title": "Accueil | API de paiement Mobile Money en Afrique | SendFlow",
+      "name": "SendFlow",
+      "title": "SendFlow | La plateforme de digitalisation des paiements",
       "description": "Intégrez les paiements Mobile Money inter-réseaux avec l’API développeur SendFlow. Découvrez des tarifs compétitifs dans les pays africains couverts."
     },
     "en": {
       "path": "/en/",
-      "name": "Home",
-      "title": "Home | Mobile Money Payment API for Africa | SendFlow",
+      "name": "SendFlow",
+      "title": "SendFlow | The digital payments platform",
       "description": "Integrate Mobile Money and cross-network payments with the SendFlow developer API, with competitive rates in supported African countries."
     },
     "service": {

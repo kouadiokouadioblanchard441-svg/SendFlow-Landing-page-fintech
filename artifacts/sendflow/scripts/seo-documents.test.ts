@@ -35,7 +35,10 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(schema['@graph'][0]['@id'], `${origin}/#organization`);
   assert.equal(schema['@graph'][0].logo, `${origin}/sendflow-favicon.png`);
   assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').url, `${origin}/`);
-  assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').name, 'Accueil | API de paiement Mobile Money en Afrique | SendFlow');
+  assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').name, 'SendFlow | La plateforme de digitalisation des paiements');
+  assert.match(rendered.html, /<title>SendFlow \| La plateforme de digitalisation des paiements<\/title>/);
+  assert.match(rendered.html, /property="og:title" content="SendFlow \| La plateforme de digitalisation des paiements"/);
+  assert.match(rendered.html, /name="twitter:title" content="SendFlow \| La plateforme de digitalisation des paiements"/);
   assert.ok(schema['@graph'].some((item: { '@type': string; serviceType?: string }) =>
     item['@type'] === 'Service' && item.serviceType?.includes('API développeur'),
   ));
@@ -43,9 +46,11 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
 });
 
 test('home and feature SEO target developer payments in both languages', () => {
-  assert.match(publicSeoRoutes.home.fr.title, /^Accueil \| .*API.*Mobile Money.*Afrique/);
+  assert.equal(publicSeoRoutes.home.fr.title, 'SendFlow | La plateforme de digitalisation des paiements');
+  assert.equal(publicSeoRoutes.home.fr.name, 'SendFlow');
   assert.match(publicSeoRoutes.home.fr.description, /tarifs compétitifs/);
-  assert.match(publicSeoRoutes.home.en.title, /^Home \| .*Mobile Money.*API.*Africa/);
+  assert.equal(publicSeoRoutes.home.en.title, 'SendFlow | The digital payments platform');
+  assert.equal(publicSeoRoutes.home.en.name, 'SendFlow');
   assert.match(publicSeoRoutes.features.fr.description, /API de paiement.*développeurs/);
   assert.match(publicSeoRoutes.features.en.description, /payment API for developers/);
   assert.equal(publicSeoRoutes.home.fr.path, '/');
