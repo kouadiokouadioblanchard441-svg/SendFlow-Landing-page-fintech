@@ -2975,7 +2975,6 @@ section#faq .reveal.space-y-2 > div {
   display: flex;
   width: min(100%, 420px);
   max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  min-height: min(650px, calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
@@ -3085,7 +3084,7 @@ section#faq .reveal.space-y-2 > div {
 .sf-public-nav-footer {
   display: grid;
   gap: 14px;
-  margin-top: auto;
+  margin-top: 0;
   padding-top: 20px;
 }
 
