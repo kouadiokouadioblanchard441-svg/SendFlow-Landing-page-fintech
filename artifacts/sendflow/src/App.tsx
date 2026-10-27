@@ -98,7 +98,7 @@ const publicEditorialFallbacks: Record<string, Copy> = {
   'nav.home': { fr: 'Accueil', en: 'Home' },
   'nav.features': { fr: 'Fonctionnalités', en: 'Features' },
   'nav.how': { fr: 'Comment ça marche', en: 'How it works' },
-  'nav.international': { fr: 'International', en: 'International' },
+  'nav.developer': { fr: 'Développeur', en: 'Developer' },
   'nav.security': { fr: 'Sécurité', en: 'Security' },
   'nav.about': { fr: 'À propos', en: 'About' },
   'cta.download': { fr: 'Télécharger l’application', en: 'Download the app' },
@@ -258,7 +258,7 @@ const navItems = [
   { id: 'top', label: { fr: 'Accueil', en: 'Home' } },
   { id: 'features-cards', label: { fr: 'Fonctionnalités', en: 'Features' } },
   { id: 'how', label: { fr: 'Comment ça marche', en: 'How it works' } },
-  { id: 'international', label: { fr: 'International', en: 'International' } },
+  { id: 'developer-api', label: { fr: 'Développeur', en: 'Developer' } },
   { id: 'security', label: { fr: 'Sécurité', en: 'Security' } },
   { id: 'about', label: { fr: 'À propos', en: 'About' } },
 ];
@@ -919,7 +919,7 @@ function LandingPage() {
       top: 'nav.home',
       'features-cards': 'nav.features',
       how: 'nav.how',
-      international: 'nav.international',
+      'developer-api': 'nav.developer',
       security: 'nav.security',
       about: 'nav.about',
     };

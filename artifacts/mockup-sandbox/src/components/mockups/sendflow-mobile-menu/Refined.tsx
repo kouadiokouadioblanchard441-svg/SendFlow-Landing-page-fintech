@@ -8,7 +8,7 @@ const links = [
   "Accueil",
   "Fonctionnalités",
   "Comment ça marche",
-  "International",
+  "Développeur",
   "Sécurité",
   "À propos",
 ];
