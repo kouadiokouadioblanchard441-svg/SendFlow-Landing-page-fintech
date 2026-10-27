@@ -45,16 +45,16 @@ export default function DeveloperApiCard({
                   <span className="h-2.5 w-2.5 rounded-full bg-[#f8d66d]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[#81c995]" />
                 </div>
-                <span className="min-w-0 truncate text-[10px] font-bold uppercase tracking-[.12em] text-[#c8bdd7] sm:text-[11px]">
+                <span className="min-w-0 truncate text-[11px] font-bold uppercase tracking-[.12em] text-[#c8bdd7] sm:text-[12px]">
                   {codeLabel}
                 </span>
-                <span className="shrink-0 rounded-full bg-[#6d35d8]/25 px-2.5 py-1 text-[9px] font-bold text-[#d8c6ff]">
+                <span className="shrink-0 rounded-full bg-[#6d35d8]/25 px-2.5 py-1 text-[10px] font-bold text-[#d8c6ff]">
                   API
                 </span>
               </div>
               <div className="max-h-[390px] overflow-auto">
                 <pre
-                  className="min-w-max px-4 py-5 font-mono text-[10px] leading-[1.85] text-[#e9e2f4] sm:px-6 sm:py-6 sm:text-[12px]"
+                  className="min-w-max px-4 py-5 font-mono text-[12px] leading-[1.8] text-[#e9e2f4] sm:px-6 sm:py-6 sm:text-[14px]"
                   data-testid="text-developer-api-code"
                 >
                   <code>{code}</code>

@@ -373,36 +373,28 @@ const faqs: { q: Copy; a: Copy }[] = [
 
 const developerApiCode: Copy = {
   fr: [
-    'const API_BASE_URL = "https://sendflow.africa";',
-    'const url = API_BASE_URL + "/<route-officielle>";',
-    'const headers = {',
-    '  ...AUTH_HEADERS, // définis dans la documentation',
-    '  "Content-Type": "application/json",',
-    '};',
+    'const API_URL = "https://sendflow.africa/api/healthz";',
     '',
-    'const response = await fetch(url, {',
-    '  method: "POST",',
-    '  headers,',
-    '  body: JSON.stringify(payload),',
-    '});',
+    'const response = await fetch(API_URL);',
+    'const health = await response.json();',
     '',
-    'if (!response.ok) throw new Error("API request failed");',
+    'if (!response.ok || health.status !== "ok") {',
+    '  throw new Error("L’API SendFlow est indisponible");',
+    '}',
+    '',
+    'console.log("API SendFlow opérationnelle");',
   ].join('\n'),
   en: [
-    'const API_BASE_URL = "https://sendflow.africa";',
-    'const url = API_BASE_URL + "/<official-endpoint>";',
-    'const headers = {',
-    '  ...AUTH_HEADERS, // define these per the documentation',
-    '  "Content-Type": "application/json",',
-    '};',
+    'const API_URL = "https://sendflow.africa/api/healthz";',
     '',
-    'const response = await fetch(url, {',
-    '  method: "POST",',
-    '  headers,',
-    '  body: JSON.stringify(payload),',
-    '});',
+    'const response = await fetch(API_URL);',
+    'const health = await response.json();',
     '',
-    'if (!response.ok) throw new Error("API request failed");',
+    'if (!response.ok || health.status !== "ok") {',
+    '  throw new Error("SendFlow API is unavailable");',
+    '}',
+    '',
+    'console.log("SendFlow API is operational");',
   ].join('\n'),
 };
 
@@ -1343,8 +1335,8 @@ function LandingPage() {
         <DeveloperApiCard
           eyebrow={t(contentCopy(landingBundle?.content, 'developer.api.eyebrow', { fr: 'API pour les développeurs', en: 'Developer API' }), language)}
           title={t(contentCopy(landingBundle?.content, 'developer.api.title', { fr: 'Connectez vos services à SendFlow.', en: 'Connect your services to SendFlow.' }), language)}
-          body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Intégrez l’API développeur à vos applications et créez des parcours adaptés à vos utilisateurs.', en: 'Integrate the developer API into your applications and build journeys for your users.' }), language)}
-          codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Exemple Node.js · Fetch', en: 'Node.js · Fetch example' }), language)}
+          body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Commencez par vérifier la disponibilité de l’API SendFlow depuis votre application.', en: 'Start by checking SendFlow API availability from your application.' }), language)}
+          codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Node.js · Vérifier l’API', en: 'Node.js · Check API availability' }), language)}
           code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiCode), language)}
         />
 
