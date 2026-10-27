@@ -25,7 +25,8 @@ import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
 import heroPlaceholder from '@assets/generated_images/sendflow-hero-placeholder.png';
 import heroGlobe from '@assets/generated_images/sendflow-earth-globe-transparent.png';
-import heroGlobalConnection from '@assets/file_000000003d2481f8a4200aa758aa64b9_1789047674015.png';
+import heroWomanConnection from '@assets/generated_images/sendflow-hero-woman.webp';
+import heroWomanCutout from '@assets/generated_images/sendflow-hero-woman-cutout.webp';
 import networkSectionArt from '@assets/generated_images/sendflow-section-network-3d-transparent.png';
 import howItWorksSectionArt from '@assets/generated_images/sendflow-section-how-it-works-3d-transparent.png';
 import internationalSectionArt from '@assets/generated_images/sendflow-section-international-3d-transparent.png';
@@ -1219,11 +1220,11 @@ function LandingPage() {
             </div>
               <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)] lg:aspect-[4/3] lg:max-w-[600px]">
                 <ProtectedImage
-                 src={heroGlobalConnection}
-                 alt={isFrench ? 'Homme devant un globe connecté entre l’Afrique et l’Europe' : 'Man in front of a globe connecting Africa and Europe'}
+                  src={heroWomanConnection}
+                  alt={isFrench ? 'Femme avec son téléphone devant un globe connecté entre l’Afrique et l’Europe' : 'Woman with her phone in front of a globe connecting Africa and Europe'}
                   className="h-full w-full object-cover"
                />
-                 <div className="pointer-events-none absolute left-3 top-3 z-10 flex origin-top-left scale-[0.76] items-center rounded-full border border-[#6d35d8]/20 bg-white/90 px-3 py-2 shadow-[0_8px_20px_rgba(50,30,130,.16)] backdrop-blur-sm sm:left-4 sm:top-4 sm:scale-[0.88]" aria-label="SendFlow">
+                  <div className="pointer-events-none absolute left-3 top-3 z-30 flex origin-top-left scale-[0.76] items-center rounded-full border border-[#6d35d8]/20 bg-white/90 px-3 py-2 shadow-[0_8px_20px_rgba(50,30,130,.16)] backdrop-blur-sm sm:left-4 sm:top-4 sm:scale-[0.88]" aria-label="SendFlow">
                   <BrandLockup />
                 </div>
                  <div className="hero-globe-motion pointer-events-none absolute right-[4%] top-[3%] z-10 aspect-square w-[61%] rounded-full" aria-hidden="true">
@@ -1249,6 +1250,7 @@ function LandingPage() {
                   <span className="hero-globe-motion__meridian hero-globe-motion__meridian--wide" />
                   <span className="hero-globe-motion__meridian hero-globe-motion__meridian--narrow" />
                 </div>
+                 <ProtectedImage src={heroWomanCutout} alt="" className="pointer-events-none absolute bottom-0 left-[17%] z-20 h-full w-auto max-w-none object-contain lg:left-[13%]" />
             </div>
            </div>
          </section>
