@@ -197,7 +197,7 @@ export default function OperatorFeesAdminEditor({
         </div>
       </div>
       <p className="sendflow-admin-founder-intro">
-        Définissez les frais affichés aux intégrateurs. Les montants sont enregistrés en pourcentage ou en francs CFA.
+        Définissez les frais affichés aux intégrateurs pour les opérateurs associés à la Côte d’Ivoire. Les montants sont enregistrés en pourcentage ou en francs CFA.
       </p>
 
       <div className="grid gap-4">

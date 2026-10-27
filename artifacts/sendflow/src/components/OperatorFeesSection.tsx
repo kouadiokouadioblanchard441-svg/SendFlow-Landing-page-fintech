@@ -72,6 +72,7 @@ export default function OperatorFeesSection({ language, config }: OperatorFeesSe
 
   return (
     <section
+      id="operator-fees"
       aria-label={language === 'fr' ? 'Tarifs des opérateurs' : 'Operator fees'}
       className="px-5 py-12 sm:px-8 sm:py-16"
       data-testid="section-operator-fees"

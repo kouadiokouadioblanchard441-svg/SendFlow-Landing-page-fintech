@@ -88,7 +88,7 @@ test("CMS content type is restricted to the supported values", () => {
   }), false);
 });
 
-test("operator fees are bounded, unique, and cover the current operator catalog", () => {
+test("operator fees are bounded, unique, and cover exactly the selected operator set", () => {
   const config = {
     collectionTitleFr: "Frais à l'encaissement",
     collectionTitleEn: "Collection fees",

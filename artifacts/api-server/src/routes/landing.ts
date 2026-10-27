@@ -1005,12 +1005,32 @@ router.put("/admin/landing/operator-fees", requireAdmin, async (req, res): Promi
     return;
   }
 
-  const currentOperators = await db.select({ slug: landingOperators.slug }).from(landingOperators);
+  const [ivoryCoast] = await db.select({ id: landingCountries.id })
+    .from(landingCountries)
+    .where(and(eq(landingCountries.code, "CI"), eq(landingCountries.isVisible, true)))
+    .limit(1);
+  if (!ivoryCoast) {
+    res.status(400).json({ error: "Le pays Côte d’Ivoire n’est pas disponible dans le catalogue." });
+    return;
+  }
+
+  const [countryAssignments, visibleOperators] = await Promise.all([
+    db.select({ operatorId: landingCountryOperators.operatorId })
+      .from(landingCountryOperators)
+      .where(eq(landingCountryOperators.countryId, ivoryCoast.id)),
+    db.select({ id: landingOperators.id, slug: landingOperators.slug })
+      .from(landingOperators)
+      .where(eq(landingOperators.isVisible, true)),
+  ]);
+  const ivoryCoastOperatorIds = new Set(countryAssignments.map((assignment) => assignment.operatorId));
+  const ivoryCoastOperatorSlugs = visibleOperators
+    .filter((operator) => ivoryCoastOperatorIds.has(operator.id))
+    .map((operator) => operator.slug);
   if (!hasExactOperatorFeeCoverage(
     parsed.data.operators.map((operator) => operator.slug),
-    currentOperators.map((operator) => operator.slug),
+    ivoryCoastOperatorSlugs,
   )) {
-    res.status(400).json({ error: "Enregistre un tarif pour chaque opérateur du panneau d’administration." });
+    res.status(400).json({ error: "Enregistre un tarif pour chaque opérateur actif de Côte d’Ivoire." });
     return;
   }
 

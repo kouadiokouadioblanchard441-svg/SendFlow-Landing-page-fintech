@@ -1229,13 +1229,28 @@ export default function AdminPage() {
 
   const config = resourceConfigs[activeResource];
   const operatorFeeOperators = useMemo<AdminFeeOperator[]>(() => {
+    const ivoryCoast = bundle.countries.find((country) =>
+      country.code === 'CI' && country.isVisible === true && typeof country.id === 'number',
+    );
+    if (!ivoryCoast || typeof ivoryCoast.id !== 'number') return [];
+    const ivoryCoastOperatorIds = new Set(
+      bundle.countryOperators
+        .filter((assignment) => assignment.countryId === ivoryCoast.id)
+        .map((assignment) => assignment.operatorId),
+    );
     return bundle.operators.reduce<AdminFeeOperator[]>((result, item) => {
-      if (typeof item.slug === 'string' && typeof item.name === 'string') {
+      if (
+        typeof item.id === 'number' &&
+        ivoryCoastOperatorIds.has(item.id) &&
+        item.isVisible === true &&
+        typeof item.slug === 'string' &&
+        typeof item.name === 'string'
+      ) {
         result.push({ slug: item.slug, name: item.name });
       }
       return result;
     }, []).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  }, [bundle.operators]);
+  }, [bundle.countries, bundle.countryOperators, bundle.operators]);
   const operatorFeesValue = useMemo<EditableFeeConfig>(() => {
     const savedRow = bundle.content.find((item) =>
       item.contentKey === OPERATOR_FEES_CONTENT_KEY && item.locale === 'fr',

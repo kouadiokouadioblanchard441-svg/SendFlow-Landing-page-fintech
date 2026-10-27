@@ -364,7 +364,16 @@ function PublicOperatorFees({
   if (!feeConfig) return null;
 
   const ratesBySlug = new Map(feeConfig.operators.map((operator) => [operator.slug, operator]));
-  const visibleOperators = bundle.operators.filter((operator) => operator.isVisible);
+  const ivoryCoast = bundle.countries.find((country) => country.code === 'CI' && country.isVisible);
+  if (!ivoryCoast) return null;
+  const ivoryCoastOperatorIds = new Set(
+    bundle.countryOperators
+      .filter((assignment) => assignment.countryId === ivoryCoast.id)
+      .map((assignment) => assignment.operatorId),
+  );
+  const visibleOperators = bundle.operators.filter((operator) =>
+    operator.isVisible && ivoryCoastOperatorIds.has(operator.id),
+  );
   if (visibleOperators.some((operator) => !ratesBySlug.has(operator.slug))) return null;
 
   const operators = visibleOperators
