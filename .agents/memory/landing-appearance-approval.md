@@ -20,3 +20,9 @@ The user also wants the desktop site to feel professional while keeping the mobi
 **Why:** desktop quality is an explicit product requirement, not a secondary consequence of mobile styling.
 
 **How to apply:** verify public pages at desktop widths as well as phone widths; improve desktop composition without regressing mobile.
+
+The primary mobile navigation should keep each destination in its own clearly framed card while preserving its existing links and footer actions.
+
+**Why:** the user explicitly asked for a professional, card-framed menu.
+
+**How to apply:** when updating the home-page mobile menu, retain distinct borders and spacing for each link card, plus the language and download actions.

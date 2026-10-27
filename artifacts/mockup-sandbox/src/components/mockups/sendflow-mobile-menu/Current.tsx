@@ -1,4 +1,4 @@
-import { ArrowRight, Globe2, Menu, X } from "lucide-react";
+import { ArrowRight, ChevronRight, Globe2, Menu, X } from "lucide-react";
 import { useState } from "react";
 import sendflowMark from "./assets/sendflow-mark.png";
 import sendflowWordmark from "./assets/sendflow-wordmark.png";
@@ -61,6 +61,7 @@ export function Current() {
         >
           <aside
             aria-label="Menu principal"
+            aria-modal="true"
             className="sf-menu-current-panel"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
@@ -76,21 +77,33 @@ export function Current() {
                 <X size={19} />
               </button>
             </div>
+            <div className="sf-menu-current-intro">
+              <p>Navigation</p>
+              <h2>Explorer SendFlow</h2>
+            </div>
             <nav aria-label="Navigation principale" className="sf-menu-current-nav">
-              {links.map((link) => (
-                <a href="#" key={link} onClick={(event) => event.preventDefault()}>
-                  {link}
+              {links.map((link, index) => (
+                <a
+                  aria-current={index === 0 ? "page" : undefined}
+                  className="sf-menu-current-link"
+                  href="#"
+                  key={link}
+                  onClick={(event) => event.preventDefault()}
+                >
+                  <span>{link}</span>
+                  <ChevronRight aria-hidden="true" size={17} />
                 </a>
               ))}
             </nav>
-            <button className="sf-menu-current-language" type="button">
-              <span aria-hidden="true">🇬🇧</span>
-              Passer en anglais
-              <Globe2 size={15} />
-            </button>
-            <a className="sf-menu-current-download" href="#">
-              Télécharger l’application <ArrowRight size={16} />
-            </a>
+            <div className="sf-menu-current-footer">
+              <button className="sf-menu-current-language" type="button">
+                <span>Langue</span>
+                <strong><Globe2 aria-hidden="true" size={15} /> English</strong>
+              </button>
+              <a className="sf-menu-current-download" href="#">
+                Télécharger l’application <ArrowRight aria-hidden="true" size={16} />
+              </a>
+            </div>
           </aside>
         </div>
       )}

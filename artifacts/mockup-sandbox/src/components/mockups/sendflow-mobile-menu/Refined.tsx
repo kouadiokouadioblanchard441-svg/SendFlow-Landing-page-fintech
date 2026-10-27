@@ -103,7 +103,7 @@ export function Refined() {
                 <span>Langue</span>
                 <strong>
                   <Globe2 aria-hidden="true" size={15} />
-                  Français
+                  English
                 </strong>
               </button>
               <a className="sf-menu-refined-download" href="#">
