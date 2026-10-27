@@ -241,13 +241,13 @@ button[data-testid="button-submit-email"] {
 }
 
 /* Keep the two landing-page hero calls to action in SendFlow violet. */
-a[data-testid="button-hero-download"],
+a[data-testid="button-hero-register"],
 a[data-testid="button-hero-discover"] {
   background-color: #6d35d8 !important;
   border-color: #8b62e5 !important;
   color: #ffffff !important;
 }
-a[data-testid="button-hero-download"]:hover,
+a[data-testid="button-hero-register"]:hover,
 a[data-testid="button-hero-discover"]:hover {
   background-color: #5822c3 !important;
   border-color: #5822c3 !important;

@@ -4,10 +4,12 @@ import {
   adminLoginSchema,
   countryOperatorAssignmentSchema,
   imageBytesMatchMimeType,
+  isSafeRegistrationCtaContent,
   landingResourceSchemas,
   mediaUploadHeadersSchema,
   newsletterCampaignSchema,
   parseLandingResourcePayload,
+  registrationCtaSchema,
 } from "../src/lib/requestValidation.ts";
 
 test("CMS creation requires complete, typed fields and rejects server-owned properties", () => {
@@ -60,6 +62,31 @@ test("CMS content type is restricted to the supported values", () => {
   assert.equal(landingResourceSchemas.content.safeParse(valid).success, true);
   assert.equal(landingResourceSchemas.content.safeParse({ ...valid, contentType: "javascript" }).success, false);
   assert.equal(landingResourceSchemas.content.safeParse({ ...valid, value: "x".repeat(20_001) }).success, false);
+  assert.equal(isSafeRegistrationCtaContent({
+    ...valid,
+    contentKey: "cta.signup.url",
+    value: "javascript:alert(1)",
+  }), false);
+  assert.equal(isSafeRegistrationCtaContent({
+    ...valid,
+    contentKey: "cta.signup.url",
+    value: "https://signup.example.org",
+  }), true);
+  assert.equal(isSafeRegistrationCtaContent({
+    ...valid,
+    contentKey: "cta.signup.url",
+    locale: "en",
+    value: "https://signup.example.org",
+  }), false);
+});
+
+test("registration CTA accepts an empty destination but requires HTTPS when set", () => {
+  const labels = { labelFr: "Inscrivez-vous", labelEn: "Sign up" };
+  assert.equal(registrationCtaSchema.safeParse({ url: "", ...labels }).success, true);
+  assert.equal(registrationCtaSchema.safeParse({ url: "https://signup.example.org", ...labels }).success, true);
+  assert.equal(registrationCtaSchema.safeParse({ url: "http://signup.example.org", ...labels }).success, false);
+  assert.equal(registrationCtaSchema.safeParse({ url: "javascript:alert(1)", ...labels }).success, false);
+  assert.equal(registrationCtaSchema.safeParse({ url: "", ...labels, extra: true }).success, false);
 });
 
 test("country coordinates and colors are bounded before persistence", () => {

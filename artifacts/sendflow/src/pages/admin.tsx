@@ -31,6 +31,11 @@ import {
   X,
 } from 'lucide-react';
 import { ABOUT_HERO_ASSETS, ABOUT_HERO_ASSET_BY_KEY } from '@/lib/aboutCarouselAssets';
+import {
+  REGISTRATION_CTA_DEFAULT_LABELS,
+  REGISTRATION_CTA_LABEL_KEY,
+  REGISTRATION_CTA_URL_KEY,
+} from '@/lib/registration-cta';
 
 type Primitive = string | number | boolean | null | undefined;
 type RecordItem = { id?: number; [key: string]: Primitive };
@@ -821,7 +826,28 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   googlePlayUrl: '',
   appStoreUrl: '',
   apkUrl: '',
+  registrationUrl: '',
+  registrationLabelFr: REGISTRATION_CTA_DEFAULT_LABELS.fr,
+  registrationLabelEn: REGISTRATION_CTA_DEFAULT_LABELS.en,
 };
+
+function registrationCtaValues(content: RecordItem[]): Record<string, Primitive> {
+  const getVisibleValue = (contentKey: string, locale: string, fallback: string) => {
+    const record = content.find((item) =>
+      item.contentKey === contentKey && item.locale === locale && item.isVisible === true,
+    );
+    return typeof record?.value === 'string' && record.value.trim() ? record.value : fallback;
+  };
+  const urlRecord = content.find((item) =>
+    item.contentKey === REGISTRATION_CTA_URL_KEY && item.locale === 'fr',
+  );
+
+  return {
+    registrationUrl: urlRecord?.isVisible === true && typeof urlRecord.value === 'string' ? urlRecord.value : '',
+    registrationLabelFr: getVisibleValue(REGISTRATION_CTA_LABEL_KEY, 'fr', REGISTRATION_CTA_DEFAULT_LABELS.fr),
+    registrationLabelEn: getVisibleValue(REGISTRATION_CTA_LABEL_KEY, 'en', REGISTRATION_CTA_DEFAULT_LABELS.en),
+  };
+}
 
 function SiteSettingsEditor({
   bundle,
@@ -832,10 +858,18 @@ function SiteSettingsEditor({
   saving: boolean;
   onSave: (values: Record<string, Primitive>) => void;
 }) {
-  const [values, setValues] = useState<Record<string, Primitive>>(() => ({ ...siteSettingsDefaults, ...(bundle.settings ?? {}) }));
+  const [values, setValues] = useState<Record<string, Primitive>>(() => ({
+    ...siteSettingsDefaults,
+    ...(bundle.settings ?? {}),
+    ...registrationCtaValues(bundle.content),
+  }));
   useEffect(() => {
-    setValues({ ...siteSettingsDefaults, ...(bundle.settings ?? {}) });
-  }, [bundle.settings]);
+    setValues({
+      ...siteSettingsDefaults,
+      ...(bundle.settings ?? {}),
+      ...registrationCtaValues(bundle.content),
+    });
+  }, [bundle.settings, bundle.content]);
 
   const update = (key: string, value: Primitive) => setValues((current) => ({ ...current, [key]: value }));
   const field = (key: string, label: string, type: 'text' | 'email' | 'url' | 'tel' = 'text', placeholder?: string) => (
@@ -856,6 +890,10 @@ function SiteSettingsEditor({
         {field('supportEmail', 'Email support public', 'email')}
         {field('supportPhone', 'Téléphone support', 'tel')}
         <div className="sendflow-admin-settings-group-title">Accueil</div>
+        {field('registrationUrl', 'URL d’inscription', 'url', 'https://…')}
+        {field('registrationLabelFr', 'Libellé du bouton · FR', 'text', REGISTRATION_CTA_DEFAULT_LABELS.fr)}
+        {field('registrationLabelEn', 'Button label · EN', 'text', REGISTRATION_CTA_DEFAULT_LABELS.en)}
+        <p className="sendflow-admin-muted sendflow-admin-field-wide">Le bouton reste inactif tant que l’URL HTTPS n’est pas renseignée. Le lien s’ouvre dans le même onglet.</p>
         {field('homeContactEmail', 'Email de contact · accueil', 'email')}
         {field('homeContactPhone', 'Téléphone · accueil', 'tel')}
         {field('homeContactWhatsapp', 'WhatsApp · accueil', 'tel', '+225 07 00 00 00 00')}
@@ -901,7 +939,7 @@ function SiteSettingsEditor({
       <div className="sendflow-admin-founder-foot">
         <span className="sendflow-admin-muted">Le lien APK peut rester vide avant la publication. Il accepte une URL publique https:// ou un chemin / de l’application.</span>
         <button className="sendflow-admin-button sendflow-admin-button-primary" disabled={saving} onClick={() => onSave(values)} data-testid="button-save-site-settings">
-          {saving ? <LoaderCircle className="sendflow-admin-spin" size={16} /> : <Save size={16} />} {saving ? 'Enregistrement…' : 'Enregistrer les coordonnées'}
+          {saving ? <LoaderCircle className="sendflow-admin-spin" size={16} /> : <Save size={16} />} {saving ? 'Enregistrement…' : 'Enregistrer les paramètres'}
         </button>
       </div>
     </section>
@@ -1304,11 +1342,22 @@ export default function AdminPage() {
     setSettingsSaving(true);
     try {
       const payload = Object.fromEntries(Object.entries(values).filter(([key]) => !['id', 'createdAt', 'updatedAt'].includes(key)));
-      const saved = await apiRequest<RecordItem>('/api/admin/landing/settings', { method: 'PUT', body: JSON.stringify(payload) });
-      setBundle((current) => ({ ...current, settings: saved }));
-      setNotice({ tone: 'success', text: 'Les coordonnées du site sont à jour.' });
+      const saved = await apiRequest<{ settings: RecordItem; registrationContent: RecordItem[] }>('/api/admin/landing/settings', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      const registrationKeys = new Set([REGISTRATION_CTA_URL_KEY, REGISTRATION_CTA_LABEL_KEY]);
+      setBundle((current) => ({
+        ...current,
+        settings: saved.settings,
+        content: [
+          ...current.content.filter((item) => !registrationKeys.has(String(item.contentKey))),
+          ...saved.registrationContent,
+        ],
+      }));
+      setNotice({ tone: 'success', text: 'Les paramètres du site sont à jour.' });
     } catch (caught) {
-      setNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible d’enregistrer les coordonnées du site.' });
+      setNotice({ tone: 'error', text: caught instanceof Error ? caught.message : 'Impossible d’enregistrer les paramètres du site.' });
     } finally {
       setSettingsSaving(false);
     }

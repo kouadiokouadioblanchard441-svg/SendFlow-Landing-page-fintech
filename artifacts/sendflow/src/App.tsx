@@ -23,6 +23,12 @@ import { SendFlowFooter } from '@/components/sendflow-footer';
 import DeveloperApiCard from '@/components/DeveloperApiCard';
 import FeatureActionCards from '@/components/FeatureActionCards';
 import { developerApiExample } from '@/lib/developer-api-example';
+import {
+  getRegistrationUrl,
+  REGISTRATION_CTA_DEFAULT_LABELS,
+  REGISTRATION_CTA_LABEL_KEY,
+  REGISTRATION_CTA_URL_KEY,
+} from '@/lib/registration-cta';
 import { ProtectedImage } from '@/components/protected-image';
 import sendflowMark from '@assets/sendflow-mark-original.png';
 import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
@@ -987,6 +993,13 @@ function LandingPage() {
   const appStoreUrl = landingBundle?.settings?.appStoreUrl?.trim() || null;
   const hasStoreLink = Boolean(googlePlayUrl || appStoreUrl);
   const homeServiceDefaults = publicSeoRoutes.home.service[language];
+  const registrationUrl = getRegistrationUrl(
+    landingBundle?.content.find((item) => item.contentKey === REGISTRATION_CTA_URL_KEY && item.locale === 'fr' && item.isVisible)?.value,
+  );
+  const registrationLabel = t(
+    contentCopy(landingBundle?.content, REGISTRATION_CTA_LABEL_KEY, REGISTRATION_CTA_DEFAULT_LABELS),
+    language,
+  );
   useSeo({
     path: '/',
     locale: language,
@@ -1186,7 +1199,19 @@ function LandingPage() {
               <h1 className="rise delay-1 mt-6 max-w-[760px] whitespace-pre-line text-[clamp(3.7rem,9vw,7.6rem)] font-extrabold leading-[.88] tracking-[-.09em] text-[#17131f] lg:mt-0 lg:text-[clamp(3.8rem,6.4vw,6.6rem)] lg:leading-[.92] lg:tracking-[-.075em]">{t(localizedSection('hero', { title: { fr: 'L’argent circule.\nLes réseaux aussi.', en: 'Money moves.\nNetworks do too.' }, body: { fr: '', en: '' } }).title, language)}</h1>
                <p className="rise delay-2 mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px] lg:mt-6">{t(localizedSection('hero', { title: { fr: '', en: '' }, body: { fr: 'SendFlow simplifie les transferts entre réseaux, localement et au-delà des frontières. Son API développeur permet d’intégrer ses services à vos applications.', en: 'SendFlow simplifies cross-network transfers, locally and across borders. Its developer API lets you integrate SendFlow services into your applications.' } }).body, language)}</p>
               <div className="rise delay-3 mt-9 flex w-full max-w-[520px] flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center">
-                  <Link href={getLocalizedPath('/download', language)} className="inline-flex min-h-[52px] whitespace-nowrap items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={15} /></Link>
+                   <a
+                    href={registrationUrl ?? undefined}
+                    onClick={(event) => {
+                      if (!registrationUrl) event.preventDefault();
+                    }}
+                    aria-disabled={!registrationUrl}
+                    role={registrationUrl ? undefined : 'link'}
+                    title={!registrationUrl ? 'Configurez l’URL d’inscription dans le panneau admin.' : undefined}
+                    className="inline-flex min-h-[52px] whitespace-nowrap items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]"
+                    data-testid="button-hero-register"
+                  >
+                    {registrationLabel} <ArrowRight className="ml-2" size={15} />
+                  </a>
                   <Link href={getLocalizedPath('/a-propos', language)} className="inline-flex min-h-[52px] whitespace-nowrap items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-discover"><Play className="mr-2 text-white" size={14} fill="currentColor" />{t(contentCopy(landingBundle?.content, 'cta.discover', { fr: 'Découvrir SendFlow', en: 'Discover SendFlow' }), language)}</Link>
               </div>
             </div>

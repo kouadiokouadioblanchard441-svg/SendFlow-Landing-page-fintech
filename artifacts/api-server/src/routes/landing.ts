@@ -43,12 +43,14 @@ import {
   countryOperatorAssignmentSchema,
   founderProfileSchema,
   imageBytesMatchMimeType,
+  isSafeRegistrationCtaContent,
   mediaUploadHeadersSchema,
   newsletterCampaignSchema,
   newsletterSubscriberStatusSchema,
   newsletterSubscribeSchema,
   parseLandingResourcePayload,
   parsePositivePathId,
+  registrationCtaSchema,
   siteSettingsSchema,
 } from "../lib/requestValidation";
 
@@ -843,7 +845,22 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
     res.status(400).json({ error: "Les paramètres du site sont invalides." });
     return;
   }
-  const values = trimContactFields(parsed.data as Record<string, unknown>, [...siteContactFields, ...siteLinkFields]);
+  const registrationParsed = registrationCtaSchema.safeParse({
+    url: parsed.data.registrationUrl,
+    labelFr: parsed.data.registrationLabelFr,
+    labelEn: parsed.data.registrationLabelEn,
+  });
+  if (!registrationParsed.success) {
+    res.status(400).json({ error: "Le lien ou les libellés d’inscription sont invalides." });
+    return;
+  }
+  const { url: registrationUrl, labelFr: registrationLabelFr, labelEn: registrationLabelEn } = registrationParsed.data;
+  const siteSettingsData = Object.fromEntries(
+    Object.entries(parsed.data).filter(([key]) =>
+      !["registrationUrl", "registrationLabelFr", "registrationLabelEn"].includes(key),
+    ),
+  );
+  const values = trimContactFields(siteSettingsData as Record<string, unknown>, [...siteContactFields, ...siteLinkFields]);
   try {
     normalizePublicLinks(values, siteLinkFields, ["apkUrl"]);
     const emailLabels: Record<string, string> = {
@@ -867,10 +884,63 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
     res.status(400).json({ error: "L’adresse email du support est requise." });
     return;
   }
-  const existing = await db.select({ id: landingSiteSettings.id }).from(landingSiteSettings).orderBy(asc(landingSiteSettings.id)).limit(1);
-  const [saved] = existing[0]
-    ? await db.update(landingSiteSettings).set(values).where(eq(landingSiteSettings.id, existing[0].id)).returning()
-    : await db.insert(landingSiteSettings).values(values as typeof landingSiteSettings.$inferInsert).returning();
+  const saved = await db.transaction(async (tx) => {
+    const existing = await tx.select({ id: landingSiteSettings.id })
+      .from(landingSiteSettings)
+      .orderBy(asc(landingSiteSettings.id))
+      .limit(1);
+    const [settings] = existing[0]
+      ? await tx.update(landingSiteSettings).set(values).where(eq(landingSiteSettings.id, existing[0].id)).returning()
+      : await tx.insert(landingSiteSettings).values(values as typeof landingSiteSettings.$inferInsert).returning();
+
+    const registrationContent: Array<typeof landingContent.$inferSelect> = [];
+    const contentToSave = [
+      {
+        contentKey: "cta.signup.url",
+        locale: "fr" as const,
+        group: "cta",
+        contentType: "url" as const,
+        value: registrationUrl,
+        isVisible: Boolean(registrationUrl),
+      },
+      {
+        contentKey: "cta.signup.label",
+        locale: "fr" as const,
+        group: "cta",
+        contentType: "text" as const,
+        value: registrationLabelFr,
+        isVisible: true,
+      },
+      {
+        contentKey: "cta.signup.label",
+        locale: "en" as const,
+        group: "cta",
+        contentType: "text" as const,
+        value: registrationLabelEn,
+        isVisible: true,
+      },
+    ];
+
+    for (const item of contentToSave) {
+      const [content] = await tx.insert(landingContent)
+        .values({ ...item, orderIndex: 0 })
+        .onConflictDoUpdate({
+          target: [landingContent.contentKey, landingContent.locale],
+          set: {
+            group: item.group,
+            contentType: item.contentType,
+            value: item.value,
+            orderIndex: 0,
+            isVisible: item.isVisible,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      registrationContent.push(content);
+    }
+
+    return { settings, registrationContent };
+  });
   res.json(saved);
 });
 
@@ -949,8 +1019,15 @@ router.patch("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pro
   const [currentMedia] = name === "media"
     ? await db.select().from(landingMedia).where(eq(landingMedia.id, id)).limit(1)
     : [];
+  const [currentContent] = name === "content"
+    ? await db.select().from(landingContent).where(eq(landingContent.id, id)).limit(1)
+    : [];
   if ((name === "sections" && !currentSection) || (name === "media" && !currentMedia)) {
     res.status(404).json({ error: "Resource not found" });
+    return;
+  }
+  if (name === "content" && !isSafeRegistrationCtaContent({ ...currentContent, ...values })) {
+    res.status(400).json({ error: "Le lien ou le libellé d’inscription est invalide." });
     return;
   }
   if (name === "sections") {
@@ -1017,6 +1094,10 @@ router.post("/admin/landing/:resource", requireAdmin, async (req, res): Promise<
   const values = editable && parseLandingResourcePayload(name, editable, "create");
   if (!values) {
     res.status(400).json({ error: "No editable fields supplied" });
+    return;
+  }
+  if (name === "content" && !isSafeRegistrationCtaContent(values)) {
+    res.status(400).json({ error: "Le lien ou le libellé d’inscription est invalide." });
     return;
   }
   if (name === "sections") {

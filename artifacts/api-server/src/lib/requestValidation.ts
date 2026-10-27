@@ -27,6 +27,15 @@ function isHttpUrl(value: string, allowRelative = false): boolean {
   }
 }
 
+function isHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 const optionalHttpUrl = (allowRelative = false) =>
   text(2_048).nullable().optional().refine((value) =>
     value === null || value === undefined || isHttpUrl(value, allowRelative),
@@ -129,6 +138,22 @@ const landingContentSchema = z.object({
   orderIndex: orderIndex.optional(),
   isVisible: visibility,
 }).strict();
+
+export function isSafeRegistrationCtaContent(item: Record<string, unknown>): boolean {
+  if (item.contentKey === "cta.signup.url") {
+    return item.locale === "fr" &&
+      item.contentType === "url" &&
+      (item.isVisible === false ||
+        (typeof item.value === "string" && item.value.length <= 2_048 && isHttpsUrl(item.value)));
+  }
+  if (item.contentKey === "cta.signup.label") {
+    return item.contentType === "text" &&
+      typeof item.value === "string" &&
+      item.value.trim().length > 0 &&
+      item.value.length <= 120;
+  }
+  return true;
+}
 
 export const landingResourceSchemas = {
   content: landingContentSchema,
@@ -307,7 +332,16 @@ for (const field of settingsEmailFields) settingsShape[field] = optionalEmail(fi
 for (const field of settingsUrlFields) settingsShape[field] = optionalHttpUrl();
 for (const field of settingsOptionalUrlFields) settingsShape[field] = optionalHttpUrl(true);
 for (const field of settingsMediaFields) settingsShape[field] = nullableText(160);
-export const siteSettingsSchema = z.object(settingsShape).strict();
+export const registrationCtaSchema = z.object({
+  url: z.string().trim().max(2_048).refine((value) => !value || isHttpsUrl(value)),
+  labelFr: meaningfulText(120),
+  labelEn: meaningfulText(120),
+}).strict();
+export const siteSettingsSchema = z.object(settingsShape).strict().extend({
+  registrationUrl: registrationCtaSchema.shape.url,
+  registrationLabelFr: registrationCtaSchema.shape.labelFr,
+  registrationLabelEn: registrationCtaSchema.shape.labelEn,
+});
 
 export function parsePositivePathId(value: unknown): number | null {
   if (typeof value !== "string" || !/^[1-9]\d{0,9}$/.test(value)) return null;
