@@ -549,14 +549,23 @@ function PublicLegalRoute({ page: Page, slug }: { page: (props: LegalPageProps) 
   const { data } = usePublicLandingBundle();
   const legalPage = data?.legalPages?.find((item) => item.slug === slug && item.isVisible);
   const legalSections = data?.legalSections?.filter((item) => item.pageId === legalPage?.id).sort((a, b) => a.orderIndex - b.orderIndex) ?? [];
-  const fallbackTitles: Record<string, string> = {
-    'conditions-utilisation': 'Conditions générales d’utilisation',
-    confidentialite: 'Politique de confidentialité',
-    'mentions-legales': 'Mentions légales',
+  const fallbackTitles: Record<string, { fr: string; en: string }> = {
+    'conditions-utilisation': {
+      fr: publicSeoRoutes.terms.fr.name,
+      en: publicSeoRoutes.terms.en.name,
+    },
+    confidentialite: {
+      fr: publicSeoRoutes.privacy.fr.name,
+      en: publicSeoRoutes.privacy.en.name,
+    },
+    'mentions-legales': {
+      fr: publicSeoRoutes.legalNotice.fr.name,
+      en: publicSeoRoutes.legalNotice.en.name,
+    },
   };
   const legalTitle = locale === 'fr'
-    ? legalPage?.titleFr || fallbackTitles[slug] || 'Informations légales'
-    : legalPage?.titleEn || 'Legal information';
+    ? legalPage?.titleFr || fallbackTitles[slug]?.fr || 'Informations légales'
+    : legalPage?.titleEn || fallbackTitles[slug]?.en || 'Legal information';
   useSeo({
     path: `/${slug}`,
     locale,
@@ -645,10 +654,8 @@ function AboutRoute() {
   useSeo({
     path: '/a-propos',
     locale: language,
-    title: language === 'fr' ? 'À propos de SendFlow | Transferts plus simples' : 'About SendFlow | Simpler money transfers',
-    description: language === 'fr'
-      ? 'Découvrez l’histoire, la mission et la vision de SendFlow pour simplifier les transferts entre réseaux de paiement.'
-      : 'Discover SendFlow’s story, mission, and vision for simpler transfers across payment networks.',
+    title: publicSeoRoutes.about[language].title,
+    description: publicSeoRoutes.about[language].description,
     breadcrumbs: [{ name: language === 'fr' ? 'Accueil' : 'Home', path: '/' }, { name: language === 'fr' ? 'À propos' : 'About', path: '/a-propos' }],
   });
 

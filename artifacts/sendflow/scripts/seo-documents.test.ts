@@ -35,7 +35,7 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(schema['@graph'][0]['@id'], `${origin}/#organization`);
   assert.equal(schema['@graph'][0].logo, `${origin}/sendflow-favicon.png`);
   assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').url, `${origin}/`);
-  assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').name, 'API de paiement Mobile Money en Afrique | SendFlow');
+  assert.equal(schema['@graph'].find((item: { '@type': string }) => item['@type'] === 'WebPage').name, 'Accueil | API de paiement Mobile Money en Afrique | SendFlow');
   assert.ok(schema['@graph'].some((item: { '@type': string; serviceType?: string }) =>
     item['@type'] === 'Service' && item.serviceType?.includes('API développeur'),
   ));
@@ -43,13 +43,27 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
 });
 
 test('home and feature SEO target developer payments in both languages', () => {
-  assert.match(publicSeoRoutes.home.fr.title, /API.*Mobile Money.*Afrique/);
+  assert.match(publicSeoRoutes.home.fr.title, /^Accueil \| .*API.*Mobile Money.*Afrique/);
   assert.match(publicSeoRoutes.home.fr.description, /tarifs compétitifs/);
-  assert.match(publicSeoRoutes.home.en.title, /Mobile Money.*API.*Africa/);
+  assert.match(publicSeoRoutes.home.en.title, /^Home \| .*Mobile Money.*API.*Africa/);
   assert.match(publicSeoRoutes.features.fr.description, /API de paiement.*développeurs/);
   assert.match(publicSeoRoutes.features.en.description, /payment API for developers/);
   assert.equal(publicSeoRoutes.home.fr.path, '/');
   assert.equal(publicSeoRoutes.home.en.path, '/en/');
+});
+
+test('every localized public page has its own browser title beginning with its page name', () => {
+  const groups = Object.values(publicSeoRoutes).filter((group: any) => group.fr?.path && group.en?.path);
+  for (const locale of ['fr', 'en'] as const) {
+    const titles = groups.map((group: any) => group[locale].title);
+    assert.equal(new Set(titles).size, titles.length);
+    for (const group of groups as any[]) {
+      assert.ok(
+        group[locale].title.toLocaleLowerCase().startsWith(group[locale].name.toLocaleLowerCase()),
+        `${locale} title does not begin with its page name: ${group[locale].path}`,
+      );
+    }
+  }
 });
 
 test('public routes have stable reciprocal French and English URLs', () => {

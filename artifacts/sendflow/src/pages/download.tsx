@@ -17,6 +17,7 @@ import { ProtectedImage } from '@/components/protected-image';
 import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 import { useSeo } from '@/lib/seo';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
+import publicSeoRoutes from '@/lib/public-seo-routes.json';
 
 type Language = 'fr' | 'en';
 
@@ -309,16 +310,8 @@ export default function DownloadPage() {
   useSeo({
     path: '/download',
     locale: language,
-    title: language === 'fr'
-      ? hasStoreLink ? 'Télécharger SendFlow | Application de transfert d’argent' : 'Télécharger bientôt SendFlow | Application de transfert'
-      : hasStoreLink ? 'Download SendFlow | Money transfer app' : 'Download SendFlow soon | Transfer app',
-    description: language === 'fr'
-      ? hasStoreLink
-        ? 'Téléchargez l’application SendFlow sur votre store et simplifiez vos transferts entre réseaux de paiement.'
-        : 'Découvrez comment télécharger bientôt l’application SendFlow pour vos transferts entre réseaux de paiement.'
-      : hasStoreLink
-        ? 'Download the SendFlow app from your store and simplify transfers across payment networks.'
-        : 'Learn how to download the SendFlow app soon for transfers across payment networks.',
+    title: publicSeoRoutes.download[language].title,
+    description: publicSeoRoutes.download[language].description,
     breadcrumbs: [{ name: language === 'fr' ? 'Accueil' : 'Home', path: '/' }, { name: language === 'fr' ? 'Télécharger' : 'Download', path: '/download' }],
     application: {
       name: 'SendFlow',

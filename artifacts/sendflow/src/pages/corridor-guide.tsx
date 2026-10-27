@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSeo } from '@/lib/seo';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
+import publicSeoRoutes from '@/lib/public-seo-routes.json';
 
 const content = {
   fr: {
@@ -41,10 +42,8 @@ export default function CorridorGuidePage() {
   useSeo({
     path: '/france-senegal',
     locale,
-    title: locale === 'fr'
-      ? 'Envoyer de l’argent de France au Sénégal | SendFlow'
-      : 'Send money from France to Senegal | SendFlow',
-    description: t.description,
+    title: publicSeoRoutes.franceSenegal[locale].title,
+    description: publicSeoRoutes.franceSenegal[locale].description,
     imagePath: '/sendflow-favicon.png',
     breadcrumbs: [
       { name: locale === 'fr' ? 'Accueil' : 'Home', path: '/' },

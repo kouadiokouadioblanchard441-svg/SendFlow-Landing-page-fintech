@@ -10,6 +10,7 @@ import { SendFlowFooter, type FooterContentItem, type FooterSettings } from '@/c
 import { ProtectedImage } from '@/components/protected-image';
 import { useSeo } from '@/lib/seo';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
+import publicSeoRoutes from '@/lib/public-seo-routes.json';
 
 type Language = 'fr' | 'en';
 
@@ -91,10 +92,8 @@ export default function SecurityPage() {
   useSeo({
     path: '/securite',
     locale: language,
-    title: language === 'fr' ? 'Sécurité des transferts d’argent | SendFlow' : 'Money transfer security | SendFlow',
-    description: language === 'fr'
-      ? 'Découvrez les garanties de sécurité de SendFlow pour protéger vos transferts d’argent et vos données personnelles.'
-      : 'Discover SendFlow security guarantees designed to protect your transfers and personal data.',
+    title: publicSeoRoutes.security[language].title,
+    description: publicSeoRoutes.security[language].description,
     breadcrumbs: [{ name: language === 'fr' ? 'Accueil' : 'Home', path: '/' }, { name: t.security, path: '/securite' }],
   });
 
