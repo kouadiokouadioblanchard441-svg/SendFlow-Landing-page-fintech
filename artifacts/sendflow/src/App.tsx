@@ -380,42 +380,34 @@ const faqs: { q: Copy; a: Copy }[] = [
 
 const developerApiCode: Copy = {
   fr: [
-    "$baseUrl = 'https://sendflow.africa';",
-    "$paymentEndpoint = '/api/v1/merchant/payments';",
-    '$paymentUrl = $baseUrl.$paymentEndpoint;',
+    'POST https://sendflow.africa/v2/payin/initiate',
+    'Content-Type: application/json',
     '',
-    '$response = Http::withHeaders([',
-    "    'X-API-Key' => config('services.sendflow.key'),",
-    "    'X-API-Secret' => config('services.sendflow.secret'),",
-    "])->post($paymentUrl, [",
-    "    'amount' => 15000,",
-    "    'description' => 'Commande #123',",
-    ']);',
-    '',
-    '$response->throw();',
-    '',
-    'return redirect()->away(',
-    "    $response->json('data.checkout_url')",
-    ');',
+    '{',
+    '  "amount": 5000,',
+    '  "currency": "XOF",',
+    '  "country_code": "CI",',
+    '  "operator": "orange",',
+    '  "phone": "+2250700000000",',
+    '  "order_id": "ORDER-20260711-001",',
+    '  "operator_otp": "123456",',
+    '  "webhook_url": "https://yourapp.com/webhooks/drimpay"',
+    '}',
   ].join('\n'),
   en: [
-    "$baseUrl = 'https://sendflow.africa';",
-    "$paymentEndpoint = '/api/v1/merchant/payments';",
-    '$paymentUrl = $baseUrl.$paymentEndpoint;',
+    'POST https://sendflow.africa/v2/payin/initiate',
+    'Content-Type: application/json',
     '',
-    '$response = Http::withHeaders([',
-    "    'X-API-Key' => config('services.sendflow.key'),",
-    "    'X-API-Secret' => config('services.sendflow.secret'),",
-    "])->post($paymentUrl, [",
-    "    'amount' => 15000,",
-    "    'description' => 'Order #123',",
-    ']);',
-    '',
-    '$response->throw();',
-    '',
-    'return redirect()->away(',
-    "    $response->json('data.checkout_url')",
-    ');',
+    '{',
+    '  "amount": 5000,',
+    '  "currency": "XOF",',
+    '  "country_code": "CI",',
+    '  "operator": "orange",',
+    '  "phone": "+2250700000000",',
+    '  "order_id": "ORDER-20260711-001",',
+    '  "operator_otp": "123456",',
+    '  "webhook_url": "https://yourapp.com/webhooks/drimpay"',
+    '}',
   ].join('\n'),
 };
 
@@ -1097,7 +1089,7 @@ function LandingPage() {
           <button onClick={() => goTo('top')} className="flex items-center gap-2" data-testid="button-logo">
             <BrandLockup />
           </button>
-          <div className="hidden items-center gap-7 md:flex">
+          <div className="hidden items-center gap-7 min-[1280px]:flex">
             {publicNavItems.map((item) => {
               const href = getLocalizedPath(publicNavHref(item.id), language);
               const className = "link-underline text-[13px] font-medium text-[#5e5766] transition-colors hover:text-[#6d35d8]";
@@ -1106,13 +1098,13 @@ function LandingPage() {
                 : <Link key={item.id} href={href} onClick={() => setMobileOpen(false)} className={className} data-testid={`link-nav-${item.id}`}>{t(item.label, language)}</Link>;
             })}
           </div>
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-3 min-[1280px]:flex">
             <button onClick={() => navigate(getLocalizedPath(window.location.pathname, isFrench ? 'en' : 'fr'))} className="flex items-center gap-1 rounded-full px-2 py-2 text-[12px] font-semibold text-[#5e5766] hover:text-[#6d35d8]" data-testid="button-language">{isFrench ? 'EN' : 'FR'} <Globe2 size={14} /></button>
              <Link href={getLocalizedPath('/download', language)} onClick={() => setMobileOpen(false)} className="rounded-full bg-[#211d2c] px-4 py-2.5 text-[12px] font-semibold !text-white transition-transform hover:-translate-y-0.5" data-testid="button-nav-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-1 inline" size={14} /></Link>
           </div>
-          <button type="button" onClick={downloadBrief} className="hidden items-center gap-1 rounded-full px-2 py-2 text-[11px] font-semibold text-[#6d35d8] lg:flex" data-testid="button-download-brief">{isFrench ? 'Brief' : 'Brief'} <ArrowDownRight size={13} /></button>
+          <button type="button" onClick={downloadBrief} className="hidden items-center gap-1 rounded-full px-2 py-2 text-[11px] font-semibold text-[#6d35d8] min-[1280px]:flex" data-testid="button-download-brief">{isFrench ? 'Brief' : 'Brief'} <ArrowDownRight size={13} /></button>
           <button
-            className="sf-public-nav-trigger md:hidden"
+            className="sf-public-nav-trigger min-[1280px]:hidden"
             onClick={() => setMobileOpen(true)}
             aria-label={isFrench ? 'Ouvrir le menu' : 'Open menu'}
             aria-expanded={mobileOpen}
@@ -1127,7 +1119,7 @@ function LandingPage() {
 
       {mobileOpen && (
         <div
-          className="sf-public-nav-backdrop md:hidden"
+          className="sf-public-nav-backdrop min-[1280px]:hidden"
           onClick={() => setMobileOpen(false)}
           onKeyDown={(event) => {
             if (event.key === 'Escape') setMobileOpen(false);
@@ -1227,9 +1219,9 @@ function LandingPage() {
               </div>
               <h1 className="rise delay-1 mt-6 max-w-[760px] whitespace-pre-line text-[clamp(3.7rem,9vw,7.6rem)] font-extrabold leading-[.88] tracking-[-.09em] text-[#17131f] lg:mt-0 lg:text-[clamp(3.8rem,6.4vw,6.6rem)] lg:leading-[.92] lg:tracking-[-.075em]">{t(localizedSection('hero', { title: { fr: 'L’argent circule.\nLes réseaux aussi.', en: 'Money moves.\nNetworks do too.' }, body: { fr: '', en: '' } }).title, language)}</h1>
                <p className="rise delay-2 mt-8 max-w-[520px] text-[17px] font-semibold leading-7 text-[#30283b] sm:text-[19px] lg:mt-6">{t(localizedSection('hero', { title: { fr: '', en: '' }, body: { fr: 'SendFlow simplifie les transferts entre réseaux, localement et au-delà des frontières. Son API développeur permet d’intégrer ses services à vos applications.', en: 'SendFlow simplifies cross-network transfers, locally and across borders. Its developer API lets you integrate SendFlow services into your applications.' } }).body, language)}</p>
-              <div className="rise delay-3 mt-9 flex w-full max-w-[520px] flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center">
-                 <Link href={getLocalizedPath('/download', language)} className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={15} /></Link>
-                 <Link href={getLocalizedPath('/a-propos', language)} className="inline-flex min-h-[52px] items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-discover"><Play className="mr-2 text-white" size={14} fill="currentColor" />{t(contentCopy(landingBundle?.content, 'cta.discover', { fr: 'Découvrir SendFlow', en: 'Discover SendFlow' }), language)}</Link>
+              <div className="rise delay-3 mt-9 flex w-full max-w-[520px] flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center">
+                  <Link href={getLocalizedPath('/download', language)} className="inline-flex min-h-[52px] whitespace-nowrap items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-download">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={15} /></Link>
+                  <Link href={getLocalizedPath('/a-propos', language)} className="inline-flex min-h-[52px] whitespace-nowrap items-center justify-center rounded-[14px] border-2 border-[#8b62e5] bg-[#6d35d8] px-5 py-3.5 text-sm font-bold !text-white shadow-[0_12px_24px_rgba(109,53,216,.2)] transition-all hover:-translate-y-1 hover:bg-[#5822c3] hover:!text-white sm:min-w-[210px]" data-testid="button-hero-discover"><Play className="mr-2 text-white" size={14} fill="currentColor" />{t(contentCopy(landingBundle?.content, 'cta.discover', { fr: 'Découvrir SendFlow', en: 'Discover SendFlow' }), language)}</Link>
               </div>
             </div>
               <div className="relative mx-auto aspect-[3/2] w-full max-w-[530px] overflow-hidden rounded-[28px] border border-[#6d35d8]/15 bg-white shadow-[0_22px_45px_rgba(75,44,180,.14)] lg:aspect-[4/3] lg:max-w-[600px]">
@@ -1402,9 +1394,9 @@ function LandingPage() {
 
         <DeveloperApiCard
           eyebrow={t(contentCopy(landingBundle?.content, 'developer.api.eyebrow', { fr: 'API pour les développeurs', en: 'Developer API' }), language)}
-          title={t(contentCopy(landingBundle?.content, 'developer.api.title', { fr: 'Créez un paiement et redirigez vers le checkout.', en: 'Create a payment and redirect to checkout.' }), language)}
-          body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Exemple Laravel : créez un paiement SendFlow, puis redirigez votre client vers la page de checkout.', en: 'Laravel example: create a SendFlow payment, then redirect your customer to checkout.' }), language)}
-          codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Exemple Laravel · Paiement', en: 'Laravel example · Payment' }), language)}
+          title={t(contentCopy(landingBundle?.content, 'developer.api.title', { fr: 'Initiez un paiement avec l’API SendFlow.', en: 'Initiate a payment with the SendFlow API.' }), language)}
+          body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Exemple de requête JSON vers l’endpoint de paiement entrant.', en: 'Example JSON request to the pay-in endpoint.' }), language)}
+          codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Requête JSON · Paiement entrant', en: 'JSON request · Pay-in' }), language)}
           code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiCode), language)}
         />
 

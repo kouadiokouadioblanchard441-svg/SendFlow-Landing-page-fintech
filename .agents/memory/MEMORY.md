@@ -12,5 +12,5 @@
 - [Empty CMS collections](empty-cms-collections.md) — A loaded empty public collection is authoritative; never resurrect defaults just because its length is zero.
 - [Admin content editability](admin-content-editability.md) — The user requires all SendFlow site information to be editable in the admin panel, with nothing hardcoded.
 - [SendFlow authentication scope](sendflow-auth-provider.md) — Keep admin access app-owned and avoid external identity-provider dependencies.
-- [SendFlow developer API](sendflow-developer-api.md) — API availability is confirmed; the landing-page Laravel payment sample is illustrative, not a verified contract.
+- [SendFlow developer API](sendflow-developer-api.md) — API availability is confirmed; do not infer missing authentication or response details from the public example.
 - [SendFlow payment links](sendflow-payment-links.md) — Payment links are available; do not invent a creation route when linking public CTAs.
