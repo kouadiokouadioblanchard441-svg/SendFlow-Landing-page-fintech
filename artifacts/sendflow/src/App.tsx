@@ -373,28 +373,42 @@ const faqs: { q: Copy; a: Copy }[] = [
 
 const developerApiCode: Copy = {
   fr: [
-    'const API_URL = "https://sendflow.africa/api/healthz";',
+    "$baseUrl = 'https://sendflow.africa';",
+    "$paymentEndpoint = '/api/v1/merchant/payments';",
+    '$paymentUrl = $baseUrl.$paymentEndpoint;',
     '',
-    'const response = await fetch(API_URL);',
-    'const health = await response.json();',
+    '$response = Http::withHeaders([',
+    "    'X-API-Key' => config('services.sendflow.key'),",
+    "    'X-API-Secret' => config('services.sendflow.secret'),",
+    "])->post($paymentUrl, [",
+    "    'amount' => 15000,",
+    "    'description' => 'Commande #123',",
+    ']);',
     '',
-    'if (!response.ok || health.status !== "ok") {',
-    '  throw new Error("L’API SendFlow est indisponible");',
-    '}',
+    '$response->throw();',
     '',
-    'console.log("API SendFlow opérationnelle");',
+    'return redirect()->away(',
+    "    $response->json('data.checkout_url')",
+    ');',
   ].join('\n'),
   en: [
-    'const API_URL = "https://sendflow.africa/api/healthz";',
+    "$baseUrl = 'https://sendflow.africa';",
+    "$paymentEndpoint = '/api/v1/merchant/payments';",
+    '$paymentUrl = $baseUrl.$paymentEndpoint;',
     '',
-    'const response = await fetch(API_URL);',
-    'const health = await response.json();',
+    '$response = Http::withHeaders([',
+    "    'X-API-Key' => config('services.sendflow.key'),",
+    "    'X-API-Secret' => config('services.sendflow.secret'),",
+    "])->post($paymentUrl, [",
+    "    'amount' => 15000,",
+    "    'description' => 'Order #123',",
+    ']);',
     '',
-    'if (!response.ok || health.status !== "ok") {',
-    '  throw new Error("SendFlow API is unavailable");',
-    '}',
+    '$response->throw();',
     '',
-    'console.log("SendFlow API is operational");',
+    'return redirect()->away(',
+    "    $response->json('data.checkout_url')",
+    ');',
   ].join('\n'),
 };
 
@@ -1334,9 +1348,9 @@ function LandingPage() {
 
         <DeveloperApiCard
           eyebrow={t(contentCopy(landingBundle?.content, 'developer.api.eyebrow', { fr: 'API pour les développeurs', en: 'Developer API' }), language)}
-          title={t(contentCopy(landingBundle?.content, 'developer.api.title', { fr: 'Connectez vos services à SendFlow.', en: 'Connect your services to SendFlow.' }), language)}
-          body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Commencez par vérifier la disponibilité de l’API SendFlow depuis votre application.', en: 'Start by checking SendFlow API availability from your application.' }), language)}
-          codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Node.js · Vérifier l’API', en: 'Node.js · Check API availability' }), language)}
+          title={t(contentCopy(landingBundle?.content, 'developer.api.title', { fr: 'Créez un paiement et redirigez vers le checkout.', en: 'Create a payment and redirect to checkout.' }), language)}
+          body={t(contentCopy(landingBundle?.content, 'developer.api.body', { fr: 'Exemple Laravel : créez un paiement SendFlow, puis redirigez votre client vers la page de checkout.', en: 'Laravel example: create a SendFlow payment, then redirect your customer to checkout.' }), language)}
+          codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Exemple Laravel · Paiement', en: 'Laravel example · Payment' }), language)}
           code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiCode), language)}
         />
 
