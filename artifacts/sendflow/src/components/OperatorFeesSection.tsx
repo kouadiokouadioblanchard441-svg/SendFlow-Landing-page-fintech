@@ -104,16 +104,16 @@ export default function OperatorFeesSection({ language, config }: OperatorFeesSe
               hidden={!collectionOpen}
               className="border-t border-[#edf0f4] px-5 py-5 sm:px-8 sm:py-6"
             >
-              <div className="grid grid-cols-2 gap-2 rounded-[18px] bg-[#f1f5ff] p-3 sm:gap-4 sm:p-5 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 rounded-[18px] bg-[#f1f5ff] p-3 min-[360px]:grid-cols-2 sm:gap-4 sm:p-5 lg:grid-cols-3">
                 {config.operators.map((operator) => (
                   <div
                     key={operator.slug}
-                    className="flex min-h-[86px] items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-4 py-3 shadow-[0_2px_5px_rgba(23,32,45,.035)]"
+                    className="flex min-h-[86px] min-w-0 items-center gap-2 rounded-[14px] border border-[#edf0f5] bg-white px-2.5 py-3 shadow-[0_2px_5px_rgba(23,32,45,.035)] sm:gap-3 sm:px-4"
                     data-testid={`card-collection-fee-${operator.slug}`}
                   >
                     <OperatorMark operator={operator} />
-                    <div className="min-w-0">
-                      <p className="m-0 truncate text-[14px] font-semibold leading-5 text-[#17202d]">{operator.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="m-0 whitespace-normal break-words text-[13px] font-semibold leading-4 text-[#17202d] sm:text-[14px] sm:leading-5">{operator.name}</p>
                       <p className="m-0 mt-0.5 font-mono text-[13px] font-medium tabular-nums text-[#657184]">
                         {formatPercent(operator.collectionPercent)}
                       </p>
@@ -155,16 +155,16 @@ export default function OperatorFeesSection({ language, config }: OperatorFeesSe
               hidden={!transferOpen}
               className="border-t border-[#edf0f4] px-5 py-5 sm:px-8 sm:py-6"
             >
-              <div className="grid grid-cols-2 gap-2 rounded-[18px] bg-[#f1f5ff] p-3 sm:gap-4 sm:p-5 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 rounded-[18px] bg-[#f1f5ff] p-3 min-[360px]:grid-cols-2 sm:gap-4 sm:p-5 lg:grid-cols-3">
                 {config.operators.map((operator) => (
                   <div
                     key={operator.slug}
-                    className="flex min-h-[86px] items-center gap-3 rounded-[14px] border border-[#edf0f5] bg-white px-4 py-3 shadow-[0_2px_5px_rgba(23,32,45,.035)]"
+                    className="flex min-h-[86px] min-w-0 items-center gap-2 rounded-[14px] border border-[#edf0f5] bg-white px-2.5 py-3 shadow-[0_2px_5px_rgba(23,32,45,.035)] sm:gap-3 sm:px-4"
                     data-testid={`card-transfer-fee-${operator.slug}`}
                   >
                     <OperatorMark operator={operator} />
-                    <div className="min-w-0">
-                      <p className="m-0 truncate text-[14px] font-semibold leading-5 text-[#17202d]">{operator.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="m-0 whitespace-normal break-words text-[13px] font-semibold leading-4 text-[#17202d] sm:text-[14px] sm:leading-5">{operator.name}</p>
                       <p className="m-0 mt-0.5 font-mono text-[13px] font-medium tabular-nums text-[#657184]">
                         {formatPercent(operator.transferPercent)}
                       </p>
@@ -172,14 +172,14 @@ export default function OperatorFeesSection({ language, config }: OperatorFeesSe
                   </div>
                 ))}
                 <div
-                  className="flex min-h-[86px] items-center gap-3 rounded-[14px] border border-[#e4e9f1] bg-white px-4 py-3 shadow-[0_2px_5px_rgba(23,32,45,.035)]"
+                  className="flex min-h-[86px] min-w-0 items-center gap-2 rounded-[14px] border border-[#e4e9f1] bg-white px-2.5 py-3 shadow-[0_2px_5px_rgba(23,32,45,.035)] sm:gap-3 sm:px-4"
                   data-testid="card-bank-transfer-fee"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf1f7] text-[#27374c]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#edf1f7] text-[#27374c] sm:h-11 sm:w-11">
                     <Landmark size={20} strokeWidth={1.8} aria-hidden="true" />
                   </span>
-                  <div className="min-w-0">
-                    <p className="m-0 truncate text-[14px] font-semibold leading-5 text-[#17202d]">{config.bankTransferLabel}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="m-0 whitespace-normal break-words text-[13px] font-semibold leading-4 text-[#17202d] sm:text-[14px] sm:leading-5">{config.bankTransferLabel}</p>
                     <p className="m-0 mt-0.5 font-mono text-[13px] font-semibold tabular-nums text-[#657184]">
                       {formatXof(config.bankTransferAmountXof)} F CFA
                     </p>
