@@ -373,6 +373,7 @@ const faqs: { q: Copy; a: Copy }[] = [
 
 const developerApiCode: Copy = {
   fr: [
+    'const API_BASE_URL = "https://sendflow.africa";',
     'const url = API_BASE_URL + "/<route-officielle>";',
     'const headers = {',
     '  ...AUTH_HEADERS, // définis dans la documentation',
@@ -388,6 +389,7 @@ const developerApiCode: Copy = {
     'if (!response.ok) throw new Error("API request failed");',
   ].join('\n'),
   en: [
+    'const API_BASE_URL = "https://sendflow.africa";',
     'const url = API_BASE_URL + "/<official-endpoint>";',
     'const headers = {',
     '  ...AUTH_HEADERS, // define these per the documentation',
