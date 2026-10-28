@@ -334,24 +334,59 @@ export default function DownloadPage() {
             {supportEmail && <a href={`mailto:${supportEmail}`}>{t.navSupport}</a>}
             <button type="button" onClick={toggleLanguage}><Globe2 size={15} />{t.language}</button>
           </nav>
-          <button type="button" className="sf-download-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen}><Menu size={26} /></button>
+          <button type="button" className="sf-download-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen} aria-controls="sf-public-mobile-navigation"><Menu size={22} /></button>
         </div>
       </header>
 
       {menuOpen && (
-        <div className="sf-download-menu-backdrop" onClick={closeMenu}>
-          <aside className="sf-download-menu" onClick={(event) => event.stopPropagation()}>
-            <div className="sf-download-menu-top"><Brand /><button type="button" onClick={closeMenu} aria-label={t.menuClose}><X size={24} /></button></div>
-            <nav>
-              <Link href={getLocalizedPath('/', language)} onClick={closeMenu}>{t.navHome}<ChevronRight size={18} /></Link>
-              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu}>{t.navFeatures}<ChevronRight size={18} /></Link>
-              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu}>{t.navSecurity}<ChevronRight size={18} /></Link>
-              {supportEmail && <a href={`mailto:${supportEmail}`} onClick={closeMenu}>{t.navSupport}<ChevronRight size={18} /></a>}
+        <div
+          className="sf-public-nav-backdrop"
+          onClick={closeMenu}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') closeMenu();
+          }}
+          role="presentation"
+        >
+          <aside
+            id="sf-public-mobile-navigation"
+            className="sf-public-nav-panel"
+            onClick={(event) => event.stopPropagation()}
+            aria-label={language === 'fr' ? 'Menu principal' : 'Main menu'}
+            aria-modal="true"
+            role="dialog"
+          >
+            <div className="sf-public-nav-top">
+              <Brand />
+              <button type="button" className="sf-public-nav-close" onClick={closeMenu} aria-label={t.menuClose}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="sf-public-nav-intro">
+              <p>Navigation</p>
+              <h2>{language === 'fr' ? 'Explorer SendFlow' : 'Explore SendFlow'}</h2>
+            </div>
+            <nav className="sf-public-nav-links" aria-label={language === 'fr' ? 'Navigation principale' : 'Main navigation'}>
+              <Link href={getLocalizedPath('/', language)} onClick={closeMenu} className="sf-public-nav-link">
+                <span>{t.navHome}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+              </Link>
+              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu} className="sf-public-nav-link">
+                <span>{t.navFeatures}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+              </Link>
+              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu} className="sf-public-nav-link">
+                <span>{t.navSecurity}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+              </Link>
+              {supportEmail && (
+                <a href={`mailto:${supportEmail}`} onClick={closeMenu} className="sf-public-nav-link">
+                  <span>{t.navSupport}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
+                </a>
+              )}
             </nav>
-            <button type="button" className="sf-download-menu-language" onClick={toggleLanguage}>
-              <span className="sf-download-language-flag" aria-hidden="true">{language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
-              {language === 'fr' ? 'Passer en anglais' : 'Switch to French'}
-            </button>
+            <div className="sf-public-nav-footer">
+              <button type="button" className="sf-public-nav-language" onClick={toggleLanguage}>
+                <span>{language === 'fr' ? 'Langue' : 'Language'}</span>
+                <strong><Globe2 size={15} aria-hidden="true" />{language === 'fr' ? 'English' : 'Français'}</strong>
+              </button>
+            </div>
           </aside>
         </div>
       )}

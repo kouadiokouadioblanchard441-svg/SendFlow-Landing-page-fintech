@@ -1104,15 +1104,7 @@ footer > div > div:first-child {
 }
 .sf-download-desktop-nav a:hover,
 .sf-download-desktop-nav button:hover { color: var(--sf-violet); }
-.sf-download-menu-button { display: grid; place-items: center; border: 0; background: transparent; color: var(--sf-ink); cursor: pointer; }
-.sf-download-menu-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(19, 28, 78, .28); }
-.sf-download-menu { min-height: 100dvh; width: min(88%, 390px); margin-left: auto; background: #fff; padding: 25px 24px; box-shadow: -15px 0 45px rgba(11, 22, 91, .16); }
-.sf-download-menu-top { display: flex; align-items: center; justify-content: space-between; }
-.sf-download-menu-top button { display: grid; place-items: center; border: 0; background: transparent; color: var(--sf-ink); cursor: pointer; }
-.sf-download-menu nav { display: grid; gap: 0; margin-top: 62px; }
-.sf-download-menu nav a { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e6e8ee; padding: 18px 0; color: var(--sf-ink); font-size: 21px; font-weight: 700; letter-spacing: -.04em; }
-.sf-download-menu-language { display: flex; align-items: center; gap: 9px; margin-top: 36px; border: 0; background: transparent; color: var(--sf-violet); cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; }
-.sf-download-language-flag { font-size: 20px; line-height: 1; }
+.sf-download-menu-button { display: grid; place-items: center; cursor: pointer; }
 .sf-download-hero { position: relative; overflow: hidden; min-height: 705px; background: linear-gradient(145deg, #7d48e4 0%, #6d35d8 48%, #5421ad 100%); color: #fff; }
 .sf-download-hero-content { position: relative; z-index: 2; width: min(100% - 38px, 570px); margin: 0 auto; padding: 62px 0 70px; text-align: center; }
 .sf-download-app-icon { display: grid; place-items: center; width: 106px; height: 106px; margin: 0 auto 22px; border-radius: 26px; background: #fff; box-shadow: 0 15px 30px rgba(47, 18, 111, .25); }
@@ -2936,6 +2928,11 @@ section#faq .reveal.space-y-2 > div {
 
 .sf-public-nav-trigger {
   display: grid;
+}
+
+.sf-public-nav-trigger,
+.sf-features-menu-button,
+.sf-download-menu-button {
   width: 44px;
   height: 44px;
   place-items: center;
@@ -2947,7 +2944,9 @@ section#faq .reveal.space-y-2 > div {
   transition: background .18s ease, color .18s ease, transform .18s ease;
 }
 
-.sf-public-nav-trigger:hover {
+.sf-public-nav-trigger:hover,
+.sf-features-menu-button:hover,
+.sf-download-menu-button:hover {
   transform: translateY(-1px);
   background: #fff;
   color: #6d35d8;
@@ -3145,6 +3144,8 @@ section#faq .reveal.space-y-2 > div {
 }
 
 .sf-public-nav-trigger:focus-visible,
+.sf-features-menu-button:focus-visible,
+.sf-download-menu-button:focus-visible,
 .sf-public-nav-close:focus-visible,
 .sf-public-nav-link:focus-visible,
 .sf-public-nav-language:focus-visible,
