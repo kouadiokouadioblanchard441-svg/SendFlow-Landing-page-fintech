@@ -140,6 +140,7 @@ const landingContentSchema = z.object({
 }).strict();
 
 export const OPERATOR_FEES_CONTENT_KEY = "pricing.operator-fees";
+export const DOCUMENTATION_CTA_URL_CONTENT_KEY = "cta.documentation.url";
 const operatorFeePercent = z.number().min(0).max(100)
   .refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-8);
 const operatorFeeRateSchema = z.object({
@@ -182,6 +183,12 @@ export function hasExactOperatorFeeCoverage(
 export function isSafeRegistrationCtaContent(item: Record<string, unknown>): boolean {
   if (item.contentKey === OPERATOR_FEES_CONTENT_KEY) return false;
   if (item.contentKey === "cta.signup.url") {
+    return item.locale === "fr" &&
+      item.contentType === "url" &&
+      (item.isVisible === false ||
+        (typeof item.value === "string" && item.value.length <= 2_048 && isHttpsUrl(item.value)));
+  }
+  if (item.contentKey === DOCUMENTATION_CTA_URL_CONTENT_KEY) {
     return item.locale === "fr" &&
       item.contentType === "url" &&
       (item.isVisible === false ||
@@ -382,6 +389,7 @@ export const siteSettingsSchema = z.object(settingsShape).strict().extend({
   registrationUrl: registrationCtaSchema.shape.url,
   registrationLabelFr: registrationCtaSchema.shape.labelFr,
   registrationLabelEn: registrationCtaSchema.shape.labelEn,
+  documentationUrl: registrationCtaSchema.shape.url.default(""),
 });
 
 export function parsePositivePathId(value: unknown): number | null {

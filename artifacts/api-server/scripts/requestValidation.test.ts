@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   adminLoginSchema,
   countryOperatorAssignmentSchema,
+  DOCUMENTATION_CTA_URL_CONTENT_KEY,
   hasExactOperatorFeeCoverage,
   imageBytesMatchMimeType,
   isSafeRegistrationCtaContent,
@@ -12,6 +13,7 @@ import {
   operatorFeesSchema,
   parseLandingResourcePayload,
   registrationCtaSchema,
+  siteSettingsSchema,
 } from "../src/lib/requestValidation.ts";
 
 test("CMS creation requires complete, typed fields and rejects server-owned properties", () => {
@@ -128,6 +130,49 @@ test("registration CTA accepts an empty destination but requires HTTPS when set"
   assert.equal(registrationCtaSchema.safeParse({ url: "http://signup.example.org", ...labels }).success, false);
   assert.equal(registrationCtaSchema.safeParse({ url: "javascript:alert(1)", ...labels }).success, false);
   assert.equal(registrationCtaSchema.safeParse({ url: "", ...labels, extra: true }).success, false);
+});
+
+test("documentation CTA only accepts a visible French HTTPS URL", () => {
+  const base = {
+    contentKey: DOCUMENTATION_CTA_URL_CONTENT_KEY,
+    locale: "fr",
+    contentType: "url",
+    value: "https://docs.sendflow.africa",
+    isVisible: true,
+  };
+  assert.equal(isSafeRegistrationCtaContent(base), true);
+  assert.equal(isSafeRegistrationCtaContent({ ...base, value: "http://docs.sendflow.africa" }), false);
+  assert.equal(isSafeRegistrationCtaContent({ ...base, locale: "en" }), false);
+});
+
+test("site settings accept a configurable HTTPS documentation URL", () => {
+  const base = {
+    companyName: "SendFlow",
+    legalForm: "SARL",
+    legalAddress: "",
+    footerAddressFlag: "🇨🇮",
+    footerAddressCountry: "Côte d’Ivoire",
+    footerAddress: "",
+    regulatorNameFr: "",
+    regulatorNameEn: "",
+    supportEmail: "support@sendflow.africa",
+    legalEmail: "legal@sendflow.africa",
+    registrationUrl: "",
+    registrationLabelFr: "Inscrivez-vous",
+    registrationLabelEn: "Sign up",
+  };
+  const omitted = siteSettingsSchema.safeParse(base);
+  assert.equal(omitted.success, true);
+  if (omitted.success) assert.equal(omitted.data.documentationUrl, "");
+
+  assert.equal(siteSettingsSchema.safeParse({
+    ...base,
+    documentationUrl: "https://docs.sendflow.africa",
+  }).success, true);
+  assert.equal(siteSettingsSchema.safeParse({
+    ...base,
+    documentationUrl: "http://docs.sendflow.africa",
+  }).success, false);
 });
 
 test("country coordinates and colors are bounded before persistence", () => {

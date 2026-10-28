@@ -1,7 +1,7 @@
 import { ArrowRight, Code2, Link2 } from 'lucide-react';
-import { Link } from 'wouter';
 import type { FooterContentItem } from '@/components/sendflow-footer';
-import { getLocalizedPath, type PublicLocale } from '@/lib/localized-routes';
+import { getHttpsUrl, REGISTRATION_CTA_URL_KEY, DOCUMENTATION_CTA_URL_KEY } from '@/lib/registration-cta';
+import type { PublicLocale } from '@/lib/localized-routes';
 
 type FeatureActionCardsProps = {
   content: FooterContentItem[];
@@ -18,23 +18,17 @@ function readContent(
   return content.find((item) => item.contentKey === key && item.locale === locale && item.isVisible)?.value ?? fallback;
 }
 
-function safeLocalHref(value: string, fallback: string) {
-  const candidate = value.trim();
-  if (/^#[A-Za-z0-9_-]+$/.test(candidate)) return candidate;
-  if (candidate.startsWith('/') && !candidate.startsWith('//') && !candidate.includes('\\') && !/\s/.test(candidate)) return candidate;
-  return fallback;
-}
-
 export default function FeatureActionCards({ content, language, animated = true }: FeatureActionCardsProps) {
   const read = (key: string, fallback: string) => readContent(content, key, language, fallback);
-  const paymentLinkFallback = getLocalizedPath('/download', language);
-  const paymentLinkHref = safeLocalHref(
-    read('feature.payment-link.href', paymentLinkFallback),
-    paymentLinkFallback,
+  const paymentLinkHref = getHttpsUrl(
+    content.find((item) =>
+      item.contentKey === REGISTRATION_CTA_URL_KEY && item.locale === 'fr' && item.isVisible,
+    )?.value,
   );
-  const developerApiHref = safeLocalHref(
-    read('feature.api-integration.href', '#developer-api'),
-    '#developer-api',
+  const developerDocsHref = getHttpsUrl(
+    content.find((item) =>
+      item.contentKey === DOCUMENTATION_CTA_URL_KEY && item.locale === 'fr' && item.isVisible,
+    )?.value,
   );
 
   return (
@@ -56,13 +50,21 @@ export default function FeatureActionCards({ content, language, animated = true 
             ? 'Aucun code. Sans tracas. Partagez votre lien de paiement pour faciliter l’encaissement.'
             : 'No code. No hassle. Share your payment link to make collecting payments easier.')}
         </p>
-        <Link
-          href={paymentLinkHref}
-          className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#4c0fa8] px-6 py-3 text-[14px] font-bold !text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
+        <a
+          href={paymentLinkHref ?? undefined}
+          aria-disabled={!paymentLinkHref}
+          role={paymentLinkHref ? undefined : 'link'}
+          title={!paymentLinkHref
+            ? (language === 'fr' ? 'Configurez l’URL d’inscription dans le panneau admin.' : 'Configure the signup URL in the admin panel.')
+            : undefined}
+          className={`mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#4c0fa8] px-6 py-3 text-[14px] font-bold !text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] ${paymentLinkHref ? '' : 'cursor-not-allowed opacity-50'}`}
+          onClick={(event) => {
+            if (!paymentLinkHref) event.preventDefault();
+          }}
         >
           {read('feature.payment-link.cta', language === 'fr' ? 'Créer un lien' : 'Create a link')}
           <ArrowRight size={16} aria-hidden="true" />
-        </Link>
+        </a>
       </article>
 
       <article className="flex min-h-[360px] flex-col items-center rounded-[24px] border border-[#e4e3eb] bg-white px-7 py-8 text-center shadow-[0_14px_36px_rgba(35,40,60,.08)] transition-transform hover:-translate-y-1 sm:px-10">
@@ -78,8 +80,16 @@ export default function FeatureActionCards({ content, language, animated = true 
             : 'Connect your applications to SendFlow services through the developer API.')}
         </p>
         <a
-          href={developerApiHref}
-          className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#4c0fa8] px-6 py-3 text-[14px] font-bold !text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
+          href={developerDocsHref ?? undefined}
+          aria-disabled={!developerDocsHref}
+          role={developerDocsHref ? undefined : 'link'}
+          title={!developerDocsHref
+            ? (language === 'fr' ? 'Configurez l’URL de la documentation dans le panneau admin.' : 'Configure the documentation URL in the admin panel.')
+            : undefined}
+          className={`mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#4c0fa8] px-6 py-3 text-[14px] font-bold !text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8] ${developerDocsHref ? '' : 'cursor-not-allowed opacity-50'}`}
+          onClick={(event) => {
+            if (!developerDocsHref) event.preventDefault();
+          }}
         >
           {read('feature.api-integration.cta', language === 'fr' ? 'Voir la documentation' : 'View the documentation')}
           <ArrowRight size={16} aria-hidden="true" />

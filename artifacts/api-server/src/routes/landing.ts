@@ -50,6 +50,7 @@ import {
   newsletterSubscriberStatusSchema,
   newsletterSubscribeSchema,
   OPERATOR_FEES_CONTENT_KEY,
+  DOCUMENTATION_CTA_URL_CONTENT_KEY,
   operatorFeesSchema,
   parseLandingResourcePayload,
   parsePositivePathId,
@@ -858,9 +859,12 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
     return;
   }
   const { url: registrationUrl, labelFr: registrationLabelFr, labelEn: registrationLabelEn } = registrationParsed.data;
+  const documentationUrl = typeof parsed.data.documentationUrl === "string"
+    ? parsed.data.documentationUrl
+    : "";
   const siteSettingsData = Object.fromEntries(
     Object.entries(parsed.data).filter(([key]) =>
-      !["registrationUrl", "registrationLabelFr", "registrationLabelEn"].includes(key),
+      !["registrationUrl", "registrationLabelFr", "registrationLabelEn", "documentationUrl"].includes(key),
     ),
   );
   const values = trimContactFields(siteSettingsData as Record<string, unknown>, [...siteContactFields, ...siteLinkFields]);
@@ -896,7 +900,7 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
       ? await tx.update(landingSiteSettings).set(values).where(eq(landingSiteSettings.id, existing[0].id)).returning()
       : await tx.insert(landingSiteSettings).values(values as typeof landingSiteSettings.$inferInsert).returning();
 
-    const registrationContent: Array<typeof landingContent.$inferSelect> = [];
+    const ctaContent: Array<typeof landingContent.$inferSelect> = [];
     const contentToSave = [
       {
         contentKey: "cta.signup.url",
@@ -922,6 +926,14 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
         value: registrationLabelEn,
         isVisible: true,
       },
+      {
+        contentKey: DOCUMENTATION_CTA_URL_CONTENT_KEY,
+        locale: "fr" as const,
+        group: "cta",
+        contentType: "url" as const,
+        value: documentationUrl,
+        isVisible: Boolean(documentationUrl),
+      },
     ];
 
     for (const item of contentToSave) {
@@ -939,10 +951,10 @@ router.put("/admin/landing/settings", requireAdmin, async (req, res): Promise<vo
           },
         })
         .returning();
-      registrationContent.push(content);
+      ctaContent.push(content);
     }
 
-    return { settings, registrationContent };
+    return { settings, ctaContent };
   });
   res.json(saved);
 });
@@ -1092,7 +1104,7 @@ router.patch("/admin/landing/:resource/:id", requireAdmin, async (req, res): Pro
     return;
   }
   if (name === "content" && !isSafeRegistrationCtaContent({ ...currentContent, ...values })) {
-    res.status(400).json({ error: "Le lien ou le libellé d’inscription est invalide." });
+    res.status(400).json({ error: "Le lien d’inscription, le lien de documentation ou son libellé est invalide." });
     return;
   }
   if (name === "sections") {
@@ -1166,7 +1178,7 @@ router.post("/admin/landing/:resource", requireAdmin, async (req, res): Promise<
     return;
   }
   if (name === "content" && !isSafeRegistrationCtaContent(values)) {
-    res.status(400).json({ error: "Le lien ou le libellé d’inscription est invalide." });
+    res.status(400).json({ error: "Le lien d’inscription, le lien de documentation ou son libellé est invalide." });
     return;
   }
   if (name === "sections") {

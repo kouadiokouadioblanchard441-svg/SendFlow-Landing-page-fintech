@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { ABOUT_HERO_ASSETS, ABOUT_HERO_ASSET_BY_KEY } from '@/lib/aboutCarouselAssets';
 import {
+  DOCUMENTATION_CTA_URL_KEY,
   REGISTRATION_CTA_DEFAULT_LABELS,
   REGISTRATION_CTA_LABEL_KEY,
   REGISTRATION_CTA_URL_KEY,
@@ -832,11 +833,12 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   appStoreUrl: '',
   apkUrl: '',
   registrationUrl: '',
+  documentationUrl: '',
   registrationLabelFr: REGISTRATION_CTA_DEFAULT_LABELS.fr,
   registrationLabelEn: REGISTRATION_CTA_DEFAULT_LABELS.en,
 };
 
-function registrationCtaValues(content: RecordItem[]): Record<string, Primitive> {
+function ctaValues(content: RecordItem[]): Record<string, Primitive> {
   const getVisibleValue = (contentKey: string, locale: string, fallback: string) => {
     const record = content.find((item) =>
       item.contentKey === contentKey && item.locale === locale && item.isVisible === true,
@@ -846,9 +848,15 @@ function registrationCtaValues(content: RecordItem[]): Record<string, Primitive>
   const urlRecord = content.find((item) =>
     item.contentKey === REGISTRATION_CTA_URL_KEY && item.locale === 'fr',
   );
+  const documentationRecord = content.find((item) =>
+    item.contentKey === DOCUMENTATION_CTA_URL_KEY && item.locale === 'fr',
+  );
 
   return {
     registrationUrl: urlRecord?.isVisible === true && typeof urlRecord.value === 'string' ? urlRecord.value : '',
+    documentationUrl: documentationRecord?.isVisible === true && typeof documentationRecord.value === 'string'
+      ? documentationRecord.value
+      : '',
     registrationLabelFr: getVisibleValue(REGISTRATION_CTA_LABEL_KEY, 'fr', REGISTRATION_CTA_DEFAULT_LABELS.fr),
     registrationLabelEn: getVisibleValue(REGISTRATION_CTA_LABEL_KEY, 'en', REGISTRATION_CTA_DEFAULT_LABELS.en),
   };
@@ -866,13 +874,13 @@ function SiteSettingsEditor({
   const [values, setValues] = useState<Record<string, Primitive>>(() => ({
     ...siteSettingsDefaults,
     ...(bundle.settings ?? {}),
-    ...registrationCtaValues(bundle.content),
+    ...ctaValues(bundle.content),
   }));
   useEffect(() => {
     setValues({
       ...siteSettingsDefaults,
       ...(bundle.settings ?? {}),
-      ...registrationCtaValues(bundle.content),
+      ...ctaValues(bundle.content),
     });
   }, [bundle.settings, bundle.content]);
 
@@ -898,7 +906,10 @@ function SiteSettingsEditor({
         {field('registrationUrl', 'URL d’inscription', 'url', 'https://…')}
         {field('registrationLabelFr', 'Libellé du bouton · FR', 'text', REGISTRATION_CTA_DEFAULT_LABELS.fr)}
         {field('registrationLabelEn', 'Button label · EN', 'text', REGISTRATION_CTA_DEFAULT_LABELS.en)}
-        <p className="sendflow-admin-muted sendflow-admin-field-wide">Le bouton reste inactif tant que l’URL HTTPS n’est pas renseignée. Le lien s’ouvre dans le même onglet.</p>
+        <p className="sendflow-admin-muted sendflow-admin-field-wide">Cette URL alimente aussi le bouton « Créer un lien ». Les boutons restent inactifs tant qu’une URL HTTPS n’est pas renseignée et les liens s’ouvrent dans le même onglet.</p>
+        <div className="sendflow-admin-settings-group-title">Développeurs</div>
+        {field('documentationUrl', 'URL de la documentation développeur', 'url', 'https://…')}
+        <p className="sendflow-admin-muted sendflow-admin-field-wide">Le bouton « Voir la documentation » utilise cette URL HTTPS et reste inactif tant qu’elle n’est pas renseignée.</p>
         {field('homeContactEmail', 'Email de contact · accueil', 'email')}
         {field('homeContactPhone', 'Téléphone · accueil', 'tel')}
         {field('homeContactWhatsapp', 'WhatsApp · accueil', 'tel', '+225 07 00 00 00 00')}
@@ -1397,17 +1408,17 @@ export default function AdminPage() {
     setSettingsSaving(true);
     try {
       const payload = Object.fromEntries(Object.entries(values).filter(([key]) => !['id', 'createdAt', 'updatedAt'].includes(key)));
-      const saved = await apiRequest<{ settings: RecordItem; registrationContent: RecordItem[] }>('/api/admin/landing/settings', {
+      const saved = await apiRequest<{ settings: RecordItem; ctaContent: RecordItem[] }>('/api/admin/landing/settings', {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
-      const registrationKeys = new Set([REGISTRATION_CTA_URL_KEY, REGISTRATION_CTA_LABEL_KEY]);
+      const ctaKeys = new Set([REGISTRATION_CTA_URL_KEY, REGISTRATION_CTA_LABEL_KEY, DOCUMENTATION_CTA_URL_KEY]);
       setBundle((current) => ({
         ...current,
         settings: saved.settings,
         content: [
-          ...current.content.filter((item) => !registrationKeys.has(String(item.contentKey))),
-          ...saved.registrationContent,
+          ...current.content.filter((item) => !ctaKeys.has(String(item.contentKey))),
+          ...saved.ctaContent,
         ],
       }));
       setNotice({ tone: 'success', text: 'Les paramètres du site sont à jour.' });
