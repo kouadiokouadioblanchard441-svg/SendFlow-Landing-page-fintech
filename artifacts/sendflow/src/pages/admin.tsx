@@ -1264,7 +1264,7 @@ export default function AdminPage() {
       transferTitleEn: saved?.transferTitleEn ?? 'Transfer fees',
       bankTransferLabelFr: saved?.bankTransferLabelFr ?? 'Banque',
       bankTransferLabelEn: saved?.bankTransferLabelEn ?? 'Bank',
-      bankTransferAmountXof: saved?.bankTransferAmountXof ?? 1000,
+      bankTransferAmountXof: saved?.bankTransferAmountXof ?? 950,
       operators: operatorFeeOperators.map((operator) => {
         const existing = savedRates.get(operator.slug);
         return {

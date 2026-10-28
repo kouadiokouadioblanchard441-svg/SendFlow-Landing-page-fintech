@@ -202,7 +202,7 @@ export function Current() {
     collectionTitle: "Frais à l'encaissement",
     transferTitle: 'Frais de transfert',
     bankTransferLabel: 'Banque',
-    bankTransferAmountXof: 1000,
+    bankTransferAmountXof: 950,
     operators: [
       { slug: 'orange', name: 'Orange', logoUrl: '/__mockup/images/sendflow-operators/orange.png', background: '#ff7900', foreground: '#ffffff', collectionPercent: 3, transferPercent: 2.6 },
       { slug: 'mtn', name: 'MTN', logoUrl: '/__mockup/images/sendflow-operators/mtn-momo.png', background: '#ffca05', foreground: '#17131f', collectionPercent: 3, transferPercent: 2.6 },
