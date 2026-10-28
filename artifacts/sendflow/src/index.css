@@ -3040,40 +3040,40 @@ section#faq .reveal.space-y-2 > div {
 
 .sf-public-nav-links {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .sf-public-nav-link {
   display: flex;
-  min-height: 54px;
+  min-height: 58px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 14px;
-  border: 1px solid #ece8f1;
-  border-radius: 15px;
+  padding: 0 16px;
+  border: 2px solid #17202d;
+  border-radius: 13px;
   background: #fff;
   color: #3a3444;
   font-size: 15px;
   font-weight: 650;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(33, 29, 44, .035);
+  box-shadow: 0 4px 0 #17202d, 0 7px 12px rgba(23, 32, 45, .08);
   transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
 }
 
 .sf-public-nav-link:hover {
   transform: translateY(-1px);
-  border-color: rgba(109, 53, 216, .3);
+  border-color: #6d35d8;
   background: #faf7ff;
   color: #6d35d8;
-  box-shadow: 0 8px 18px rgba(33, 29, 44, .07);
+  box-shadow: 0 5px 0 #17202d, 0 10px 16px rgba(23, 32, 45, .12);
 }
 
 .sf-public-nav-link[aria-current="page"] {
-  border-color: rgba(109, 53, 216, .32);
+  border-color: #6d35d8;
   background: #f3edff;
   color: #5525b7;
-  box-shadow: inset 3px 0 #6d35d8, 0 4px 12px rgba(109, 53, 216, .08);
+  box-shadow: inset 3px 0 #6d35d8, 0 4px 0 #17202d, 0 7px 12px rgba(109, 53, 216, .1);
 }
 
 .sf-public-nav-link-arrow {
@@ -3090,25 +3090,27 @@ section#faq .reveal.space-y-2 > div {
 
 .sf-public-nav-language {
   display: flex;
-  min-height: 46px;
+  min-height: 50px;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 0 14px;
-  border: 1px solid #ece8f1;
-  border-radius: 14px;
+  padding: 0 16px;
+  border: 2px solid #17202d;
+  border-radius: 13px;
   background: #fff;
   color: #554e60;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
   text-align: left;
-  transition: background .18s ease, border-color .18s ease;
+  box-shadow: 0 4px 0 #17202d, 0 7px 12px rgba(23, 32, 45, .08);
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
 .sf-public-nav-language:hover {
-  border-color: rgba(109, 53, 216, .25);
+  border-color: #6d35d8;
   background: #faf7ff;
+  box-shadow: 0 4px 0 #17202d, 0 9px 14px rgba(23, 32, 45, .1);
 }
 
 .sf-public-nav-language strong {
@@ -3179,5 +3181,129 @@ section#faq .reveal.space-y-2 > div {
   .sf-public-nav-language,
   .sf-public-nav-cta {
     transition: none;
+  }
+}
+
+/* Bring the homepage sections closer together without changing card interiors. */
+.noise #top > section:first-of-type {
+  padding-bottom: 1.5rem;
+}
+
+.noise #features-cards {
+  padding-block: 2.5rem;
+}
+
+.noise #how {
+  padding-block: 3.5rem;
+}
+
+.noise #features {
+  padding-block: 3.5rem 1.5rem;
+}
+
+.noise #developer-api {
+  padding-bottom: 1.5rem;
+}
+
+.noise #operator-fees {
+  padding-block: 1.5rem;
+}
+
+.noise #security {
+  padding-block: 2rem;
+}
+
+.noise #faq {
+  padding-block: 3.5rem;
+}
+
+.noise #join {
+  padding-bottom: 2.5rem;
+}
+
+.noise #download {
+  padding-bottom: 2.5rem;
+}
+
+.noise #features-cards > div > .reveal.mt-10 {
+  margin-top: 2rem;
+}
+
+.noise #features-cards > div > .reveal.mt-12 {
+  margin-top: 2.5rem;
+}
+
+.noise #features-cards > div > .reveal.mt-16 {
+  margin-top: 3rem;
+}
+
+.noise #how > div > .reveal.mt-12 {
+  margin-top: 2.5rem;
+}
+
+.noise #how > div > .reveal.mt-20 {
+  margin-top: 3.5rem;
+}
+
+.noise #features > div > .reveal.mt-12 {
+  margin-top: 2.5rem;
+}
+
+.noise #how > div > .reveal.grid {
+  gap: 2.5rem;
+}
+
+.noise #security > div,
+.noise #faq > div {
+  gap: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .noise #top > section:first-of-type {
+    padding-bottom: 2rem;
+  }
+
+  .noise #features-cards {
+    padding-block: 4rem;
+  }
+
+  .noise #how {
+    padding-block: 5rem;
+  }
+
+  .noise #features {
+    padding-block: 5rem 2.5rem;
+  }
+
+  .noise #developer-api {
+    padding-bottom: 2.5rem;
+  }
+
+  .noise #operator-fees {
+    padding-block: 2.5rem;
+  }
+
+  .noise #security {
+    padding-block: 3rem;
+  }
+
+  .noise #faq {
+    padding-block: 5rem;
+  }
+
+  .noise #join,
+  .noise #download {
+    padding-bottom: 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .noise #how > div > .reveal.grid {
+    gap: 4rem;
+  }
+
+  .noise #security > div,
+  .noise #faq > div {
+    gap: 3rem;
   }
 }
