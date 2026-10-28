@@ -348,6 +348,13 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   'M-Pesa': { mark: 'M-Pesa', background: '#f2f2f2', foreground: '#17131f', image: mpesaOperatorLogo },
 };
 
+const feeOperatorLogoBySlug: Partial<Record<string, OperatorLogo>> = {
+  orange: operatorLogoMarks.Orange,
+  mtn: operatorLogoMarks.MTN,
+  'moov-africa': operatorLogoMarks['Moov Africa'],
+  wave: operatorLogoMarks.Wave,
+};
+
 function PublicOperatorFees({
   bundle,
   language,
@@ -382,12 +389,13 @@ function PublicOperatorFees({
       const logo = operator.logoKey
         ? bundle.media.find((item) => item.slug === operator.logoKey && item.isVisible)
         : undefined;
+      const fallbackLogo = feeOperatorLogoBySlug[operator.slug];
       return {
         slug: operator.slug,
         name: operator.name,
-        logoUrl: logo?.publicUrl ?? null,
-        background: operator.background ?? null,
-        foreground: operator.foreground ?? null,
+        logoUrl: logo?.publicUrl ?? fallbackLogo?.image ?? null,
+        background: operator.background ?? fallbackLogo?.background ?? null,
+        foreground: operator.foreground ?? fallbackLogo?.foreground ?? null,
         collectionPercent: rate?.collectionPercent ?? 0,
         transferPercent: rate?.transferPercent ?? 0,
       };

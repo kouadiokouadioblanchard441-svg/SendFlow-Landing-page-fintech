@@ -7,5 +7,6 @@ export const modules: ModuleMap = {
   "./components/mockups/sendflow-discover/Editorial.tsx": () => import("../components/mockups/sendflow-discover/Editorial.tsx"),
   "./components/mockups/sendflow-discover/ProtectedImage.tsx": () => import("../components/mockups/sendflow-discover/ProtectedImage.tsx"),
   "./components/mockups/sendflow-mobile-menu/Current.tsx": () => import("../components/mockups/sendflow-mobile-menu/Current.tsx"),
-  "./components/mockups/sendflow-mobile-menu/Refined.tsx": () => import("../components/mockups/sendflow-mobile-menu/Refined.tsx")
+  "./components/mockups/sendflow-mobile-menu/Refined.tsx": () => import("../components/mockups/sendflow-mobile-menu/Refined.tsx"),
+  "./components/mockups/sendflow-operator-fees/Current.tsx": () => import("../components/mockups/sendflow-operator-fees/Current.tsx")
 };
