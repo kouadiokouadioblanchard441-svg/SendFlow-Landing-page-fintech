@@ -13,6 +13,7 @@
 - [Admin content editability](admin-content-editability.md) — The user requires all SendFlow site information to be editable in the admin panel, with nothing hardcoded.
 - [SendFlow authentication scope](sendflow-auth-provider.md) — Keep admin access app-owned and avoid external identity-provider dependencies.
 - [SendFlow developer API](sendflow-developer-api.md) — API is available; don't infer contract details, pricing, or coverage claims that aren't verified.
+- [SendFlow domain routing](sendflow-domain-routing.md) — Keep the chosen landing, merchant, and API-documentation hostnames; do not substitute other names.
 - [SendFlow payment links](sendflow-payment-links.md) — Payment links are available; do not invent a creation route when linking public CTAs.
 - [SendFlow wallet positioning](sendflow-wallet-positioning.md) — The public FAQ should say SendFlow has a wallet; do not infer custody or autonomy details.
 - [SendFlow page titles](sendflow-page-titles.md) — Keep every public route’s localized browser title distinct and aligned between runtime and Plesk HTML.
