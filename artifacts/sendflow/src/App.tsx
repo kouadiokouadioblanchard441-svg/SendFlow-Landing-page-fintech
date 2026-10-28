@@ -1476,7 +1476,19 @@ function LandingPage() {
              <p className="text-[11px] font-bold uppercase tracking-[.17em] text-[#e8cd4d]">{t(contentCopy(landingBundle?.content, 'cta.nextMove', { fr: 'Le prochain mouvement', en: 'The next move' }), language)}</p>
              <h2 className="mt-5 max-w-[820px] whitespace-pre-line text-6xl font-extrabold leading-[.86] tracking-[-.08em] sm:text-8xl">{t(contentCopy(landingBundle?.content, 'cta.download.title', { fr: 'Votre prochain transfert\ncommence ici.', en: 'Your next transfer\nstarts here.' }), language)}</h2>
               <p className="mt-7 max-w-[540px] text-[17px] font-semibold leading-7 text-[#f4edff]">{t(contentCopy(landingBundle?.content, 'cta.download.body', { fr: 'Téléchargez bientôt l’application SendFlow et simplifiez vos transferts entre réseaux.', en: 'Download the SendFlow app soon and simplify transfers across networks.' }), language)}</p>
-                <Link href={getLocalizedPath('/download', language)} className="mt-6 inline-flex items-center rounded-[14px] border-2 border-[#a68bea] bg-[#5b21b6] px-6 py-3.5 text-[14px] font-extrabold text-white shadow-[0_14px_28px_rgba(33,29,44,.24)] transition-all hover:-translate-y-0.5 hover:bg-[#4c1d95]" data-testid="button-download-placeholder">{t(contentCopy(landingBundle?.content, 'cta.download', { fr: 'Télécharger l’application', en: 'Download the app' }), language)} <ArrowRight className="ml-2" size={17} /></Link>
+                <a
+                  href={registrationUrl ?? undefined}
+                  onClick={(event) => {
+                    if (!registrationUrl) event.preventDefault();
+                  }}
+                  aria-disabled={!registrationUrl}
+                  role={registrationUrl ? undefined : 'link'}
+                  title={!registrationUrl ? 'Configurez l’URL d’inscription dans le panneau admin.' : undefined}
+                  className={`mt-6 inline-flex items-center rounded-[14px] border-2 border-[#a68bea] bg-[#5b21b6] px-6 py-3.5 text-[14px] font-extrabold text-white shadow-[0_14px_28px_rgba(33,29,44,.24)] transition-all hover:-translate-y-0.5 hover:bg-[#4c1d95] ${registrationUrl ? '' : 'cursor-not-allowed opacity-50'}`}
+                  data-testid="button-register-bottom"
+                >
+                  {registrationLabel}<ArrowRight className="ml-2" size={17} />
+                </a>
               <div className="mt-4 flex flex-wrap gap-3">
                <StoreBadge store="Google Play" icon="play" href={googlePlayUrl} soonLabel={isFrench ? 'bientôt' : 'coming soon'} className="sendflow-store-badge--large sendflow-store-badge--featured" />
                <StoreBadge store="App Store" icon="apple" href={appStoreUrl} soonLabel={isFrench ? 'bientôt' : 'coming soon'} className="sendflow-store-badge--large sendflow-store-badge--featured" />
