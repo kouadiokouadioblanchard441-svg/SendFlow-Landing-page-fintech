@@ -51,7 +51,8 @@ export function setAdminSessionCookie(res: Response, token: string): void {
 }
 
 export function clearAdminSessionCookie(res: Response): void {
-  res.setHeader("Set-Cookie", `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  res.setHeader("Set-Cookie", `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`);
 }
 
 export async function getAdminUser(req: Request) {
