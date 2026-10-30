@@ -8,6 +8,7 @@
     "dev": "node ./scripts/dev.mjs",
     "build": "pnpm run test && pnpm run typecheck && pnpm --filter @workspace/sendflow run build && pnpm --filter @workspace/api-server run build && node ./scripts/prepare-plesk-build.mjs && node ./scripts/verify-plesk-build.mjs",
     "deploy:plesk": "bash ./scripts/plesk-deploy.sh",
+    "package:plesk": "bash ./scripts/plesk-git-deploy.sh && node ./scripts/package-plesk-release.mjs",
     "start": "node ./index.cjs",
     "lint": "eslint index.cjs eslint.config.mjs \"artifacts/**/*.{ts,tsx,mjs}\" \"scripts/**/*.{cjs,mjs,js,ts}\"",
     "test": "pnpm run lint && pnpm run test:deploy-node && pnpm run test:package-manager && pnpm --filter @workspace/api-server run test:health && pnpm --filter @workspace/api-server run test:server-listener && pnpm --filter @workspace/api-server run test:app-fallback && pnpm --filter @workspace/api-server run test:request-validation && pnpm --filter @workspace/api-server run test:landing-visibility && pnpm --filter @workspace/api-server run test:public-storage && pnpm --filter @workspace/api-server run test:origin-security && pnpm --filter @workspace/api-server run test:resend && pnpm --filter @workspace/sendflow run test:panel-access && pnpm --filter @workspace/sendflow run test:landing-countries && pnpm --filter @workspace/sendflow run test:localized-routes && pnpm --filter @workspace/sendflow run test:seo",

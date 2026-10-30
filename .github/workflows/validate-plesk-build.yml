@@ -54,8 +54,15 @@ jobs:
           node-version: "24"
           cache: pnpm
 
-      - name: Build production files
-        run: pnpm run deploy:plesk
+      - name: Confirm the build does not depend on a checked-in dist
+        run: |
+          if [[ -e dist ]]; then
+            echo "::error::A clean Git checkout should not contain dist; the release must be built from tracked source."
+            exit 1
+          fi
+
+      - name: Build and package a standalone Plesk release
+        run: pnpm run package:plesk
 
       - name: Smoke-test the Plesk runtime bundle
         env:
@@ -99,6 +106,22 @@ jobs:
             exit 1
           fi
 
+          smoke_dir="$(mktemp -d)"
+          while IFS= read -r route; do
+            [[ -n "$route" ]] || continue
+            status="$(curl --location --silent --show-error --output "$smoke_dir/page.html" --write-out '%{http_code}' \
+              "http://127.0.0.1:$port$route")"
+            if [[ "$status" != "200" ]]; then
+              echo "::error::Generated public route $route returned HTTP $status."
+              exit 1
+            fi
+          done < <(node -e '
+            const routes = require("./artifacts/sendflow/src/lib/public-seo-routes.json");
+            for (const group of Object.values(routes)) {
+              for (const locale of ["fr", "en"]) console.log(group[locale].path);
+            }
+          ')
+
           health_json="$(curl --silent --show-error --fail "http://127.0.0.1:$port/api/healthz")"
           expected_build_id="$(node -p "require('./dist/build-info.json').buildId")"
           actual_build_id="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).buildId ?? "")' "$health_json")"
@@ -107,8 +130,6 @@ jobs:
             exit 1
           fi
           echo "Verified health endpoint uses Plesk package build ID $expected_build_id."
-
-          smoke_dir="$(mktemp -d)"
 
           while IFS='|' read -r route locale marker; do
             page_file="$smoke_dir/page.html"
@@ -259,3 +280,12 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Upload Plesk release package
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sendflow-plesk-${{ github.sha }}
+          path: generated-artifacts/sendflow-plesk-*.tar.gz
+          if-no-files-found: error
+          retention-days: 14

@@ -113,6 +113,13 @@ bash scripts/plesk-git-deploy.sh
 
 Plesk effectue d’abord son opération Git native ; l’action de build ne démarre qu’après la réussite de cette étape. Cette action ne lance aucune commande Git et ne dépend pas de `.git` dans le dossier livré. Elle repère la racine du projet depuis son propre fichier, vérifie les fichiers sources nécessaires, Node et la version de pnpm, valide les URL de build, installe avec le lockfile, exécute lint/tests/vérifications TypeScript, construit le frontend et l’API, contrôle les assets/pages générés, puis marque Passenger pour redémarrage. Elle ne lance aucune migration de base de données et peut être relancée : `dist/` est un résultat généré puis reconstruit.
 
+Le dépôt ignore `dist/` volontairement. Le Git natif ne transfère donc pas ce
+répertoire, même s’il existe dans un poste local ou dans Replit. En déploiement
+Git normal, c’est l’action `bash scripts/plesk-git-deploy.sh` qui doit le
+reconstruire dans `<racine-déployée-du-monorepo>/dist`. Si l’étape native
+« Deploying files » échoue, ne considère pas le hook exécuté et ne configure
+pas Passenger sur un `dist` supposé présent.
+
 Les captures Plesk fournies montrent le dépôt `SendFlow-Landing-page-fintech.git`, la branche `main`, la cible de déploiement affichée comme `/sendflow.africa`, puis le résultat exact :
 
 ```text
@@ -144,6 +151,46 @@ git -C "<chemin-réel-du-dépôt-local>" worktree list --porcelain
 Ces résultats doivent être interprétés selon le mode de stockage Plesk : un dépôt interne bare peut être normal et ne doit pas être converti ou supprimé à l’aveugle. Si Plesk est censé faire un checkout dans un répertoire précis, vérifie ce répertoire séparément avec `git -C "<chemin-réel-du-checkout>" rev-parse --show-toplevel` et `git -C "<chemin-réel-du-checkout>" rev-parse --is-inside-work-tree`. Si l’étape échoue encore alors que les chemins affichés paraissent cohérents, l’administrateur/l’hébergeur doit examiner le détail de la tâche `ext-git-task\deployment` et le journal de l’extension pour identifier le chemin courant et la commande Git qui a échoué. Ne lance pas `reset --hard`, `clean`, ne supprime pas le dépôt et ne change pas son remote pour tester.
 
 Le flux complet est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now**, confirmer que le déploiement Git Plesk réussit, vérifier la sortie du hook de build, puis cliquer **Restart** si Passenger ne redémarre pas automatiquement.
+
+### Livraison de secours sans le Git natif Plesk
+
+Le workflow GitHub Actions exécute désormais le même hook
+`scripts/plesk-git-deploy.sh` depuis un checkout propre où `dist/` est absent.
+Il vérifie les pages et le démarrage du paquet, puis publie
+un artefact `sendflow-plesk-<commit>` pour les exécutions hors pull request.
+L’archive `sendflow-plesk-<build-id>.tar.gz` ne contient que le dossier généré
+`dist/`; elle n’inclut pas le dépôt Git ni ses variables d’environnement. Elle
+est conservée 14 jours par GitHub Actions. Cette voie permet de fournir le build
+à Plesk sans attendre que son extension Git fonctionne, mais elle ne répare pas
+l’erreur Git native et ne déploie rien automatiquement.
+
+Procédure non destructive :
+
+1. Ouvre l’exécution réussie du workflow **Validate SendFlow Plesk build** sur
+   `main`, puis télécharge l’artefact correspondant au commit souhaité.
+2. Dans Plesk, identifie les chemins réels du checkout et de l’application.
+   Crée un nouveau dossier de release séparé de la version actuellement servie;
+   n’écrase ni ne supprime l’ancienne version.
+3. Téléverse l’archive et extrais-la dans ce nouveau dossier. Elle contient un
+   sous-dossier `dist/`. Si l’extraction n’est pas disponible dans le File
+   Manager, demande à l’hébergeur d’extraire l’archive dans le dossier choisi.
+4. Configure l’Application Root sur le chemin réel de cette nouvelle release
+   suivi de `/dist`, le Startup File sur `index.cjs` et le Document Root sur
+   ce même chemin suivi de `/dist/public`. Garde les variables d’environnement
+   Node déjà configurées; ne place aucune valeur secrète dans l’archive.
+5. Redémarre Passenger. Vérifie `GET /`, `/api/healthz` et les pages publiques.
+   Le `buildId` renvoyé par `/api/healthz` doit correspondre à celui de
+   `dist/build-info.json` dans la release extraite.
+6. Conserve l’ancienne release jusqu’à la validation complète. En cas de
+   problème, remets les chemins Node de l’ancienne release; ne supprime aucune
+   donnée pour tenter une réparation.
+
+Cette solution de secours nécessite toujours l’action manuelle d’un
+administrateur Plesk/Cybrancee pour téléverser, extraire, sélectionner les
+chemins et redémarrer Passenger. L’erreur `fatal: this operation must be run in
+a work tree` doit être examinée séparément par Cybrancee dans les journaux de
+`ext-git-task\deployment`; le dépôt ne peut ni lire ni réparer le checkout
+interne de l’extension Plesk.
 
 ### Première livraison et réglages Node.js
 
