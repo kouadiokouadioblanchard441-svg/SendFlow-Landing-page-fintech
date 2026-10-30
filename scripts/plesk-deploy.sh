@@ -11,10 +11,8 @@ fi
 
 node scripts/check-deploy-node.cjs
 
-if ! command -v pnpm >/dev/null 2>&1; then
-  echo "pnpm is required. Select pnpm as the package manager in Plesk." >&2
-  exit 1
-fi
+source "$ROOT_DIR/scripts/plesk-pnpm.sh"
+resolve_plesk_pnpm "$ROOT_DIR"
 
 PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-${PUBLIC_SITE_URL:-${VITE_PUBLIC_SITE_URL:-}}}}"
 if [[ -z "$PUBLIC_SITE_URL" ]]; then
@@ -46,10 +44,10 @@ NODE
 export BASE_PATH="${BASE_PATH:-/}"
 
 echo "Installing workspace dependencies..."
-pnpm install --frozen-lockfile --prod=false
+"${PLESK_PNPM[@]}" install --frozen-lockfile --prod=false
 
 echo "Running tests, type checks, and the Plesk production build..."
-pnpm run build
+"${PLESK_PNPM[@]}" run build
 
 required_files=(
   "dist/build-info.json"
@@ -88,6 +86,16 @@ for file in "${required_files[@]}"; do
     exit 1
   fi
 done
+
+node --check dist/index.cjs
+node -e '
+  const fs = require("node:fs");
+  const pkg = JSON.parse(fs.readFileSync("dist/package.json", "utf8"));
+  if (pkg.type !== "commonjs" || pkg.scripts?.start !== "node ./index.cjs") {
+    console.error("Plesk runtime manifest must start the CommonJS bundle with node ./index.cjs.");
+    process.exit(1);
+  }
+'
 
 echo "Plesk build is ready."
 echo "Application root: dist"

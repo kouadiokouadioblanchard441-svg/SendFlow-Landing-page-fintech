@@ -8,7 +8,7 @@ Le build de production produit `dist/` dans le checkout Git Plesk après l’act
 - **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
 - **Document root** : `public` sous l’application root, soit le chemin réel `<checkout-git>/dist/public`.
 - **Node.js** : Node 24 si disponible (référence de développement et de CI), sinon Node 22.12+ dans la branche 22. La compatibilité de build avec Node 20.19+ dans la branche 20 est conservée pour les hébergements existants ; préférer une branche LTS encore maintenue.
-- **Gestionnaire Plesk** : pnpm (comme le projet). Le manifeste runtime ne déclare aucune dépendance à installer ; le build du dépôt utilise pnpm 10.26.1.
+- **Gestionnaire Plesk** : pnpm 10.26.1, épinglé par `packageManager` dans `package.json`. Les scripts Plesk utilisent Corepack quand il est disponible ; sinon ils exigent que le pnpm fourni par Plesk corresponde exactement à cette version. Le manifeste runtime ne déclare aucune dépendance à installer.
 - **Mode** : `production`.
 - **Écoute réseau** : sous Plesk, le serveur détecte `PhusionPassenger` et utilise son socket avec `listen("passenger")`. Aucun `PORT` numérique n’est exigé sous Passenger. En exécution Node directe seulement, `PORT` reste obligatoire et le serveur écoute sur `0.0.0.0`.
 
@@ -94,13 +94,29 @@ pnpm run deploy:plesk
 
 ## Déploiement depuis Plesk Git
 
-Le checkout du dépôt Git doit rester dans son propre dossier, sur la branche `main`; l’action de déploiement s’exécute depuis ce checkout et crée `dist/` à l’intérieur. Dans les paramètres du dépôt Git Plesk, garde la racine du dépôt comme dossier de déploiement et configure une seule action après le pull :
+Le dépôt est un monorepo : le dossier livré par Git doit conserver sa racine et contenir `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `scripts/` et `artifacts/`. Le build écrit `dist/` dans cette racine ; `dist/` n’est pas suivi par Git.
+
+Plesk distingue le dépôt local/checkout géré par son extension, le dossier où il déploie les fichiers et la racine de l’application Node.js. Vérifie leurs chemins réels dans les paramètres du dépôt et le Gestionnaire de fichiers ; ne déduis pas un chemin absolu à partir du seul nom de domaine. Le dossier déployé doit contenir toute la racine du monorepo pour que l’action ci-dessous trouve le lockfile et le build.
+
+Avant le déploiement, configure une seule action de déploiement Plesk pour construire les sources livrées :
 
 ```sh
 bash scripts/plesk-git-deploy.sh
 ```
 
-Cette action installe les dépendances avec le lockfile, exécute les tests et les vérifications TypeScript, construit le frontend et l’API, vérifie les fichiers attendus et marque Passenger pour redémarrage. Elle ne lance aucune migration de base de données. Ensuite, le flux est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now** dans Plesk, vérifier que l’action de déploiement réussit, puis cliquer **Restart** dans Plesk.
+Plesk effectue d’abord son opération Git native ; l’action de build ne démarre qu’après la réussite de cette étape. Cette action ne lance aucune commande Git. Elle repère la racine du projet depuis son propre fichier, vérifie la version de pnpm, installe avec le lockfile, exécute tests et vérifications TypeScript, construit le frontend et l’API, vérifie le paquet, puis marque Passenger pour redémarrage. Elle ne lance aucune migration de base de données.
+
+Le bouton Plesk **Deploy Now** effectue d’abord son propre déploiement Git. L’erreur `fatal: this operation must be run in a work tree` affichée dans l’étape Plesk **Deploying files** survient avant cette action de build : cette erreur n’est pas produite par le script du projet et ne peut pas être corrigée par `index.cjs`. Vérifie le checkout et le répertoire ciblé dans Plesk avant de relancer :
+
+```sh
+git -C "<chemin-réel-du-checkout-ou-worktree-utilisé-par-Plesk>" rev-parse --show-toplevel
+git -C "<chemin-réel-du-checkout-ou-worktree-utilisé-par-Plesk>" rev-parse --is-inside-work-tree
+git -C "<chemin-réel-du-checkout-ou-worktree-utilisé-par-Plesk>" rev-parse --is-bare-repository
+```
+
+Pour le worktree dans lequel Plesk tente son opération de checkout, les réponses attendues sont un chemin de racine, `true`, puis `false`. Un dépôt bare peut être une copie interne valide ; dans ce cas, vérifie le worktree de déploiement distinct au lieu d’exiger que le dépôt bare lui-même soit un worktree. Si Plesk ne peut pas exécuter ces commandes dans le dossier concerné, corrige ou recrée la copie locale gérée par Plesk sans supprimer le dépôt Git distant ni les fichiers du site. Si le worktree est valide mais que l’étape interne échoue encore, le problème relève de l’état/configuration de l’extension Git Plesk ou de l’hébergeur.
+
+Le flux complet est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now**, confirmer que le déploiement Git Plesk réussit, vérifier la sortie du hook de build, puis cliquer **Restart** si Passenger ne redémarre pas automatiquement.
 
 ### Première livraison et réglages Node.js
 
@@ -108,20 +124,24 @@ Si `dist/` n’existe pas encore sur le serveur, il est normal qu’il soit abse
 dans le sélecteur de dossiers Plesk. Ce sélecteur **Document Root** choisit un
 dossier, pas le fichier de démarrage. Procède dans cet ordre :
 
-1. Configure l’action Git ci-dessus depuis le checkout du dépôt.
-2. Exécute **Pull**, puis **Deploy Now**. Vérifie que le hook réussit et crée
-   `dist/index.cjs`, `dist/build-info.json` et `dist/public/index.html`.
-3. Dans les réglages Node.js, sélectionne comme Application Root le chemin
-   absolu réel du dossier `dist` généré sous le checkout. Le fichier de
-   démarrage est `index.cjs`, relatif à cette racine.
-4. Sélectionne comme Document Root le dossier `public` de cette même racine
-   d’application (`<checkout-git>/dist/public`).
-5. Garde une version Node compatible avec le build et le mode `production`,
-   puis clique **Restart**.
+1. Configure l’action de build ci-dessus sur la racine déployée du monorepo.
+2. Vérifie que la copie Git Plesk fonctionne, puis exécute **Pull** et **Deploy Now**.
+3. Vérifie que le hook réussit et crée `dist/index.cjs`, `dist/build-info.json`
+   et `dist/public/index.html`.
+4. Dans les réglages Node.js, configure **Application Root** avec le chemin
+   réel `<racine-déployée-du-monorepo>/dist`. Le **Startup File** est
+   `index.cjs`, relatif à cette racine.
+5. Configure **Document Root** avec
+   `<racine-déployée-du-monorepo>/dist/public`.
+6. Utilise Node 24, ou Node 22.12+ / Node 20.19+ compatible avec le build,
+   pnpm 10.26.1, le mode `production`, puis **Restart**.
 
-Ne configure pas `/httpdocs` ou un autre chemin absolu sans confirmer que le
-checkout Plesk se trouve réellement à cet emplacement. Le hook de build et les
-réglages Node.js sont deux configurations différentes.
+`index.cjs` est le point de démarrage de l’application compilée ; ce n’est pas
+une commande de build ni une action Git. Le `index.cjs` à la racine des sources
+est seulement un wrapper qui échoue explicitement si `dist/index.cjs` n’existe
+pas. N’utilise pas ce wrapper comme substitut au hook de build. Ne configure pas
+`/httpdocs`, `/sendflow.africa` ou un autre chemin absolu sans vérifier dans
+Plesk le chemin réel de la racine déployée.
 
 Le workflow `.github/workflows/validate-plesk-build.yml` ne déploie pas sur Plesk et n’a besoin d’aucun secret SSH : il vérifie le build sur GitHub à chaque push sur `main`. Le déploiement de production est effectué par Plesk lorsque tu cliques **Deploy Now**.
 

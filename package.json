@@ -4,13 +4,14 @@
   "license": "MIT",
   "packageManager": "pnpm@10.26.1",
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "preinstall": "node ./scripts/check-package-manager.cjs",
     "dev": "node ./scripts/dev.mjs",
     "build": "pnpm run test && pnpm run typecheck && pnpm --filter @workspace/sendflow run build && pnpm --filter @workspace/api-server run build && node ./scripts/prepare-plesk-build.mjs",
     "deploy:plesk": "bash ./scripts/plesk-deploy.sh",
     "start": "node ./index.cjs",
-    "test": "pnpm run test:deploy-node && pnpm --filter @workspace/api-server run test:health && pnpm --filter @workspace/api-server run test:server-listener && pnpm --filter @workspace/api-server run test:request-validation && pnpm --filter @workspace/api-server run test:landing-visibility && pnpm --filter @workspace/api-server run test:public-storage && pnpm --filter @workspace/api-server run test:origin-security && pnpm --filter @workspace/api-server run test:resend && pnpm --filter @workspace/sendflow run test:panel-access && pnpm --filter @workspace/sendflow run test:landing-countries && pnpm --filter @workspace/sendflow run test:localized-routes && pnpm --filter @workspace/sendflow run test:seo",
+    "test": "pnpm run test:deploy-node && pnpm run test:package-manager && pnpm --filter @workspace/api-server run test:health && pnpm --filter @workspace/api-server run test:server-listener && pnpm --filter @workspace/api-server run test:request-validation && pnpm --filter @workspace/api-server run test:landing-visibility && pnpm --filter @workspace/api-server run test:public-storage && pnpm --filter @workspace/api-server run test:origin-security && pnpm --filter @workspace/api-server run test:resend && pnpm --filter @workspace/sendflow run test:panel-access && pnpm --filter @workspace/sendflow run test:landing-countries && pnpm --filter @workspace/sendflow run test:localized-routes && pnpm --filter @workspace/sendflow run test:seo",
     "test:deploy-node": "node --test scripts/check-deploy-node.test.cjs",
+    "test:package-manager": "node --test scripts/check-package-manager.test.cjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },

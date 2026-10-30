@@ -9,8 +9,11 @@ if [[ ! -f pnpm-lock.yaml || ! -f package.json ]]; then
   exit 1
 fi
 
+source "$ROOT_DIR/scripts/plesk-pnpm.sh"
+resolve_plesk_pnpm "$ROOT_DIR"
+
 echo "Building SendFlow from the Plesk Git checkout..."
-pnpm run deploy:plesk
+"${PLESK_PNPM[@]}" run deploy:plesk
 
 mkdir -p dist/tmp
 touch dist/tmp/restart.txt
