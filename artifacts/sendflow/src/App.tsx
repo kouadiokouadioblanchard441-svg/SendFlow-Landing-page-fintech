@@ -572,7 +572,9 @@ function AnimatedRoutes() {
   const prefersReducedMotion = useReducedMotion();
   const previousLocation = useRef(location);
   const previousRoutePath = useRef(getTransitionRoutePath(location));
-  const [isNavigating, setIsNavigating] = useState(false);
+  const hasMountedRoutes = useRef(false);
+  const navigationTimeout = useRef<number | null>(null);
+  const [isNavigating, setIsNavigating] = useState(true);
   const previousIndex = getRouteMotionIndex(previousLocation.current);
   const nextIndex = getRouteMotionIndex(location);
   const direction: RouteMotionSettings['direction'] =
@@ -586,19 +588,24 @@ function AnimatedRoutes() {
   useLayoutEffect(() => {
     const nextRoutePath = getTransitionRoutePath(location);
     const hasRouteChanged = previousRoutePath.current !== nextRoutePath;
+    const isInitialMount = !hasMountedRoutes.current;
     const hasLocationChanged = previousLocation.current !== location;
 
+    hasMountedRoutes.current = true;
     previousRoutePath.current = nextRoutePath;
     if (hasLocationChanged) {
       previousLocation.current = location;
       if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
 
-    if (!hasRouteChanged) return;
+    if (!isInitialMount && !hasRouteChanged) return;
 
     setIsNavigating(true);
-    const timeoutId = window.setTimeout(() => setIsNavigating(false), 420);
-    return () => window.clearTimeout(timeoutId);
+    if (navigationTimeout.current !== null) window.clearTimeout(navigationTimeout.current);
+    navigationTimeout.current = window.setTimeout(() => {
+      navigationTimeout.current = null;
+      setIsNavigating(false);
+    }, 420);
   }, [location]);
 
   return (

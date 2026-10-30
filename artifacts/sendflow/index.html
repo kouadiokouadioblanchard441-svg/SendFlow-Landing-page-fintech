@@ -69,9 +69,49 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Protest+Strike&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
+    <style>
+      .sf-initial-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        background: #fff;
+      }
+      .sf-initial-loader .sf-loading-dots {
+        display: grid;
+        width: 48px;
+        height: 48px;
+        grid-template-columns: repeat(2, 18px);
+        grid-template-rows: repeat(2, 18px);
+        gap: 10px;
+      }
+      .sf-initial-loader .sf-loading-dots > span {
+        display: block;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: #5428ad;
+        animation: sf-initial-dot-pulse .76s cubic-bezier(.4, 0, .2, 1) infinite;
+      }
+      .sf-initial-loader .sf-loading-dots > span:nth-child(2) { animation-delay: .12s; }
+      .sf-initial-loader .sf-loading-dots > span:nth-child(3) { animation-delay: .24s; }
+      .sf-initial-loader .sf-loading-dots > span:nth-child(4) { animation-delay: .36s; }
+      @keyframes sf-initial-dot-pulse {
+        0%, 80%, 100% { opacity: .58; transform: scale(.76); }
+        40% { opacity: 1; transform: scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sf-initial-loader .sf-loading-dots > span { animation: none; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="sf-initial-loader" role="status" aria-live="polite" aria-atomic="true" aria-label="Chargement de SendFlow">
+        <span class="sf-loading-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
