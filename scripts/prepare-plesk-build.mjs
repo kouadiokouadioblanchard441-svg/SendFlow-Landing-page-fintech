@@ -36,6 +36,8 @@ await writeFile(
     "<IfModule mod_rewrite.c>",
     "RewriteEngine On",
     "RewriteRule ^favicon\\.ico$ favicon.svg [L]",
+    "# Keep API requests for the Passenger application; never rewrite them to the SPA.",
+    "RewriteRule ^api(?:/|$) - [L,NC]",
     "RewriteCond %{REQUEST_URI} !^/api(/|$) [NC]",
     "RewriteCond %{REQUEST_FILENAME} !-f",
     "RewriteCond %{REQUEST_FILENAME} !-d",

@@ -10,4 +10,5 @@ if (!fs.existsSync(builtServer)) {
   process.exit(1);
 }
 
+process.chdir(path.dirname(builtServer));
 require(builtServer);

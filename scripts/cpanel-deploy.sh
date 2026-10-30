@@ -10,7 +10,7 @@ if [[ ! -f package.json || ! -f pnpm-lock.yaml || ! -f index.cjs ]]; then
 fi
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "Node.js is required. Select Node.js 24 if available, or a compatible host runtime (20.19.x+ in 20.x, or 22.12.0+)." >&2
+  echo "Node.js is required. Select Node.js 24 if available, 20.19+, 22.13+, or a supported even-numbered LTS line from 24+." >&2
   exit 1
 fi
 

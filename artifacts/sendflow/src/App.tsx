@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type FormEvent } from 'react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
 import { ArrowDownRight, ArrowRight, Check, ChevronDown, ChevronRight, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
@@ -10,15 +10,8 @@ import publicSeoRoutes from '@/lib/public-seo-routes.json';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
-import NotFound from '@/pages/not-found';
-import AdminPage from '@/pages/admin';
-import AboutPage, { type FounderProfile } from '@/pages/about';
-import { LegalMentionsPage, PrivacyPage, TermsPage, type LegalPageProps } from '@/pages/legal';
-import { EditableLegalPage } from '@/pages/editable-legal';
-import DownloadPage from '@/pages/download';
-import FeaturesPage from '@/pages/features';
-import SecurityPage from '@/pages/security';
-import CorridorGuidePage from '@/pages/corridor-guide';
+import type { FounderProfile } from '@/pages/about';
+import type { LegalPageProps } from '@/pages/legal';
 import { SendFlowFooter } from '@/components/sendflow-footer';
 import DeveloperApiCard from '@/components/DeveloperApiCard';
 import FeatureActionCards from '@/components/FeatureActionCards';
@@ -87,6 +80,26 @@ import trackingIcon from './assets/sendflow-icon-transaction-tracking.svg';
 import simpleExperienceIcon from './assets/sendflow-icon-simple-experience.svg';
 import visibleDetailsIcon from './assets/sendflow-icon-visible-details.svg';
 import privateIcon from './assets/sendflow-icon-private.svg';
+
+const NotFound = lazy(() => import('@/pages/not-found'));
+const AdminPage = lazy(() => import('@/pages/admin'));
+const AboutPage = lazy(() => import('@/pages/about'));
+const LegalMentionsPage = lazy(() =>
+  import('@/pages/legal').then((module) => ({ default: module.LegalMentionsPage })),
+);
+const PrivacyPage = lazy(() =>
+  import('@/pages/legal').then((module) => ({ default: module.PrivacyPage })),
+);
+const TermsPage = lazy(() =>
+  import('@/pages/legal').then((module) => ({ default: module.TermsPage })),
+);
+const EditableLegalPage = lazy(() =>
+  import('@/pages/editable-legal').then((module) => ({ default: module.EditableLegalPage })),
+);
+const DownloadPage = lazy(() => import('@/pages/download'));
+const FeaturesPage = lazy(() => import('@/pages/features'));
+const SecurityPage = lazy(() => import('@/pages/security'));
+const CorridorGuidePage = lazy(() => import('@/pages/corridor-guide'));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -558,6 +571,8 @@ function AnimatedRoutes() {
   const [location] = useLocation();
   const prefersReducedMotion = useReducedMotion();
   const previousLocation = useRef(location);
+  const previousRoutePath = useRef(getTransitionRoutePath(location));
+  const [isNavigating, setIsNavigating] = useState(false);
   const previousIndex = getRouteMotionIndex(previousLocation.current);
   const nextIndex = getRouteMotionIndex(location);
   const direction: RouteMotionSettings['direction'] =
@@ -568,42 +583,98 @@ function AnimatedRoutes() {
         : -1;
   const motionSettings = { direction, reduced: Boolean(prefersReducedMotion) };
 
-  useEffect(() => {
-    if (previousLocation.current === location) return;
-    previousLocation.current = location;
-    if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  useLayoutEffect(() => {
+    const nextRoutePath = getTransitionRoutePath(location);
+    const hasRouteChanged = previousRoutePath.current !== nextRoutePath;
+    const hasLocationChanged = previousLocation.current !== location;
+
+    previousRoutePath.current = nextRoutePath;
+    if (hasLocationChanged) {
+      previousLocation.current = location;
+      if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+
+    if (!hasRouteChanged) return;
+
+    setIsNavigating(true);
+    const timeoutId = window.setTimeout(() => setIsNavigating(false), 420);
+    return () => window.clearTimeout(timeoutId);
   }, [location]);
 
   return (
-    <AnimatePresence mode="wait" custom={motionSettings}>
-      <motion.div
-        key={location}
-        className="sendflow-route-transition"
-        custom={motionSettings}
-        variants={routeMotionVariants}
-        initial="enter"
-        animate="center"
-        exit="exit"
-      >
-        <Switch>
-          <Route path="/" component={LandingPage} />
-          <Route path="/download" component={DownloadPage} />
-          <Route path="/fonctionnalites" component={FeaturesPage} />
-          <Route path="/securite" component={SecurityPage} />
-          <Route path="/a-propos" component={AboutRoute} />
-          <Route path="/conditions-utilisation" component={() => <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />} />
-          <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
-          <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
-          <Route path="/france-senegal" component={CorridorGuidePage} />
-          <Route path="/en/*?" component={EnglishPublicRoute} />
-          <Route path="/admin" component={LegacyAdminRedirect} />
-          <Route path="/admin/*" component={LegacyAdminRedirect} />
-          <Route path="/panel" component={PanelRoute} />
-          <Route component={NotFoundRoute} />
-        </Switch>
-      </motion.div>
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait" custom={motionSettings}>
+        <motion.div
+          key={location}
+          className="sendflow-route-transition"
+          custom={motionSettings}
+          variants={routeMotionVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+        >
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Switch>
+              <Route path="/" component={LandingPage} />
+              <Route path="/download" component={DownloadPage} />
+              <Route path="/fonctionnalites" component={FeaturesPage} />
+              <Route path="/securite" component={SecurityPage} />
+              <Route path="/a-propos" component={AboutRoute} />
+              <Route path="/conditions-utilisation" component={() => <PublicLegalRoute page={TermsPage} slug="conditions-utilisation" />} />
+              <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
+              <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
+              <Route path="/france-senegal" component={CorridorGuidePage} />
+              <Route path="/en/*?" component={EnglishPublicRoute} />
+              <Route path="/admin" component={LegacyAdminRedirect} />
+              <Route path="/admin/*" component={LegacyAdminRedirect} />
+              <Route path="/panel" component={PanelRoute} />
+              <Route component={NotFoundRoute} />
+            </Switch>
+          </Suspense>
+        </motion.div>
+      </AnimatePresence>
+      {isNavigating && (
+        <div
+          className="sf-navigation-loader"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span className="sr-only">
+            {getLocaleFromPath(location) === 'fr' ? 'Chargement de la page' : 'Loading page'}
+          </span>
+          <SendFlowLoadingDots />
+        </div>
+      )}
+    </>
   );
+}
+
+function RouteLoadingFallback() {
+  return (
+    <div className="sf-route-loading-fallback" role="status" aria-live="polite">
+      <span className="sr-only">
+        {getLocaleFromPath(window.location.pathname) === 'fr' ? 'Chargement de la page' : 'Loading page'}
+      </span>
+      <SendFlowLoadingDots />
+    </div>
+  );
+}
+
+function SendFlowLoadingDots() {
+  return (
+    <span className="sf-loading-dots" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+      <span />
+    </span>
+  );
+}
+
+function getTransitionRoutePath(location: string) {
+  const pathname = location.split(/[?#]/, 1)[0] || '/';
+  return pathname.replace(/\/+$/, '') || '/';
 }
 
 function EnglishPublicRoute() {
@@ -620,7 +691,7 @@ function EnglishPublicRoute() {
   return <NotFoundRoute />;
 }
 
-function PublicLegalRoute({ page: Page, slug }: { page: (props: LegalPageProps) => ReactElement; slug: string }) {
+function PublicLegalRoute({ page: Page, slug }: { page: ComponentType<LegalPageProps>; slug: string }) {
   const locale = getLocaleFromPath(window.location.pathname);
   const { data } = usePublicLandingBundle();
   const legalPage = data?.legalPages?.find((item) => item.slug === slug && item.isVisible);

@@ -13,6 +13,23 @@ if (Number.isNaN(port) || port <= 0) {
 
 const basePath = process.env.BASE_PATH ?? '/';
 
+function manualChunkForModule(id: string) {
+  const packagePath = id.split('/node_modules/').at(-1);
+  if (!packagePath) return undefined;
+
+  const [scopeOrName, packageName] = packagePath.split('/');
+  const name = scopeOrName.startsWith('@')
+    ? `${scopeOrName}/${packageName}`
+    : scopeOrName;
+
+  if (['react', 'react-dom', 'scheduler'].includes(name)) return 'vendor-react';
+  if (['framer-motion', 'motion-dom', 'motion-utils'].includes(name)) return 'vendor-motion';
+  if (name === '@tanstack/react-query') return 'vendor-query';
+  if (name === 'wouter') return 'vendor-router';
+  if (name === 'lucide-react') return 'vendor-icons';
+  return undefined;
+}
+
 const isLegacyAdminPath = (requestUrl = '') => {
   const requestPath = requestUrl.split('?')[0].replace(/\/+$/, '') || '/';
   const normalizedBasePath = basePath.replace(/\/+$/, '');
@@ -76,7 +93,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: manualChunkForModule,
+      },
+    },
   },
+  css: { devSourcemap: false },
   server: {
     port,
     strictPort: true,

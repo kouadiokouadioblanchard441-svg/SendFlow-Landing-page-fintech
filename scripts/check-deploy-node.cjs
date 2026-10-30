@@ -2,8 +2,9 @@
 "use strict";
 
 // Vite 7 and @vitejs/plugin-react 5 require ^20.19.0 || >=22.12.0.
+// ESLint 10 also runs in the deploy build and requires Node 22.13+ in that line.
 // Keep legacy hosting compatibility separate from the Node 24 CI baseline.
-const BUILD_NODE_RANGE = "^20.19.0 || >=22.12.0";
+const BUILD_NODE_RANGE = "Node.js 20.19+, 22.13+, or an even-numbered LTS line from 24+";
 
 function isSupportedBuildNode(version) {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
@@ -11,15 +12,15 @@ function isSupportedBuildNode(version) {
   const [, major, minor] = match.map(Number);
   return (
     (major === 20 && minor >= 19) ||
-    (major === 22 && minor >= 12) ||
-    major > 22
+    (major === 22 && minor >= 13) ||
+    (major >= 24 && major % 2 === 0)
   );
 }
 
 function checkDeployNode(version, executable) {
   if (!isSupportedBuildNode(version)) {
     console.error(
-      `Unsupported Node.js ${version}. The deployment build requires ${BUILD_NODE_RANGE} (Node.js 20.19.x or later in 20.x, or Node.js 22.12.0 or newer).`,
+      `Unsupported Node.js ${version}. The deployment build requires Node.js 20.19+, 22.13+, or an even-numbered LTS line 24+.`,
     );
     return 1;
   }

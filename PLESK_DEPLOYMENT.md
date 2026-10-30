@@ -7,14 +7,14 @@ Le build de production produit `dist/` dans le checkout Git Plesk après l’act
 - **Application root** : le `dist` généré sous le checkout Git Plesk. Résous le chemin à partir du vrai dossier du dépôt affiché par Plesk ; ne suppose pas que ce chemin est `/httpdocs`.
 - **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
 - **Document root** : `public` sous l’application root, soit le chemin réel `<checkout-git>/dist/public`.
-- **Node.js** : Node 24 si disponible (référence de développement et de CI), sinon Node 22.12+ dans la branche 22. La compatibilité de build avec Node 20.19+ dans la branche 20 est conservée pour les hébergements existants ; préférer une branche LTS encore maintenue.
+- **Node.js** : Node 24 recommandé (référence CI), Node 22.13+ ou Node 20.19+ sont également acceptés. Les autres versions paires LTS à partir de 24 le sont aussi. Les versions impaires, dont Node 21, sont refusées.
 - **Gestionnaire Plesk** : pnpm 10.26.1, épinglé par `packageManager` dans `package.json`. Les scripts Plesk utilisent Corepack quand il est disponible ; sinon ils exigent que le pnpm fourni par Plesk corresponde exactement à cette version. Le manifeste runtime ne déclare aucune dépendance à installer.
 - **Mode** : `production`.
 - **Écoute réseau** : sous Plesk, le serveur détecte `PhusionPassenger` et utilise son socket avec `listen("passenger")`. Aucun `PORT` numérique n’est exigé sous Passenger. En exécution Node directe seulement, `PORT` reste obligatoire et le serveur écoute sur `0.0.0.0`.
 
-Le build génère aussi `dist/public/.htaccess` : Apache renvoie les routes web inconnues vers `index.html` pour que le routeur React traite les accès directs et les actualisations. Les chemins `/api/*` restent transmis à Passenger.
+Le build génère aussi `dist/public/.htaccess` : Apache renvoie les routes web inconnues vers `index.html` pour que le routeur React traite les accès directs et les actualisations. Une règle laisse explicitement `/api` et `/api/*` à Passenger ; le serveur répond en JSON pour les routes API inconnues et ne leur renvoie jamais le HTML de la SPA.
 
-Plesk doit démarrer le bundle avec `dist` comme répertoire courant : le serveur y cherche `build-info.json` et `public/`. Le fichier `index.cjs` à la racine du checkout est un wrapper de build ; ne le sélectionne pas comme fichier de démarrage si l’application root reste le checkout. Il laisse le répertoire courant au checkout, ce qui fait perdre l’ID du build et ne correspond pas au paquet runtime isolé.
+Plesk doit démarrer le bundle avec `dist` comme répertoire courant : le serveur y cherche `build-info.json` et `public/`. Configure donc l’Application Root sur `dist`, le Startup File sur `index.cjs` et le Document Root sur `dist/public`. Le wrapper source `index.cjs` à la racine du checkout change lui aussi le répertoire courant vers `dist` avant de lancer le bundle, mais la configuration recommandée reste de lancer directement le bundle généré depuis l’Application Root `dist`.
 
 L’arborescence attendue dans l’application root Plesk est :
 
@@ -52,25 +52,24 @@ existants ; elle n'est pas une garantie de validation équivalente à la CI.
 | Contexte | Version / portée |
 | --- | --- |
 | Workspace et CI GitHub | Node 24, avec tests, types, build et smoke-test du bundle |
-| Contrôle de build Plesk et cPanel | `^20.19.0 || >=22.12.0`, exigence déclarée par Vite 7 et son plugin React dans les dépendances verrouillées |
-| Anciennes branches et autres versions acceptées | Compatibilité conservée, mais pas de matrice CI sur ces versions ; valider le build et le démarrage sur l'hôte |
+| Contrôle de build Plesk et cPanel | Node 20.19+, Node 22.13+, ou une branche LTS paire à partir de Node 24 |
+| Compatibilité | Node 24 est vérifié en CI ; les autres branches acceptées passent le contrôle de version, mais doivent aussi être validées sur l'hôte |
 | Manifeste du bundle `dist/package.json` | Minimum runtime `>=20.19.0` ; ce manifeste sans dépendances ne décrit pas les prérequis du build du dépôt |
 
-Node 22.0 à 22.11 était accepté par erreur : il ne satisfait pas les prérequis
-de Vite et est désormais refusé avant l'installation. Node 21 reste refusé.
-Les versions ultérieures à 22 satisfaisant la plage restent acceptées, sans
-pour autant recommander une branche impaire ou non maintenue en production.
-Les outils de développement non exécutés par le déploiement, notamment Orval
-pour régénérer l'API, peuvent demander une version plus récente : utiliser
-Node 24 pour ce travail.
+Vite 7 demande Node 20.19+ ou 22.12+, mais ESLint 10 — exécuté pendant le build
+— demande Node 20.19+ ou 22.13+. Le contrôle du dépôt retient donc 22.13 comme
+minimum sur la branche 22. Node 21, 22.12 et les branches impaires sont refusés.
+Node 24 reste la version recommandée ; Node 20.19+ est conservé pour les
+hébergements existants. Les outils de développement non exécutés par le
+déploiement, notamment Orval pour régénérer l’API, peuvent demander une version
+plus récente.
 
 Selon la [documentation Plesk sur les runtimes Node.js](https://docs.plesk.com/en-US/obsidian/administrator-guide/plesk-administration/enabling-nodejs-support.76658/),
 Plesk Linux peut installer plusieurs versions, sélectionnables par domaine ;
 Plesk Windows n'en utilise qu'une à la fois. Les versions réellement proposées
 dépendent de l'installation et de l'hébergeur : ce guide ne confirme pas la
 version actuellement installée sur le serveur de production.
-Les [prérequis Vite](https://vite.dev/guide/#scaffolding-your-first-vite-project)
-expliquent le seuil 20.19 / 22.12.
+Les prérequis d’ESLint 10 relèvent à 22.13 le minimum du build sur la branche 22.
 
 Sélectionner la version dans Plesk **et** s'assurer que l'action Git utilise le
 même runtime dans son `PATH`. Depuis le terminal exécutant le hook :
@@ -86,11 +85,19 @@ prérequis de version, pas un build réussi ni le fonctionnement de Passenger.
 Après un changement de runtime, exécuter le déploiement complet, redémarrer
 Passenger et effectuer les vérifications HTTP ci-dessous.
 
-À la racine du dépôt, le build complet (tests, vérifications TypeScript, frontend et serveur) est :
+À la racine du dépôt, le build complet (lint ciblé, tests, vérifications TypeScript, frontend, API et contrôle des fichiers générés) est :
 
 ```sh
 pnpm run deploy:plesk
 ```
+
+Le contrôle final vérifie le manifeste et le bundle Passenger, les pages SEO
+générées, les références locales des HTML/CSS/JavaScript, l’absence de source
+maps publiées, la présence du découpage JavaScript et la taille des chunks
+(maximum 500 KiB chacun). Le build Vite désactive explicitement les source maps
+de production ; le marqueur `use client`, inutile dans cette application Vite
+client, a été retiré du composant tooltip pour éviter la référence de source
+invalide signalée pendant le build.
 
 ## Déploiement depuis Plesk Git
 
@@ -104,17 +111,37 @@ Avant le déploiement, configure une seule action de déploiement Plesk pour con
 bash scripts/plesk-git-deploy.sh
 ```
 
-Plesk effectue d’abord son opération Git native ; l’action de build ne démarre qu’après la réussite de cette étape. Cette action ne lance aucune commande Git. Elle repère la racine du projet depuis son propre fichier, vérifie la version de pnpm, installe avec le lockfile, exécute tests et vérifications TypeScript, construit le frontend et l’API, vérifie le paquet, puis marque Passenger pour redémarrage. Elle ne lance aucune migration de base de données.
+Plesk effectue d’abord son opération Git native ; l’action de build ne démarre qu’après la réussite de cette étape. Cette action ne lance aucune commande Git et ne dépend pas de `.git` dans le dossier livré. Elle repère la racine du projet depuis son propre fichier, vérifie les fichiers sources nécessaires, Node et la version de pnpm, valide les URL de build, installe avec le lockfile, exécute lint/tests/vérifications TypeScript, construit le frontend et l’API, contrôle les assets/pages générés, puis marque Passenger pour redémarrage. Elle ne lance aucune migration de base de données et peut être relancée : `dist/` est un résultat généré puis reconstruit.
 
-Le bouton Plesk **Deploy Now** effectue d’abord son propre déploiement Git. L’erreur `fatal: this operation must be run in a work tree` affichée dans l’étape Plesk **Deploying files** survient avant cette action de build : cette erreur n’est pas produite par le script du projet et ne peut pas être corrigée par `index.cjs`. Vérifie le checkout et le répertoire ciblé dans Plesk avant de relancer :
+Les captures Plesk fournies montrent le dépôt `SendFlow-Landing-page-fintech.git`, la branche `main`, la cible de déploiement affichée comme `/sendflow.africa`, puis le résultat exact :
 
-```sh
-git -C "<chemin-réel-du-checkout-ou-worktree-utilisé-par-Plesk>" rev-parse --show-toplevel
-git -C "<chemin-réel-du-checkout-ou-worktree-utilisé-par-Plesk>" rev-parse --is-inside-work-tree
-git -C "<chemin-réel-du-checkout-ou-worktree-utilisé-par-Plesk>" rev-parse --is-bare-repository
+```text
+Pulling a Git repository ... Done
+Deploying files to sendflow.africa ... Failed
+fatal: this operation must be run in a work tree
 ```
 
-Pour le worktree dans lequel Plesk tente son opération de checkout, les réponses attendues sont un chemin de racine, `true`, puis `false`. Un dépôt bare peut être une copie interne valide ; dans ce cas, vérifie le worktree de déploiement distinct au lieu d’exiger que le dépôt bare lui-même soit un worktree. Si Plesk ne peut pas exécuter ces commandes dans le dossier concerné, corrige ou recrée la copie locale gérée par Plesk sans supprimer le dépôt Git distant ni les fichiers du site. Si le worktree est valide mais que l’étape interne échoue encore, le problème relève de l’état/configuration de l’extension Git Plesk ou de l’hébergeur.
+Cela localise l’échec dans la phase **Git native de déploiement vers la cible Plesk**, après le pull et avant toute preuve que le build SendFlow s’est lancé. Le message signifie qu’une opération Git nécessitant un worktree a été exécutée dans un contexte que Git ne reconnaît pas comme worktree. Il ne révèle pas à lui seul lequel des chemins internes Plesk est fautif. Il n’indique pas une erreur Node.js, pnpm, Express, `index.cjs` ou Vite.
+
+L’examen du dépôt confirme que la chaîne `scripts/plesk-git-deploy.sh` → `scripts/plesk-deploy.sh` → préparation/vérification du build n’appelle aucune commande Git et ne requiert aucun dossier `.git`. Elle est conçue pour s’exécuter depuis les fichiers livrés, même si Plesk ne copie pas son métadossier Git dans le répertoire de déploiement. Le hook du projet ne peut donc pas réparer l’opération native qui échoue avant son exécution.
+
+Pour cette capture, le réglage Plesk à examiner est **Git → dépôt SendFlow-Landing-page-fintech.git → Deployment / Deployment directory**, actuellement affiché comme `/sendflow.africa`, ainsi que le répertoire local associé au dépôt. Confirme dans les réglages et le Gestionnaire de fichiers les chemins absolus réellement résolus par Plesk. La cible doit recevoir la racine complète du monorepo — `package.json`, lockfile, `scripts/` et `artifacts/` — et non le dossier `dist` seul. Ne change pas la cible vers un chemin deviné.
+
+Les captures Node.js antérieures ont également montré une racine d’application `/httpdocs`, tandis que la capture Git montre la cible `/sendflow.africa`. Ces valeurs peuvent être anciennes ou désigner des chemins différents ; elles ne prouvent pas à elles seules la cause de l’erreur Git. Après réparation du déploiement natif, aligne la racine Node sur le `dist` généré sous le chemin de déploiement réellement confirmé, et le Document Root sur son sous-dossier `public`.
+
+Pour diagnostiquer sans modifier les données :
+
+1. Dans **Websites & Domains → Git**, ouvre les réglages du dépôt et relève le chemin réel du dépôt local ainsi que le répertoire de déploiement. N’infère pas ces chemins à partir du nom du domaine. Repère aussi la commande d’action de déploiement configurée.
+2. Avec le terminal Plesk ou l’aide de l’administrateur/hébergeur, exécute ces commandes de lecture seule sur le chemin réel du dépôt local :
+
+```sh
+git -C "<chemin-réel-du-dépôt-local>" rev-parse --show-toplevel
+git -C "<chemin-réel-du-dépôt-local>" rev-parse --is-inside-work-tree
+git -C "<chemin-réel-du-dépôt-local>" rev-parse --is-bare-repository
+git -C "<chemin-réel-du-dépôt-local>" worktree list --porcelain
+```
+
+Ces résultats doivent être interprétés selon le mode de stockage Plesk : un dépôt interne bare peut être normal et ne doit pas être converti ou supprimé à l’aveugle. Si Plesk est censé faire un checkout dans un répertoire précis, vérifie ce répertoire séparément avec `git -C "<chemin-réel-du-checkout>" rev-parse --show-toplevel` et `git -C "<chemin-réel-du-checkout>" rev-parse --is-inside-work-tree`. Si l’étape échoue encore alors que les chemins affichés paraissent cohérents, l’administrateur/l’hébergeur doit examiner le détail de la tâche `ext-git-task\deployment` et le journal de l’extension pour identifier le chemin courant et la commande Git qui a échoué. Ne lance pas `reset --hard`, `clean`, ne supprime pas le dépôt et ne change pas son remote pour tester.
 
 Le flux complet est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now**, confirmer que le déploiement Git Plesk réussit, vérifier la sortie du hook de build, puis cliquer **Restart** si Passenger ne redémarre pas automatiquement.
 
@@ -133,7 +160,7 @@ dossier, pas le fichier de démarrage. Procède dans cet ordre :
    `index.cjs`, relatif à cette racine.
 5. Configure **Document Root** avec
    `<racine-déployée-du-monorepo>/dist/public`.
-6. Utilise Node 24, ou Node 22.12+ / Node 20.19+ compatible avec le build,
+6. Utilise Node 24 (recommandé), ou Node 22.13+ / Node 20.19+,
    pnpm 10.26.1, le mode `production`, puis **Restart**.
 
 `index.cjs` est le point de démarrage de l’application compilée ; ce n’est pas
@@ -156,10 +183,16 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 - `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
 - `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias; `VITE_PUBLIC_SITE_URL` est reconnue en dernier recours pour les configurations Plesk existantes.
 - `APP_URL` — `https://sendflow.africa`, utilisée au build. Le script Plesk accepte aussi `PUBLIC_URL`, `PUBLIC_SITE_URL` ou, en dernier recours, `VITE_PUBLIC_SITE_URL`.
+- `BASE_PATH` — `/` pour le domaine vitrine servi à la racine ; le script Plesk refuse une autre valeur afin que les assets et les pages générées gardent les bons chemins.
 - `LOG_LEVEL` — optionnel.
 - `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
 
 `SESSION_SECRET` n’est pas lu par la version actuelle du serveur SendFlow ; ne l’ajouter que si une fonctionnalité qui l’utilise est introduite. Les variables `ADMIN_BOOTSTRAP_*`, `ADMIN_PANEL_TOKEN` et les scripts de seed ne sont pas requis au démarrage normal. N’exécute aucun script de seed ou de migration pendant le démarrage Plesk.
+
+Les réglages d’environnement de l’application Node et ceux de l’action Git Plesk
+peuvent être séparés. Vérifie que `APP_URL` — ou un de ses alias — est bien
+présent dans l’environnement de l’action qui exécute le hook ; si plusieurs
+alias sont définis, ils doivent tous désigner la même origine HTTPS.
 
 ## Commandes et vérifications
 

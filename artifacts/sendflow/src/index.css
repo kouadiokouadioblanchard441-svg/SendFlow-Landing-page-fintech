@@ -3298,6 +3298,61 @@ section#faq .reveal.space-y-2 > div {
   }
 }
 
+/* A brief SendFlow loading mark for internal route changes and lazy pages. */
+.sf-navigation-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .985);
+  animation: sf-navigation-loader-in .14s ease-out both;
+  pointer-events: none;
+}
+
+.sf-route-loading-fallback {
+  display: grid;
+  min-height: 45vh;
+  place-items: center;
+}
+
+.sf-loading-dots {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  grid-template-columns: repeat(2, 18px);
+  grid-template-rows: repeat(2, 18px);
+  gap: 10px;
+}
+
+.sf-loading-dots > span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #5428ad;
+  animation: sf-navigation-dot-pulse .76s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+
+.sf-loading-dots > span:nth-child(2) { animation-delay: .12s; }
+.sf-loading-dots > span:nth-child(3) { animation-delay: .24s; }
+.sf-loading-dots > span:nth-child(4) { animation-delay: .36s; }
+
+@keyframes sf-navigation-loader-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sf-navigation-dot-pulse {
+  0%, 80%, 100% { opacity: .58; transform: scale(.76); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-navigation-loader { animation: none; }
+  .sf-loading-dots > span { animation: none; }
+}
+
 @media (min-width: 1024px) {
   .noise #how > div > .reveal.grid {
     gap: 4rem;

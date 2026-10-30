@@ -4,8 +4,26 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+required_inputs=(
+  "package.json"
+  "pnpm-lock.yaml"
+  "pnpm-workspace.yaml"
+  "index.cjs"
+  "artifacts/sendflow/vite.config.ts"
+  "artifacts/api-server/build.mjs"
+  "scripts/prepare-plesk-build.mjs"
+  "scripts/verify-plesk-build.mjs"
+  "scripts/plesk-pnpm.sh"
+)
+for input in "${required_inputs[@]}"; do
+  if [[ ! -s "$input" ]]; then
+    echo "Plesk source checkout is incomplete; required project file is missing: $input" >&2
+    exit 1
+  fi
+done
+
 if ! command -v node >/dev/null 2>&1; then
-  echo "Node.js is required to build SendFlow for Plesk. Use Node.js 24, or a compatible host runtime (20.19.x+ in 20.x, or 22.12.0+)." >&2
+  echo "Node.js is required to build SendFlow for Plesk. Use Node.js 24, 20.19+, 22.13+, or a supported even-numbered LTS line from 24+." >&2
   exit 1
 fi
 
@@ -14,88 +32,57 @@ node scripts/check-deploy-node.cjs
 source "$ROOT_DIR/scripts/plesk-pnpm.sh"
 resolve_plesk_pnpm "$ROOT_DIR"
 
-PUBLIC_SITE_URL="${APP_URL:-${PUBLIC_URL:-${PUBLIC_SITE_URL:-${VITE_PUBLIC_SITE_URL:-}}}}"
-if [[ -z "$PUBLIC_SITE_URL" ]]; then
-  echo "Set APP_URL, PUBLIC_URL, PUBLIC_SITE_URL, or VITE_PUBLIC_SITE_URL in the production build environment." >&2
-  exit 1
-fi
-export VITE_PUBLIC_SITE_URL="$(
-  PUBLIC_SITE_URL="$PUBLIC_SITE_URL" node --input-type=commonjs <<'NODE'
-try {
-  const url = new URL(process.env.PUBLIC_SITE_URL);
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    url.pathname !== "/" ||
-    url.search ||
-    url.hash
-  ) {
-    throw new Error();
-  }
-  process.stdout.write(url.origin);
-} catch {
-  console.error("APP_URL, PUBLIC_URL, or PUBLIC_SITE_URL must be a valid HTTPS origin without a path.");
+VITE_PUBLIC_SITE_URL="$(
+  node --input-type=commonjs <<'NODE'
+const names = ["APP_URL", "PUBLIC_URL", "PUBLIC_SITE_URL", "VITE_PUBLIC_SITE_URL"];
+const values = names
+  .map((name) => [name, process.env[name]?.trim()])
+  .filter(([, value]) => value);
+if (values.length === 0) {
+  console.error("Set APP_URL, PUBLIC_URL, PUBLIC_SITE_URL, or VITE_PUBLIC_SITE_URL in the Plesk build environment.");
   process.exit(1);
 }
+const origins = [];
+for (const [name, value] of values) {
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash
+    ) {
+      throw new Error();
+    }
+    origins.push([name, url.origin]);
+  } catch {
+    console.error(`${name} must be an HTTPS origin without a path, query, or fragment.`);
+    process.exit(1);
+  }
+}
+const uniqueOrigins = new Set(origins.map(([, origin]) => origin));
+if (uniqueOrigins.size > 1) {
+  console.error(`Conflicting public URL settings: ${origins.map(([name, origin]) => `${name}=${origin}`).join(", ")}.`);
+  process.exit(1);
+}
+process.stdout.write(origins[0][1]);
 NODE
 )"
+export VITE_PUBLIC_SITE_URL
 
-export BASE_PATH="${BASE_PATH:-/}"
+if [[ "${BASE_PATH:-/}" != "/" ]]; then
+  echo "Plesk serves SendFlow from the domain root; set BASE_PATH=/ (or leave it unset)." >&2
+  exit 1
+fi
+export BASE_PATH="/"
 
 echo "Installing workspace dependencies..."
 "${PLESK_PNPM[@]}" install --frozen-lockfile --prod=false
 
 echo "Running tests, type checks, and the Plesk production build..."
 "${PLESK_PNPM[@]}" run build
-
-required_files=(
-  "dist/build-info.json"
-  "dist/package.json"
-  "dist/index.cjs"
-  "dist/pino-worker.cjs"
-  "dist/pino-file.cjs"
-  "dist/pino-pretty.cjs"
-  "dist/thread-stream-worker.cjs"
-  "dist/public/.htaccess"
-  "dist/public/index.html"
-  "dist/public/sitemap.xml"
-  "dist/public/robots.txt"
-  "dist/public/download/index.html"
-  "dist/public/fonctionnalites/index.html"
-  "dist/public/securite/index.html"
-  "dist/public/a-propos/index.html"
-  "dist/public/conditions-utilisation/index.html"
-  "dist/public/confidentialite/index.html"
-  "dist/public/mentions-legales/index.html"
-  "dist/public/france-senegal/index.html"
-  "dist/public/en/index.html"
-  "dist/public/en/features/index.html"
-  "dist/public/en/security/index.html"
-  "dist/public/en/download/index.html"
-  "dist/public/en/about/index.html"
-  "dist/public/en/terms/index.html"
-  "dist/public/en/privacy/index.html"
-  "dist/public/en/legal-notice/index.html"
-  "dist/public/en/france-senegal/index.html"
-)
-
-for file in "${required_files[@]}"; do
-  if [[ ! -s "$file" ]]; then
-    echo "Plesk build output is missing or empty: $file" >&2
-    exit 1
-  fi
-done
-
-node --check dist/index.cjs
-node -e '
-  const fs = require("node:fs");
-  const pkg = JSON.parse(fs.readFileSync("dist/package.json", "utf8"));
-  if (pkg.type !== "commonjs" || pkg.scripts?.start !== "node ./index.cjs") {
-    console.error("Plesk runtime manifest must start the CommonJS bundle with node ./index.cjs.");
-    process.exit(1);
-  }
-'
 
 echo "Plesk build is ready."
 echo "Application root: dist"
