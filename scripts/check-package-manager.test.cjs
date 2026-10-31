@@ -13,7 +13,9 @@ test("reads the exact pnpm version pinned by the workspace", () => {
 
 test("accepts the pinned pnpm installer", () => {
   assert.deepEqual(
-    validatePackageManagerUserAgent("pnpm/10.26.1 npm/? node/v24.22.1 linux x64"),
+    validatePackageManagerUserAgent(
+      "pnpm/10.26.1 npm/? node/v24.22.1 linux x64",
+    ),
     { ok: true, version: "10.26.1" },
   );
 });
@@ -42,12 +44,36 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   ];
   for (const file of deploymentFiles) {
     const source = readFileSync(path.join(__dirname, file), "utf8");
-    assert.doesNotMatch(source, /(?:^|[\s;&|])git(?:\s|$)/m, `${file} must not invoke Git`);
-    assert.doesNotMatch(source, /\.git\b/, `${file} must not require a .git directory`);
+    assert.doesNotMatch(
+      source,
+      /(?:^|[\s;&|])git(?:\s|$)/m,
+      `${file} must not invoke Git`,
+    );
+    assert.doesNotMatch(
+      source,
+      /\.git\b/,
+      `${file} must not require a .git directory`,
+    );
   }
 
-  const hook = readFileSync(path.join(__dirname, "plesk-git-deploy.sh"), "utf8");
+  const hook = readFileSync(
+    path.join(__dirname, "plesk-git-deploy.sh"),
+    "utf8",
+  );
   assert.match(hook, /run deploy:plesk/);
   assert.match(hook, /mkdir -p dist\/tmp/);
   assert.match(hook, /touch dist\/tmp\/restart\.txt/);
+  for (const variable of [
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_COMMON_DIR",
+    "GIT_OBJECT_DIRECTORY",
+  ]) {
+    assert.match(
+      hook,
+      new RegExp(`unset[\\s\\S]{0,600}\\b${variable}\\b`),
+      `the deployment hook must clear inherited ${variable}`,
+    );
+  }
 });
