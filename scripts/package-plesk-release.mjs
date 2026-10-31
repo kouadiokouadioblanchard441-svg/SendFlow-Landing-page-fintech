@@ -3,7 +3,10 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const distRoot = path.join(repoRoot, "dist");
 const outputDirectory = path.join(repoRoot, "generated-artifacts");
 const buildInfoPath = path.join(distRoot, "build-info.json");
@@ -19,7 +22,9 @@ function runTar(args) {
     throw new Error(`Could not run tar: ${result.error.message}`);
   }
   if (result.status !== 0) {
-    throw new Error(result.stderr.trim() || `tar exited with status ${result.status}`);
+    throw new Error(
+      result.stderr.trim() || `tar exited with status ${result.status}`,
+    );
   }
   return result.stdout;
 }
@@ -28,7 +33,9 @@ async function requireNonEmptyFile(relativePath) {
   const filePath = path.join(distRoot, relativePath);
   const details = await stat(filePath).catch(() => null);
   if (!details?.isFile() || details.size === 0) {
-    throw new Error(`Required Plesk release file is missing or empty: dist/${relativePath}`);
+    throw new Error(
+      `Required Plesk release file is missing or empty: dist/${relativePath}`,
+    );
   }
 }
 
@@ -55,7 +62,9 @@ async function verifyArchive(archivePath, expectedBuildId) {
       /(^|\/)\.env(?:\.|$)/i.test(entry) ||
       /(^|\/)(?:\.git|node_modules)(?:\/|$)/i.test(entry)
     ) {
-      throw new Error(`Unexpected private or unsafe path in Plesk release archive: ${entry}`);
+      throw new Error(
+        `Unexpected private or unsafe path in Plesk release archive: ${entry}`,
+      );
     }
   }
 
@@ -63,7 +72,9 @@ async function verifyArchive(archivePath, expectedBuildId) {
     runTar(["-xOf", archivePath, "dist/build-info.json"]),
   );
   if (archivedBuildInfo.buildId !== expectedBuildId) {
-    throw new Error("Plesk release archive build ID does not match the current dist build.");
+    throw new Error(
+      "Plesk release archive build ID does not match the current dist build.",
+    );
   }
 }
 
@@ -72,7 +83,9 @@ if (
   typeof buildInfo.buildId !== "string" ||
   !/^[A-Za-z0-9-]{1,80}$/.test(buildInfo.buildId)
 ) {
-  throw new Error("dist/build-info.json must contain a safe, non-empty buildId.");
+  throw new Error(
+    "dist/build-info.json must contain a safe, non-empty buildId.",
+  );
 }
 
 for (const relativePath of [

@@ -49,12 +49,12 @@ chemins, ni données d’administration.
 La compatibilité plus large que Node 24 est volontaire pour les hébergements
 existants ; elle n'est pas une garantie de validation équivalente à la CI.
 
-| Contexte | Version / portée |
-| --- | --- |
-| Workspace et CI GitHub | Node 24, avec tests, types, build et smoke-test du bundle |
-| Contrôle de build Plesk et cPanel | Node 20.19+, Node 22.13+, ou une branche LTS paire à partir de Node 24 |
-| Compatibilité | Node 24 est vérifié en CI ; les autres branches acceptées passent le contrôle de version, mais doivent aussi être validées sur l'hôte |
-| Manifeste du bundle `dist/package.json` | Minimum runtime `>=20.19.0` ; ce manifeste sans dépendances ne décrit pas les prérequis du build du dépôt |
+| Contexte                                | Version / portée                                                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Workspace et CI GitHub                  | Node 24, avec tests, types, build et smoke-test du bundle                                                                             |
+| Contrôle de build Plesk et cPanel       | Node 20.19+, Node 22.13+, ou une branche LTS paire à partir de Node 24                                                                |
+| Compatibilité                           | Node 24 est vérifié en CI ; les autres branches acceptées passent le contrôle de version, mais doivent aussi être validées sur l'hôte |
+| Manifeste du bundle `dist/package.json` | Minimum runtime `>=20.19.0` ; ce manifeste sans dépendances ne décrit pas les prérequis du build du dépôt                             |
 
 Vite 7 demande Node 20.19+ ou 22.12+, mais ESLint 10 — exécuté pendant le build
 — demande Node 20.19+ ou 22.13+. Le contrôle du dépôt retient donc 22.13 comme
