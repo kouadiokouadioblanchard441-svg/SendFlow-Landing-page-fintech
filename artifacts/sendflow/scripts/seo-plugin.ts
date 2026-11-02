@@ -32,6 +32,7 @@ export function publicSeoPlugin(siteUrl: string | undefined): Plugin {
         fs.readFile(path.join(config.publicDir, 'robots.txt'), 'utf8'),
       ]);
       const rendered = renderSeoDocuments(origin, { html: '', sitemap, robots });
+      await fs.mkdir(output, { recursive: true });
       await Promise.all([
         fs.writeFile(path.join(output, 'sitemap.xml'), rendered.sitemap),
         fs.writeFile(path.join(output, 'robots.txt'), rendered.robots),

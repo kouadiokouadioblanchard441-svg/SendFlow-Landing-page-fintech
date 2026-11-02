@@ -50,3 +50,16 @@ Thumbs.db
 # Workspace
 .cache/
 .local/
+
+# Assets imported by the production frontend must exist in clean Git checkouts.
+!attached_assets/facebook-logo-clean-icon-png_1789582951886.png
+!attached_assets/file_00000000d41881f4b07497287b39201e_1789085205545.png
+!attached_assets/file_00000000f8e081f489c8c5b8c185ca4e_1789621548418.png
+!attached_assets/google-android-material-icon.svg
+!attached_assets/image_search/
+attached_assets/image_search/*
+!attached_assets/image_search/bceao-logo-official.png
+!attached_assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg
+!attached_assets/operator-logos_(1)_1789039877510.png
+!attached_assets/sendflow-mark-original.png
+!attached_assets/sendflow-wordmark-original.png
