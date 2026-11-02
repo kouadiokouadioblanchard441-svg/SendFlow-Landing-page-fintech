@@ -8,9 +8,19 @@ if (!baseUrl) {
 
 const origin = new URL(baseUrl).origin;
 const routes = [
-  { path: '/', locale: 'fr', heading: 'L’argent circule.' },
+  {
+    path: '/',
+    locale: 'fr',
+    heading: 'L’argent circule.',
+    downloadCta: { label: 'Télécharger', href: '/download' },
+  },
   { path: '/fonctionnalites/', locale: 'fr', heading: 'Nos Fonctionnalités' },
-  { path: '/en/', locale: 'en', heading: 'Money moves.' },
+  {
+    path: '/en/',
+    locale: 'en',
+    heading: 'Money moves.',
+    downloadCta: { label: 'Download', href: '/en/download' },
+  },
   { path: '/en/features/', locale: 'en', heading: 'Our Features' },
 ];
 
@@ -68,6 +78,32 @@ try {
       heading.includes(route.heading),
       `${route.path} should show "${route.heading}" in its visible heading; received "${heading}"`,
     );
+
+    if (route.downloadCta) {
+      assert.equal(
+        await page.getByTestId('button-hero-register').count(),
+        1,
+        `${route.path} should keep the configured signup CTA in the hero`,
+      );
+      const downloadCta = page.getByTestId('button-download-bottom');
+      await downloadCta.scrollIntoViewIfNeeded();
+      const downloadLabel = (await downloadCta.innerText()).replace(/\s+/g, ' ').trim();
+      assert.ok(
+        downloadLabel.startsWith(route.downloadCta.label),
+        `${route.path} should show the localized bottom download label; received "${downloadLabel}"`,
+      );
+      assert.equal(
+        await downloadCta.getAttribute('href'),
+        route.downloadCta.href,
+        `${route.path} should link to its localized download page`,
+      );
+      await Promise.all([
+        page.waitForURL((url) => url.pathname === route.downloadCta.href),
+        downloadCta.click(),
+      ]);
+      await page.locator('h1').first().waitFor({ state: 'visible', timeout: 20_000 });
+      console.log(`Verified bottom download navigation ${route.path} → ${route.downloadCta.href}`);
+    }
 
     assert.deepEqual(
       [...loadedCoreResources].sort(),

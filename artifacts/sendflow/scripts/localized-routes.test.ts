@@ -15,3 +15,8 @@ test('localized routes retain query strings and fragments', () => {
     '/en/france-senegal?source=nav#coverage',
   );
 });
+
+test('the download page destination stays localized for the hero CTA', () => {
+  assert.equal(getLocalizedPath('/download', 'fr'), '/download');
+  assert.equal(getLocalizedPath('/download', 'en'), '/en/download');
+});
