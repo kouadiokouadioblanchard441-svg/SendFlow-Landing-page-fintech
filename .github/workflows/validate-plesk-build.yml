@@ -38,6 +38,7 @@ jobs:
       PUBLIC_URL: ${{ vars.PUBLIC_URL }}
       PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
       BASE_PATH: /
+      PLESK_MEDIA_DIR: /tmp/sendflow-public-media-ci
 
     steps:
       - name: Check out the pushed commit

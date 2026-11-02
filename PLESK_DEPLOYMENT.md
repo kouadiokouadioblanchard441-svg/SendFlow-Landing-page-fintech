@@ -241,6 +241,12 @@ Les réglages d’environnement de l’application Node et ceux de l’action Gi
 peuvent être séparés. Vérifie que `APP_URL` — ou un de ses alias — est bien
 présent dans l’environnement de l’action qui exécute le hook ; si plusieurs
 alias sont définis, ils doivent tous désigner la même origine HTTPS.
+`PLESK_MEDIA_DIR` doit également être présent à la fois dans l’environnement
+de l’action de build et dans celui de l’application Node. Le hook refuse de
+construire sans ce chemin; Passenger refuse de démarrer sans le chemin ou si le
+mode n’est pas `production`. Cela évite qu’un déploiement Plesk utilise par
+erreur le service de stockage local géré par Replit, prévu pour l’autre mode
+d’hébergement.
 
 ## Commandes et vérifications
 

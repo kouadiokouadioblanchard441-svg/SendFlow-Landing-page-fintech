@@ -1,7 +1,37 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { mock, test } from "node:test";
-import { listenForRequests } from "../src/lib/serverListener";
+import {
+  assertApiRuntimeEnvironment,
+  listenForRequests,
+} from "../src/lib/serverListener";
+
+test("runtime requires an explicit production or development mode", () => {
+  assert.doesNotThrow(() => assertApiRuntimeEnvironment(undefined, "production", false));
+  assert.doesNotThrow(() => assertApiRuntimeEnvironment(undefined, "development", false));
+
+  for (const nodeEnv of [undefined, "", "test", "staging"]) {
+    assert.throws(
+      () => assertApiRuntimeEnvironment(undefined, nodeEnv, false),
+      /NODE_ENV must be explicitly set/,
+    );
+  }
+});
+
+test("Passenger runtime requires production mode and Plesk media storage", () => {
+  const passenger = { configure() {} };
+  assert.doesNotThrow(() =>
+    assertApiRuntimeEnvironment(passenger, "production", true),
+  );
+  assert.throws(
+    () => assertApiRuntimeEnvironment(passenger, "development", true),
+    /Passenger requires NODE_ENV=production/,
+  );
+  assert.throws(
+    () => assertApiRuntimeEnvironment(passenger, "production", false),
+    /Passenger requires PLESK_MEDIA_DIR/,
+  );
+});
 
 test("Passenger configures its socket before listen, without requiring PORT", () => {
   const server = createServer();

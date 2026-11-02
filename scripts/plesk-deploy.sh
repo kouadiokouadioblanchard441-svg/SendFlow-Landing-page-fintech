@@ -19,6 +19,7 @@ required_inputs=(
   "scripts/prepare-plesk-build.mjs"
   "scripts/verify-plesk-build.mjs"
   "scripts/plesk-pnpm.sh"
+  "scripts/validate-plesk-runtime-config.cjs"
 )
 for input in "${required_inputs[@]}"; do
   if [[ ! -s "$input" ]]; then
@@ -33,6 +34,7 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 node scripts/check-deploy-node.cjs
+node scripts/validate-plesk-runtime-config.cjs
 
 source "$ROOT_DIR/scripts/plesk-pnpm.sh"
 resolve_plesk_pnpm "$ROOT_DIR"
