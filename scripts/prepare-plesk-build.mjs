@@ -129,6 +129,12 @@ const renderRouteSeo = (sourceHtml, route, locale, group) => {
   html = replaceMeta(html, "name", "description", route.description);
   html = replaceMeta(html, "property", "og:title", route.title);
   html = replaceMeta(html, "property", "og:description", route.description);
+  html = replaceMeta(
+    html,
+    "property",
+    "og:locale",
+    locale === "fr" ? "fr_FR" : "en_US",
+  );
   html = replaceMeta(html, "name", "twitter:title", route.title);
   html = replaceMeta(html, "name", "twitter:description", route.description);
   if (seoOrigin) {
@@ -275,23 +281,125 @@ for (const group of seoRouteGroups) {
   }
 }
 
-const requiredPublicRoutePaths = seoRouteGroups.flatMap((group) =>
-  ["fr", "en"]
-    .map((locale) => group[locale].path)
-    .filter((routePath) => routePath !== "/"),
-);
-for (const routePath of requiredPublicRoutePaths) {
-  const routeDirectory = path.join(
-    outputDist,
-    "public",
-    routePath.replace(/^\/+|\/+$/g, ""),
+const readMetaContent = (html, attribute, key) => {
+  const match = html.match(
+    new RegExp(
+      `<meta(?=[^>]*\\b${attribute}="${escapeRegex(key)}")[^>]*\\bcontent="([^"]*)"[^>]*>`,
+      "i",
+    ),
   );
-  const html = await readFile(path.join(routeDirectory, "index.html"), "utf8");
-  if (
-    !/<title>[^<]+<\/title>/.test(html) ||
-    !/<meta name="description" content="[^"]+"/.test(html)
-  ) {
-    throw new Error(`Plesk route is missing SEO metadata: ${routePath}`);
+  return match?.[1];
+};
+for (const group of seoRouteGroups) {
+  for (const locale of ["fr", "en"]) {
+    const route = {
+      ...group[locale],
+      service: group.service?.[locale],
+    };
+    const htmlPath = path.join(
+      outputDist,
+      "public",
+      route.path.replace(/^\/+|\/+$/g, ""),
+      "index.html",
+    );
+    const html = await readFile(
+      route.path === "/" ? publicIndexPath : htmlPath,
+      "utf8",
+    );
+    const expectedLocale = locale === "fr" ? "fr_FR" : "en_US";
+    const expectedUrl = seoOrigin ? new URL(route.path, seoOrigin).href : route.path;
+    const expectedMeta = [
+      ["name", "description", route.description],
+      ["property", "og:title", route.title],
+      ["property", "og:description", route.description],
+      ["property", "og:locale", expectedLocale],
+      ["name", "twitter:title", route.title],
+      ["name", "twitter:description", route.description],
+    ];
+    for (const [attribute, key, expected] of expectedMeta) {
+      if (readMetaContent(html, attribute, key) !== escapeHtml(expected)) {
+        throw new Error(
+          `Plesk route ${key} is inconsistent for ${route.path} (${locale}).`,
+        );
+      }
+    }
+    if (
+      !html.includes(`<html lang="${locale}">`) ||
+      !html.includes(`<title>${escapeHtml(route.title)}</title>`)
+    ) {
+      throw new Error(
+        `Plesk route title or document language is inconsistent: ${route.path} (${locale}).`,
+      );
+    }
+    if (
+      seoOrigin &&
+      (readMetaContent(html, "property", "og:url") !== escapeHtml(expectedUrl) ||
+        !html.includes(
+          `<link rel="canonical" href="${escapeHtml(expectedUrl)}" />`,
+        ))
+    ) {
+      throw new Error(
+        `Plesk route social or canonical URL is inconsistent: ${route.path}.`,
+      );
+    }
+
+    const schemaMatch = html.match(
+      /<script id="sendflow-seo-schema" type="application\/ld\+json">([\s\S]*?)<\/script>/i,
+    );
+    if (!schemaMatch) {
+      throw new Error(`Plesk route is missing structured data: ${route.path}.`);
+    }
+    const graph = JSON.parse(schemaMatch[1])["@graph"];
+    const webpage = graph.find((item) => item["@type"] === "WebPage");
+    const website = graph.find((item) => item["@type"] === "WebSite");
+    const service = graph.find((item) => item["@type"] === "Service");
+    const breadcrumb = graph.find((item) => item["@type"] === "BreadcrumbList");
+    const homePath = group.homePath ?? (locale === "fr" ? "/" : "/en/");
+    const homeUrl = seoOrigin ? new URL(homePath, seoOrigin).href : homePath;
+    if (
+      webpage?.name !== route.title ||
+      webpage?.description !== route.description ||
+      webpage?.url !== expectedUrl ||
+      webpage?.["@id"] !== `${expectedUrl}#webpage` ||
+      webpage?.inLanguage !== locale ||
+      website?.inLanguage !== locale ||
+      website?.["@id"] !== `${seoOrigin ? new URL("/", seoOrigin).href : "/"}#website`
+    ) {
+      throw new Error(
+        `Plesk route structured data is inconsistent: ${route.path} (${locale}).`,
+      );
+    }
+    if (route.path === "/" || route.path === "/en/") {
+      if (breadcrumb) {
+        throw new Error(
+          `Plesk home route should not have breadcrumb data: ${route.path}.`,
+        );
+      }
+    } else {
+      const items = breadcrumb?.itemListElement ?? [];
+      if (
+        items.length !== 2 ||
+        items[0].name !== (locale === "fr" ? "Accueil" : "Home") ||
+        items[0].item !== homeUrl ||
+        items[1].name !== route.name ||
+        items[1].item !== expectedUrl
+      ) {
+        throw new Error(
+          `Plesk route breadcrumb data is inconsistent: ${route.path} (${locale}).`,
+        );
+      }
+    }
+    if (
+      (route.service &&
+        (service?.name !== route.service.name ||
+          service?.serviceType !== route.service.serviceType ||
+          service?.url !== expectedUrl)) ||
+      (!route.service && service)
+    ) {
+      throw new Error(
+        `Plesk route service data is inconsistent: ${route.path} (${locale}).`,
+      );
+    }
   }
 }
 
