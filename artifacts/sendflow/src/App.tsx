@@ -10,6 +10,7 @@ import publicSeoRoutes from '@/lib/public-seo-routes.json';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
+import { usePublicMobileMenu } from '@/hooks/use-public-mobile-menu';
 import type { FounderProfile } from '@/pages/about';
 import type { LegalPageProps } from '@/pages/legal';
 import { SendFlowFooter } from '@/components/sendflow-footer';
@@ -1020,20 +1021,7 @@ function LandingPage() {
   const { data: landingBundle } = usePublicLandingBundle();
   activePublicContent = landingBundle?.content;
 
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileOpen(false);
-    };
-
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [mobileOpen]);
+  usePublicMobileMenu(mobileOpen, setMobileOpen);
 
   const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

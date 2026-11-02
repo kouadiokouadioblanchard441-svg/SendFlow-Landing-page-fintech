@@ -7,6 +7,7 @@ import securityLockIcon from '@assets/generated_images/sendflow-security-lock-ic
 import securityCheckIcon from '../assets/sendflow-security-check.svg';
 import securityHeroArt from '@assets/generated_images/sendflow-security-hero-3d-clean.png';
 import { SendFlowFooter, type FooterContentItem, type FooterSettings } from '@/components/sendflow-footer';
+import { usePublicMobileMenu } from '@/hooks/use-public-mobile-menu';
 import { ProtectedImage } from '@/components/protected-image';
 import { useSeo } from '@/lib/seo';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
@@ -91,6 +92,7 @@ export default function SecurityPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settings, setSettings] = useState<FooterSettings | null>(null);
   const [content, setContent] = useState<FooterContentItem[]>([]);
+  usePublicMobileMenu(menuOpen, setMenuOpen);
   const t = copy[language];
 
   useSeo({
@@ -158,19 +160,16 @@ export default function SecurityPage() {
             </a>
             <button type="button" onClick={toggleLanguage}><Globe2 size={15} />{t.language}</button>
           </nav>
-          <button type="button" className="sf-features-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen} aria-controls="sf-public-mobile-navigation">
-            <Menu size={26} />
+          <button type="button" className="sf-public-nav-trigger sf-features-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen} aria-controls="sf-public-mobile-navigation" data-testid="button-open-menu">
+            <Menu size={20} />
           </button>
         </div>
       </header>
 
       {menuOpen && (
         <div
-          className="sf-public-nav-backdrop"
+          className="sf-public-nav-backdrop min-[1280px]:hidden"
           onClick={closeMenu}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') closeMenu();
-          }}
           role="presentation"
         >
           <aside
@@ -183,7 +182,7 @@ export default function SecurityPage() {
           >
             <div className="sf-public-nav-top">
               <Brand />
-              <button type="button" className="sf-public-nav-close" onClick={closeMenu} aria-label={t.menuClose}>
+              <button type="button" className="sf-public-nav-close" onClick={closeMenu} aria-label={t.menuClose} data-testid="button-close-menu">
                 <X size={18} />
               </button>
             </div>
@@ -192,13 +191,13 @@ export default function SecurityPage() {
               <h2>{language === 'fr' ? 'Explorer SendFlow' : 'Explore SendFlow'}</h2>
             </div>
             <nav className="sf-public-nav-links" aria-label={language === 'fr' ? 'Navigation principale' : 'Main navigation'}>
-              <Link href={getLocalizedPath('/', language)} onClick={closeMenu} className="sf-public-nav-link">
+              <Link href={getLocalizedPath('/', language)} onClick={closeMenu} className="sf-public-nav-link" data-testid="link-mobile-home">
                 <span>{t.home}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
               </Link>
-              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu} className="sf-public-nav-link">
+              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu} className="sf-public-nav-link" data-testid="link-mobile-features">
                 <span>{t.features}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
               </Link>
-              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu} className="sf-public-nav-link" aria-current="page">
+              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu} className="sf-public-nav-link" aria-current="page" data-testid="link-mobile-security">
                 <span>{t.security}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
               </Link>
             </nav>

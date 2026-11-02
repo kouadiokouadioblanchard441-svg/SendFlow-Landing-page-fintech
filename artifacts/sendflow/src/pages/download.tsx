@@ -13,6 +13,7 @@ import materialPersonIcon from '../assets/google-material/person.svg';
 import materialWalletIcon from '../assets/google-material/account-balance-wallet.svg';
 import materialOutboxIcon from '../assets/google-material/outbox.svg';
 import { SendFlowFooter } from '@/components/sendflow-footer';
+import { usePublicMobileMenu } from '@/hooks/use-public-mobile-menu';
 import { ProtectedImage } from '@/components/protected-image';
 import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 import { useSeo } from '@/lib/seo';
@@ -269,6 +270,7 @@ export default function DownloadPage() {
   const [content, setContent] = useState<LandingResponse['content']>([]);
   const [media, setMedia] = useState<NonNullable<LandingResponse['media']>>([]);
   const [loading, setLoading] = useState(true);
+  usePublicMobileMenu(menuOpen, setMenuOpen);
   const t = Object.fromEntries(
     Object.entries(copy[language]).map(([property, fallback]) => {
       const key = downloadContentKeys[property as DownloadCopyKey];
@@ -334,17 +336,14 @@ export default function DownloadPage() {
             {supportEmail && <a href={`mailto:${supportEmail}`}>{t.navSupport}</a>}
             <button type="button" onClick={toggleLanguage}><Globe2 size={15} />{t.language}</button>
           </nav>
-          <button type="button" className="sf-download-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen} aria-controls="sf-public-mobile-navigation"><Menu size={22} /></button>
+          <button type="button" className="sf-public-nav-trigger sf-download-menu-button" onClick={() => setMenuOpen(true)} aria-label={t.menuOpen} aria-expanded={menuOpen} aria-controls="sf-public-mobile-navigation" data-testid="button-open-menu"><Menu size={20} /></button>
         </div>
       </header>
 
       {menuOpen && (
         <div
-          className="sf-public-nav-backdrop"
+          className="sf-public-nav-backdrop min-[1280px]:hidden"
           onClick={closeMenu}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') closeMenu();
-          }}
           role="presentation"
         >
           <aside
@@ -357,7 +356,7 @@ export default function DownloadPage() {
           >
             <div className="sf-public-nav-top">
               <Brand />
-              <button type="button" className="sf-public-nav-close" onClick={closeMenu} aria-label={t.menuClose}>
+              <button type="button" className="sf-public-nav-close" onClick={closeMenu} aria-label={t.menuClose} data-testid="button-close-menu">
                 <X size={18} />
               </button>
             </div>
@@ -366,17 +365,17 @@ export default function DownloadPage() {
               <h2>{language === 'fr' ? 'Explorer SendFlow' : 'Explore SendFlow'}</h2>
             </div>
             <nav className="sf-public-nav-links" aria-label={language === 'fr' ? 'Navigation principale' : 'Main navigation'}>
-              <Link href={getLocalizedPath('/', language)} onClick={closeMenu} className="sf-public-nav-link">
+              <Link href={getLocalizedPath('/', language)} onClick={closeMenu} className="sf-public-nav-link" data-testid="link-mobile-home">
                 <span>{t.navHome}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
               </Link>
-              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu} className="sf-public-nav-link">
+              <Link href={getLocalizedPath('/fonctionnalites', language)} onClick={closeMenu} className="sf-public-nav-link" data-testid="link-mobile-features">
                 <span>{t.navFeatures}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
               </Link>
-              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu} className="sf-public-nav-link">
+              <Link href={getLocalizedPath('/securite', language)} onClick={closeMenu} className="sf-public-nav-link" data-testid="link-mobile-security">
                 <span>{t.navSecurity}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
               </Link>
               {supportEmail && (
-                <a href={`mailto:${supportEmail}`} onClick={closeMenu} className="sf-public-nav-link">
+                <a href={`mailto:${supportEmail}`} onClick={closeMenu} className="sf-public-nav-link" data-testid="link-mobile-support">
                   <span>{t.navSupport}</span><ChevronRight aria-hidden="true" size={17} className="sf-public-nav-link-arrow" />
                 </a>
               )}
