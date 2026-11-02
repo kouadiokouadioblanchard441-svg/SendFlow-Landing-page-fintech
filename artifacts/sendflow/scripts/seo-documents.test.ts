@@ -6,10 +6,15 @@ import { absoluteSeoUrl, renderSeoDocuments } from './seo-documents.ts';
 import { getLocaleFromPath, getLocalizedAlternates, getLocalizedPath } from '../src/lib/localized-routes.ts';
 
 const root = new URL('../', import.meta.url);
-const [html, sitemap, robots, routeSeoJson, viteConfig] = await Promise.all(
-  ['index.html', 'public/sitemap.xml', 'public/robots.txt', 'src/lib/public-seo-routes.json', 'vite.config.ts'].map(file =>
-    fs.readFile(new URL(file, root), 'utf8'),
-  ),
+const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource] = await Promise.all(
+  [
+    'index.html',
+    'public/sitemap.xml',
+    'public/robots.txt',
+    'src/lib/public-seo-routes.json',
+    'vite.config.ts',
+    'src/lib/seo.ts',
+  ].map((file) => fs.readFile(new URL(file, root), 'utf8')),
 );
 const publicSeoRoutes = JSON.parse(routeSeoJson);
 // Reserved example domain used only in tests, never configured for the application.
@@ -43,6 +48,13 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
     item['@type'] === 'Service' && item.serviceType?.includes('API développeur'),
   ));
   assert.equal(schema['@context'], 'https://schema.org');
+});
+
+test('HTML scripts and dynamic JSON-LD receive the response nonce', () => {
+  assert.match(html, /<style nonce="__SEND_FLOW_CSP_NONCE__">/);
+  assert.match(html, /<script type="module" src="\/src\/main\.tsx" nonce="__SEND_FLOW_CSP_NONCE__"><\/script>/);
+  assert.match(seoSource, /document\.querySelector<HTMLScriptElement>\('script\[nonce\]'\)/);
+  assert.match(seoSource, /script\.nonce = nonceSource\.nonce/);
 });
 
 test('home and feature SEO target developer payments in both languages', () => {

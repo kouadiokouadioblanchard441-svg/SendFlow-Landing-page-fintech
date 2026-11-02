@@ -1,5 +1,7 @@
 import path from "node:path";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
 import express, { type ErrorRequestHandler, type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
@@ -11,12 +13,36 @@ const app: Express = express();
 app.set("trust proxy", false);
 app.disable("x-powered-by");
 app.use((req, res, next) => {
+  const nonce = randomBytes(18).toString("base64");
+  res.locals.cspNonce = nonce;
   res.setHeader("X-Content-Type-Options", "nosniff");
   const isLegacyPrivatePanelUrl = /(^|\/)panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
   res.setHeader("Referrer-Policy", isLegacyPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
   if (isLegacyPrivatePanelUrl) res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "frame-src 'self'",
+      "object-src 'none'",
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      `script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      "script-src-attr 'none'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      `style-src-elem 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://fonts.cdnfonts.com`,
+      "style-src-attr 'unsafe-inline'",
+      "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
+      "img-src 'self' data: blob: https:",
+      "media-src 'self' data: blob: https:",
+      "connect-src 'self'",
+      "manifest-src 'self'",
+      "worker-src 'self' blob:",
+    ].join("; "),
+  );
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   if (process.env.NODE_ENV === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
@@ -95,7 +121,20 @@ app.use((req, res, next) => {
     routeIndexPath.startsWith(webRootPrefix) && existsSync(routeIndexPath)
       ? routeIndexPath
       : defaultIndexPath;
-  res.sendFile(indexPath);
+  const nonce = res.locals.cspNonce as string;
+  readFile(indexPath, "utf8")
+    .then((html) => {
+      res.setHeader("Cache-Control", "no-store");
+      const noncedHtml = html
+        .split("__SEND_FLOW_CSP_NONCE__")
+        .join(nonce)
+        .replace(
+          /<script\b(?=[^>]*\btype=["']module["'])(?![^>]*\bnonce=)[^>]*>/gi,
+          (scriptTag) => scriptTag.replace(/>$/, ` nonce="${nonce}">`),
+        );
+      res.type("html").send(noncedHtml);
+    })
+    .catch(next);
 });
 
 const apiErrorHandler: ErrorRequestHandler = (error, req, res, next) => {

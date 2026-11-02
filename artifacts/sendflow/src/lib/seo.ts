@@ -185,6 +185,8 @@ function setSchema(config: SeoConfig, pageUrl: string, imageUrl: string) {
   const script = document.createElement('script');
   script.id = schemaId;
   script.type = 'application/ld+json';
+  const nonceSource = document.querySelector<HTMLScriptElement>('script[nonce]');
+  if (nonceSource?.nonce) script.nonce = nonceSource.nonce;
   script.textContent = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
   document.head.appendChild(script);
 }

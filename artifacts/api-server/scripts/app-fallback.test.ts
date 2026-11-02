@@ -9,11 +9,13 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
   const temporaryRoot = await mkdtemp(path.join(tmpdir(), "sendflow-app-fallback-"));
   const publicRoot = path.join(temporaryRoot, "public");
   const originalWebDistDir = process.env.WEB_DIST_DIR;
+  const rootHtml =
+    '<html><style nonce="__SEND_FLOW_CSP_NONCE__">body{color:black}</style><script type="module" nonce="__SEND_FLOW_CSP_NONCE__">app</script></html>';
   await mkdir(path.join(publicRoot, "features"), { recursive: true });
-  await writeFile(path.join(publicRoot, "index.html"), "<html>SendFlow SPA</html>");
+  await writeFile(path.join(publicRoot, "index.html"), rootHtml);
   await writeFile(
     path.join(publicRoot, "features", "index.html"),
-    "<html>SendFlow features</html>",
+    '<html><script type="module" crossorigin src="/assets/features.js"></script></html>',
   );
   process.env.WEB_DIST_DIR = publicRoot;
   process.env.NEON_DATABASE_URL =
@@ -41,10 +43,34 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
     const featureResponse = await fetch(`${origin}/features`);
     assert.equal(featureResponse.status, 200);
     assert.match(featureResponse.headers.get("content-type") ?? "", /text\/html/);
-    assert.equal(await featureResponse.text(), "<html>SendFlow features</html>");
+    const featureHtml = await featureResponse.text();
+    const featureNonce = featureHtml.match(/nonce="([^"]+)"/)?.[1];
+    assert.ok(featureNonce);
+    assert.match(
+      featureHtml,
+      new RegExp(`<script type="module" crossorigin src="/assets/features\\.js" nonce="${featureNonce}"></script>`),
+    );
+    assert.ok(!featureHtml.includes("__SEND_FLOW_CSP_NONCE__"));
+    assert.equal(featureResponse.headers.get("cache-control"), "no-store");
+
+    const adminResponse = await fetch(`${origin}/panel`);
+    assert.equal(adminResponse.status, 200);
+    const adminHtml = await adminResponse.text();
+    const adminNonce = adminHtml.match(/nonce="([^"]+)"/)?.[1];
+    assert.ok(adminNonce);
+    assert.notEqual(adminNonce, featureNonce, "each HTML response needs a fresh nonce");
+    const policy = adminResponse.headers.get("content-security-policy") ?? "";
+    assert.match(policy, /script-src[^;]*'nonce-[^']+'/);
+    assert.match(policy, /script-src[^;]*'strict-dynamic'/);
+    assert.match(policy, /script-src-attr 'none'/);
+    assert.doesNotMatch(policy, /script-src[^;]*'unsafe-inline'/);
+    assert.match(policy, /style-src[^;]*'unsafe-inline'/);
+    assert.match(policy, /https:\/\/fonts\.googleapis\.com/);
+    assert.match(policy, /https:\/\/fonts\.gstatic\.com/);
+    assert.match(policy, /style-src-elem[^;]*https:\/\/fonts\.cdnfonts\.com/);
     assert.equal(
       await readFile(path.join(publicRoot, "index.html"), "utf8"),
-      "<html>SendFlow SPA</html>",
+      rootHtml,
     );
   } finally {
     if (server?.listening) {
