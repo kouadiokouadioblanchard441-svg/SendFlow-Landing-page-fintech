@@ -7,6 +7,8 @@ cd "$ROOT_DIR"
 source "$ROOT_DIR/scripts/clear-plesk-git-context.sh"
 clear_plesk_git_context
 
+echo "Building SendFlow from the Plesk Git checkout..."
+
 required_inputs=(
   "package.json"
   "pnpm-lock.yaml"
@@ -92,3 +94,7 @@ echo "Source checkout: $ROOT_DIR"
 echo "Application root: dist"
 echo "Startup file: index.cjs (dist/index.cjs)"
 echo "Document root: dist/public"
+
+mkdir -p dist/tmp
+touch dist/tmp/restart.txt
+echo "Passenger restart requested."

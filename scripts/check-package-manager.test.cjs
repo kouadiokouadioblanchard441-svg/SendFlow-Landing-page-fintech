@@ -45,7 +45,6 @@ test("rejects pnpm versions that differ from the workspace pin", () => {
 
 test("Plesk deploy chain does not run Git or require a worktree", () => {
   const deploymentFiles = [
-    "plesk-git-deploy.sh",
     "plesk-deploy.sh",
     "plesk-pnpm.sh",
     "clear-plesk-git-context.sh",
@@ -66,18 +65,14 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
     );
   }
 
-  const hook = readFileSync(
-    path.join(__dirname, "plesk-git-deploy.sh"),
+  const deployScript = readFileSync(
+    path.join(__dirname, "plesk-deploy.sh"),
     "utf8",
   );
-  assert.match(hook, /run deploy:plesk/);
-  assert.match(hook, /mkdir -p dist\/tmp/);
-  assert.match(hook, /touch dist\/tmp\/restart\.txt/);
-  assert.match(hook, /clear_plesk_git_context/);
-  for (const file of ["plesk-deploy.sh", "plesk-git-deploy.sh"]) {
-    const source = readFileSync(path.join(__dirname, file), "utf8");
-    assert.match(source, /clear_plesk_git_context/);
-  }
+  assert.match(deployScript, /run build/);
+  assert.match(deployScript, /mkdir -p dist\/tmp/);
+  assert.match(deployScript, /touch dist\/tmp\/restart\.txt/);
+  assert.match(deployScript, /clear_plesk_git_context/);
 
   const contextCleaner = readFileSync(
     path.join(__dirname, "clear-plesk-git-context.sh"),
@@ -98,7 +93,7 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   }
 });
 
-test("Plesk hooks run from an external cwd, clear Git context, and propagate failures", () => {
+test("Plesk deploy script runs externally, clears Git context, and propagates failures", () => {
   const repoRoot = path.resolve(__dirname, "..");
   const tempRoot = mkdtempSync(
     path.join(os.tmpdir(), "sendflow-plesk-hook-test-"),
@@ -107,10 +102,6 @@ test("Plesk hooks run from an external cwd, clear Git context, and propagate fai
   const fakeCorepack = path.join(fakeBin, "corepack");
   const outsideWorkingDirectory = path.join(tempRoot, "outside");
   const hooks = [
-    {
-      file: "plesk-git-deploy.sh",
-      appUrl: "https://sendflow.africa",
-    },
     {
       file: "plesk-deploy.sh",
       appUrl: "https://sendflow.africa",
