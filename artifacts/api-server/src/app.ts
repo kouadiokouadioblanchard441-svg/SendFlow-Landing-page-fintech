@@ -7,6 +7,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { readRecaptchaSettings } from "./lib/recaptcha";
 import { isAllowedOrigin } from "./middlewares/security";
 
 const app: Express = express();
@@ -14,6 +15,16 @@ app.set("trust proxy", false);
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   const nonce = randomBytes(18).toString("base64");
+  const recaptchaIsEnabled = readRecaptchaSettings().status === "enabled";
+  const recaptchaScriptSources = recaptchaIsEnabled
+    ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
+    : "";
+  const recaptchaFrameSources = recaptchaIsEnabled
+    ? " https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/"
+    : "";
+  const recaptchaStyleSources = recaptchaIsEnabled
+    ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
+    : "";
   res.locals.cspNonce = nonce;
   res.setHeader("X-Content-Type-Options", "nosniff");
   const isLegacyPrivatePanelUrl = /(^|\/)panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
@@ -27,18 +38,18 @@ app.use((req, res, next) => {
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
-      "frame-src 'self'",
+      `frame-src 'self'${recaptchaFrameSources}`,
       "object-src 'none'",
-      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-      `script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
+      `script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
       "script-src-attr 'none'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      `style-src-elem 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://fonts.cdnfonts.com`,
+      `style-src-elem 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://fonts.cdnfonts.com${recaptchaStyleSources}`,
       "style-src-attr 'unsafe-inline'",
       "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
       "img-src 'self' data: blob: https:",
       "media-src 'self' data: blob: https:",
-      "connect-src 'self'",
+      `connect-src 'self'${recaptchaScriptSources}`,
       "manifest-src 'self'",
       "worker-src 'self' blob:",
     ].join("; "),

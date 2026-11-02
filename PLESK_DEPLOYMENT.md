@@ -275,3 +275,29 @@ Pour confirmer quel paquet est réellement servi après la livraison CI :
    redémarrage Passenger.
 
 Les pages protégées nécessitant une authentification ne sont pas vérifiables sans session. Une réponse HTTP 200 à `/api/healthz` vérifie que le processus sert l’API, mais ne prouve pas à elle seule que chaque intégration tierce fonctionne.
+
+## Badge Google reCAPTCHA sur les pages publiques
+
+SendFlow utilise reCAPTCHA v3 pour l’inscription à la newsletter. Le badge
+officiel Google est chargé sur les pages publiques lorsque les deux variables
+sont présentes dans les paramètres d’environnement Node.js de l’application
+Plesk :
+
+- `RECAPTCHA_SITE_KEY` — clé publique de site, renvoyée uniquement par
+  `/api/recaptcha/config`.
+- `RECAPTCHA_SECRET_KEY` — clé secrète conservée uniquement côté serveur.
+
+Crée des clés reCAPTCHA v3 et autorise `sendflow.africa` (ainsi que
+`www.sendflow.africa` seulement si ce nom est réellement utilisé). Définis les
+deux variables ensemble dans **Plesk → Node.js → Environment variables**, puis
+redémarre l’application. Aucun secret ne doit être ajouté à Git, à Vite ou au
+formulaire navigateur.
+
+Le navigateur obtient un jeton pour l’action `newsletter_subscribe`. L’API le
+vérifie auprès de Google avant d’accepter l’inscription, en contrôlant le
+résultat, l’action, l’hôte de la requête et un score minimal de 0,5. La limite de
+débit existante reste active. Si les deux clés sont absentes, l’intégration reste
+désactivée et le formulaire garde son fonctionnement actuel. Si une seule clé
+est configurée, l’API refuse l’inscription plutôt que de contourner la
+vérification. Avant activation, mets à jour la politique de confidentialité pour
+informer les visiteurs du traitement reCAPTCHA par Google.

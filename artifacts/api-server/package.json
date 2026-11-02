@@ -13,6 +13,7 @@
     "test:server-listener": "tsx --test scripts/server-listener.test.ts",
     "test:resend": "tsx --test scripts/resend.test.ts",
     "test:request-validation": "tsx --test scripts/requestValidation.test.ts",
+    "test:recaptcha": "tsx --test scripts/recaptcha.test.ts",
     "test:newsletter": "tsx --test scripts/newsletter.test.ts",
     "test:landing-visibility": "tsx --test scripts/landing-visibility.test.ts",
     "test:public-storage": "tsx --test scripts/public-object-storage.test.ts",

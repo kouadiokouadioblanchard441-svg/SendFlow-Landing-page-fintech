@@ -32,6 +32,7 @@ import { filterPublicLandingBundle } from "../lib/landingVisibility";
 import { createRateLimiter } from "../middlewares/security";
 import { getPublicSiteUrl } from "../lib/publicSiteUrl";
 import { parseNewsletterToken } from "../lib/newsletterToken";
+import { readRecaptchaSettings, verifyRecaptchaToken } from "../lib/recaptcha";
 import {
   getNewsletterConfirmationExpiry,
   getNewsletterConfirmationUrl,
@@ -365,11 +366,50 @@ async function getNewsletterAdminBundle() {
   };
 }
 
+router.get("/recaptcha/config", (_req, res): void => {
+  const settings = readRecaptchaSettings();
+  if (settings.status === "misconfigured") {
+    res.status(503).json({ error: "reCAPTCHA configuration is incomplete." });
+    return;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    enabled: settings.status === "enabled",
+    siteKey: settings.status === "enabled" ? settings.siteKey : null,
+  });
+});
+
 router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, res): Promise<void> => {
   const parsed = newsletterSubscribeSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Saisis une adresse email valide et confirme ton consentement." });
     return;
+  }
+  const recaptchaSettings = readRecaptchaSettings();
+  if (recaptchaSettings.status === "misconfigured") {
+    res.status(503).json({ error: "La vérification anti-robot est temporairement indisponible." });
+    return;
+  }
+  if (recaptchaSettings.status === "enabled") {
+    const captchaToken = parsed.data.captchaToken;
+    if (!captchaToken) {
+      res.status(400).json({ error: "La vérification anti-robot est requise." });
+      return;
+    }
+    const verification = await verifyRecaptchaToken({
+      token: captchaToken,
+      secretKey: recaptchaSettings.secretKey,
+      expectedAction: "newsletter_subscribe",
+      expectedHostname: req.hostname,
+    });
+    if (!verification.valid) {
+      const status = verification.reason === "unavailable" ? 503 : 403;
+      const message = verification.reason === "unavailable"
+        ? "La vérification anti-robot est temporairement indisponible."
+        : "La vérification anti-robot a échoué. Réessaie.";
+      res.status(status).json({ error: message });
+      return;
+    }
   }
   const email = parsed.data.email;
   const from = process.env.RESEND_FROM_EMAIL?.trim();

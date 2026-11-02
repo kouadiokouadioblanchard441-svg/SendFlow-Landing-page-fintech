@@ -11,6 +11,7 @@ import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
 import { usePublicMobileMenu } from '@/hooks/use-public-mobile-menu';
+import { executeRecaptchaToken, loadRecaptchaScript, removeRecaptchaScript, useRecaptchaConfig } from '@/hooks/use-recaptcha';
 import type { FounderProfile } from '@/pages/about';
 import type { LegalPageProps } from '@/pages/legal';
 import { SendFlowFooter } from '@/components/sendflow-footer';
@@ -589,6 +590,8 @@ function AnimatedRoutes() {
         ? 1
         : -1;
   const motionSettings = { direction, reduced: Boolean(prefersReducedMotion) };
+  const routePath = location.split(/[?#]/, 1)[0] || '/';
+  const isPrivateRoute = /^\/(?:panel|admin)(?:\/|$)/i.test(routePath);
 
   useLayoutEffect(() => {
     const nextRoutePath = getTransitionRoutePath(location);
@@ -660,8 +663,21 @@ function AnimatedRoutes() {
           <SendFlowLoadingDots />
         </div>
       )}
+      {!isPrivateRoute && <RecaptchaRuntime />}
     </>
   );
+}
+
+function RecaptchaRuntime() {
+  const { data } = useRecaptchaConfig(true);
+
+  useEffect(() => {
+    if (!data?.enabled || !data.siteKey) return;
+    void loadRecaptchaScript(data.siteKey).catch(() => undefined);
+    return removeRecaptchaScript;
+  }, [data?.enabled, data?.siteKey]);
+
+  return null;
 }
 
 function RouteLoadingFallback() {
@@ -1026,6 +1042,7 @@ function LandingPage() {
   const [submitted, setSubmitted] = useState(false);
   const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
   const [newsletterError, setNewsletterError] = useState<string | null>(null);
+  const recaptchaQuery = useRecaptchaConfig(true);
   const { data: landingBundle } = usePublicLandingBundle();
   activePublicContent = landingBundle?.content;
 
@@ -1036,10 +1053,26 @@ function LandingPage() {
     setNewsletterError(null);
     setNewsletterSubmitting(true);
     try {
+      let captchaToken: string | undefined;
+      const recaptchaConfig = recaptchaQuery.data ?? (await recaptchaQuery.refetch()).data;
+      if (!recaptchaConfig) {
+        throw new Error(isFrench ? 'La vérification anti-robot est indisponible. Réessaie.' : 'Anti-bot verification is unavailable. Please try again.');
+      }
+      if (recaptchaConfig.enabled && recaptchaConfig.siteKey) {
+        try {
+          captchaToken = await executeRecaptchaToken(recaptchaConfig.siteKey, 'newsletter_subscribe');
+        } catch {
+          throw new Error(isFrench ? 'La vérification anti-robot a échoué. Réessaie.' : 'Anti-bot verification failed. Please try again.');
+        }
+      }
       const response = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, consent: newsletterConsent }),
+        body: JSON.stringify({
+          email,
+          consent: newsletterConsent,
+          ...(captchaToken ? { captchaToken } : {}),
+        }),
       });
       const body = await response.json().catch(() => null) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || (isFrench ? 'Impossible de vous inscrire pour le moment.' : 'We could not subscribe you right now.'));

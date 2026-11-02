@@ -29,6 +29,16 @@ test("newsletter requests require explicit affirmative consent", () => {
   assert.equal(newsletterSubscribeSchema.safeParse({
     email: "reader@example.com",
   }).success, false);
+  assert.equal(newsletterSubscribeSchema.safeParse({
+    email: "reader@example.com",
+    consent: true,
+    captchaToken: "captcha-token",
+  }).success, true);
+  assert.equal(newsletterSubscribeSchema.safeParse({
+    email: "reader@example.com",
+    consent: true,
+    captchaToken: "x".repeat(8_193),
+  }).success, false);
 });
 
 test("confirmation and unsubscribe tokens accept only UUID v4 values", () => {

@@ -48,6 +48,7 @@ const optionalEmail = (required = false) => {
 export const newsletterSubscribeSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(320),
   consent: z.literal(true),
+  captchaToken: z.string().trim().min(1).max(8_192).optional(),
 }).strict();
 
 export const newsletterSubscriberStatusSchema = z.object({
