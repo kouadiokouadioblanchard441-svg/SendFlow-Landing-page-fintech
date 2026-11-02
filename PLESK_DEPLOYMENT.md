@@ -175,6 +175,12 @@ Plesk et aucun secret n’est requis pour construire le paquet; la clé SSH ne s
 qu’au transfert depuis le runner GitHub. L’accès SSH doit être activé par
 l’hébergeur pour l’utilisateur système concerné.
 
+Le workflow crée le schéma nécessaire uniquement dans son conteneur PostgreSQL
+jetable afin que le smoke-test navigateur puisse appeler `/api/landing`. Il
+n’utilise pas la base Plesk, n’exécute pas de seed et ne lance pas de migration
+de production. Les smoke-tests indiquent aussi la méthode et l’URL d’une API qui
+retourne HTTP 500 au lieu d’un message navigateur générique.
+
 Le libellé `/sendflow.africa` affiché par le panneau est un chemin relatif à
 l’abonnement; il ne suffit pas à établir le chemin absolu utilisé par SSH. Le
 workflow exige donc `PLESK_DEPLOY_ROOT` et échoue avant le transfert si cette

@@ -64,6 +64,12 @@ jobs:
             exit 1
           fi
 
+      - name: Install workspace dependencies for the disposable CI database
+        run: pnpm install --frozen-lockfile --prod=false
+
+      - name: Create schema in the disposable CI PostgreSQL service
+        run: pnpm --filter @workspace/db run push
+
       - name: Build and package a standalone Plesk release
         run: pnpm run package:plesk
 

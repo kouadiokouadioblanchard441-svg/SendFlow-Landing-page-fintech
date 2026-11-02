@@ -43,6 +43,14 @@ try {
     page.on('response', (response) => {
       const request = response.request();
       const resourceType = request.resourceType();
+      if (
+        response.status() >= 500 &&
+        ['fetch', 'xhr'].includes(resourceType)
+      ) {
+        browserErrors.push(
+          `HTTP ${response.status()} ${request.method()} ${response.url()}`,
+        );
+      }
       if (!['script', 'stylesheet'].includes(resourceType)) return;
 
       if (response.url().startsWith(origin) && response.ok()) {

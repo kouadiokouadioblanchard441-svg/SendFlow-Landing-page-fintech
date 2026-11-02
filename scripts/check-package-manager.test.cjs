@@ -95,6 +95,15 @@ test("Plesk build and packaging use the sole active deployment script", () => {
   assert.match(deploymentWorkflow, /PLESK_DEPLOY_ROOT PLESK_SSH_PRIVATE_KEY/);
   assert.match(deploymentWorkflow, /scripts\/plesk-remote-deploy\.sh/);
   assert.match(deploymentWorkflow, /pnpm run package:plesk/);
+  assert.match(
+    deploymentWorkflow,
+    /pnpm --filter @workspace\/db run push/,
+  );
+  assert.match(
+    deploymentWorkflow,
+    /Create schema in the disposable CI PostgreSQL service/,
+  );
+  assert.doesNotMatch(deploymentWorkflow, /push-force|run seed|run migrate/);
   assert.match(deploymentWorkflow, /actions\/upload-artifact@v4/);
   assert.match(deploymentWorkflow, /actions\/download-artifact@v4/);
   assert.match(deploymentWorkflow, /scp "\$\{scp_options\[@\]\}"/);
