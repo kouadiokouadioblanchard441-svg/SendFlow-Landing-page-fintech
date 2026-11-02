@@ -62,3 +62,9 @@ For SendFlow, treat Plesk as the production target and focus work on resolving t
 **Why:** The user explicitly asked that work prioritize correcting the live Plesk deployment.
 
 **How to apply:** Start from the actual Plesk failure and its deployment path. Separate repository changes from actions executed on Plesk, and report production as fixed only after Plesk deployment and live behavior are verified.
+
+GitHub `main` is protected and requires the `build` status check; local commits must go through a feature branch and pull request rather than a direct push to `main`.
+
+**Why:** GitHub rejected a direct update to `main` with `GH006` because the required `build` check had not run for that commit.
+
+**How to apply:** Push the work to a non-protected branch, open a pull request targeting `main`, wait for the Plesk build check to pass, then merge; do not disable branch protection to force a push.
