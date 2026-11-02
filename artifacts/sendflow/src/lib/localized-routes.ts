@@ -11,6 +11,7 @@ const localizedRoutePairs = [
   { fr: '/confidentialite', en: '/en/privacy' },
   { fr: '/mentions-legales', en: '/en/legal-notice' },
   { fr: '/france-senegal', en: '/en/france-senegal' },
+  { fr: '/tarifs', en: '/en/pricing' },
 ] as const;
 
 function normalizeRoute(path: string): string {

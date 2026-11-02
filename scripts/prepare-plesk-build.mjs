@@ -78,6 +78,27 @@ const seoRoutesPath = path.join(
 const seoRouteGroups = Object.values(
   JSON.parse(await readFile(seoRoutesPath, "utf8")),
 ).filter((group) => group?.fr?.path && group?.en?.path);
+const sitemapPath = path.join(repoRoot, "artifacts", "sendflow", "public", "sitemap.xml");
+const sitemapSource = await readFile(sitemapPath, "utf8");
+const sitemapPaths = new Set(
+  [...sitemapSource.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, rawLocation]) => {
+    const location = rawLocation.trim();
+    try {
+      return new URL(location).pathname;
+    } catch {
+      return location;
+    }
+  }),
+);
+for (const group of seoRouteGroups) {
+  for (const locale of ["fr", "en"]) {
+    if (!sitemapPaths.has(group[locale].path)) {
+      throw new Error(
+        `Plesk public route is missing from the sitemap: ${group[locale].path}.`,
+      );
+    }
+  }
+}
 const seoOriginCandidate =
   process.env.VITE_PUBLIC_SITE_URL ??
   defaultRouteHtml.match(

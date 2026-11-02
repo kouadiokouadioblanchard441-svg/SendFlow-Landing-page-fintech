@@ -157,6 +157,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
           <section>
             <h3>{isFrench ? 'Produits' : 'Products'}</h3>
             <button onClick={() => navigate('top')}>SendFlow Africa</button>
+            <Link href={getLocalizedPath('/tarifs', locale)} data-testid="link-footer-pricing">{isFrench ? 'Tarifs par pays' : 'Fees by country'}</Link>
           </section>
           <section>
             <h3>{isFrench ? 'Assistance' : 'Support'}</h3>
