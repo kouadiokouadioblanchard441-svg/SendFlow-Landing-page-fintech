@@ -66,6 +66,9 @@ jobs:
       - name: Build and package a standalone Plesk release
         run: pnpm run package:plesk
 
+      - name: Install Chromium for rendered-page checks
+        run: pnpm --filter @workspace/sendflow exec playwright install --with-deps chromium
+
       - name: Smoke-test the Plesk runtime bundle
         env:
           NEON_DATABASE_URL: postgresql://sendflow_ci:sendflow_ci@127.0.0.1:5432/sendflow_ci
@@ -190,6 +193,8 @@ jobs:
             echo "::error::The SendFlow favicon did not load as a PNG resource."
             exit 1
           fi
+
+          pnpm --filter @workspace/sendflow run test:browser-smoke -- "http://127.0.0.1:$port"
 
       - name: Simulate the Passenger hook without PORT
         env:

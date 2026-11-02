@@ -19,3 +19,4 @@
 - [SendFlow page titles](sendflow-page-titles.md) — Keep every public route’s localized browser title distinct and aligned between runtime and Plesk HTML.
 - [SendFlow fee configuration](sendflow-fee-configuration.md) — Keep operator fees persisted and editable in the CMS; do not silently fall back to public hardcoded rates.
 - [Git-ignored production assets](git-ignored-production-assets.md) — Workspace-level ignore rules can hide assets required by clean GitHub/Plesk builds; explicitly check and include production imports.
+- [Playwright on Nix](playwright-nix-runtime.md) — Local headless Chromium may need Nix shared libraries exposed through `LD_LIBRARY_PATH`.
