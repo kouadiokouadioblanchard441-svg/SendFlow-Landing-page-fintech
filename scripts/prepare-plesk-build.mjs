@@ -1,11 +1,17 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 const sourceDist = path.join(repoRoot, "artifacts", "api-server", "dist");
-const outputDist = path.join(repoRoot, "dist");
+const buildId = randomUUID();
+const outputDist = path.join(repoRoot, `.sendflow-dist-stage-${buildId}`);
+const publishedDist = path.join(repoRoot, "dist");
 
 await rm(outputDist, { recursive: true, force: true });
 await mkdir(outputDist, { recursive: true });
@@ -25,7 +31,6 @@ await writeFile(
     2,
   )}\n`,
 );
-const buildId = randomUUID();
 await writeFile(
   path.join(outputDist, "build-info.json"),
   `${JSON.stringify({ buildId }, null, 2)}\n`,
@@ -44,17 +49,17 @@ await writeFile(
     "RewriteRule ^ index.html [L]",
     "</IfModule>",
     "<IfModule mod_setenvif.c>",
-    "SetEnvIf Request_URI \"(?i)^/panel/[^/]+/[^/]+/?$\" sendflow_legacy_panel",
+    'SetEnvIf Request_URI "(?i)^/panel/[^/]+/[^/]+/?$" sendflow_legacy_panel',
     "</IfModule>",
     "<IfModule mod_headers.c>",
-    "Header always set X-Content-Type-Options \"nosniff\"",
-    "Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains\"",
-    "Header always set Referrer-Policy \"strict-origin-when-cross-origin\"",
-    "Header always set X-Frame-Options \"DENY\"",
+    'Header always set X-Content-Type-Options "nosniff"',
+    'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"',
+    'Header always set Referrer-Policy "strict-origin-when-cross-origin"',
+    'Header always set X-Frame-Options "DENY"',
     "Header always set Content-Security-Policy \"frame-ancestors 'none'\"",
-    "Header always set Permissions-Policy \"camera=(), microphone=(), geolocation=()\"",
-    "Header always set Referrer-Policy \"no-referrer\" env=sendflow_legacy_panel",
-    "Header always set Cache-Control \"no-store\" env=sendflow_legacy_panel",
+    'Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"',
+    'Header always set Referrer-Policy "no-referrer" env=sendflow_legacy_panel',
+    'Header always set Cache-Control "no-store" env=sendflow_legacy_panel',
     "</IfModule>",
     "",
   ].join("\n"),
@@ -70,11 +75,14 @@ const seoRoutesPath = path.join(
   "lib",
   "public-seo-routes.json",
 );
-const seoRouteGroups = Object.values(JSON.parse(await readFile(seoRoutesPath, "utf8")))
-  .filter((group) => group?.fr?.path && group?.en?.path);
+const seoRouteGroups = Object.values(
+  JSON.parse(await readFile(seoRoutesPath, "utf8")),
+).filter((group) => group?.fr?.path && group?.en?.path);
 const seoOriginCandidate =
   process.env.VITE_PUBLIC_SITE_URL ??
-  defaultRouteHtml.match(/<link rel="canonical" href="(https?:\/\/[^"]+)"/)?.[1];
+  defaultRouteHtml.match(
+    /<link rel="canonical" href="(https?:\/\/[^"]+)"/,
+  )?.[1];
 let seoOrigin = null;
 try {
   const parsedOrigin = new URL(seoOriginCandidate);
@@ -109,7 +117,10 @@ const renderRouteSeo = (sourceHtml, route, locale, group) => {
   const homeUrl = seoOrigin ? new URL(homePath, seoOrigin).href : homePath;
   let html = sourceHtml
     .replace(/<html lang="[^"]*">/i, `<html lang="${locale}">`)
-    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(route.title)}</title>`)
+    .replace(
+      /<title>[\s\S]*?<\/title>/i,
+      `<title>${escapeHtml(route.title)}</title>`,
+    )
     .replace(/<!--\s*sendflow-canonical\s*-->/g, "")
     .replace(/<!--\s*sendflow-hreflang\s*-->/g, "")
     .replace(/<link rel="canonical"[^>]*\/?>/gi, "")
@@ -134,9 +145,13 @@ const renderRouteSeo = (sourceHtml, route, locale, group) => {
         `<link rel="alternate" hreflang="x-default" href="${escapeHtml(new URL(group.fr.path, seoOrigin).href)}" />`,
       ].join("\n    ")
     : "";
-  html = html.replace("</head>", `${canonicalAndAlternates ? `    ${canonicalAndAlternates}\n  ` : ""}</head>`);
+  html = html.replace(
+    "</head>",
+    `${canonicalAndAlternates ? `    ${canonicalAndAlternates}\n  ` : ""}</head>`,
+  );
 
-  const schemaPattern = /(<script id="sendflow-seo-schema" type="application\/ld\+json">)([\s\S]*?)(<\/script>)/i;
+  const schemaPattern =
+    /(<script id="sendflow-seo-schema" type="application\/ld\+json">)([\s\S]*?)(<\/script>)/i;
   const schemaMatch = html.match(schemaPattern);
   if (schemaMatch) {
     const schema = JSON.parse(schemaMatch[2]);
@@ -181,13 +196,25 @@ const renderRouteSeo = (sourceHtml, route, locale, group) => {
       graph.splice(serviceIndex, 1);
     }
 
-    const breadcrumbIndex = graph.findIndex((item) => item["@type"] === "BreadcrumbList");
+    const breadcrumbIndex = graph.findIndex(
+      (item) => item["@type"] === "BreadcrumbList",
+    );
     if (route.path !== "/" && route.path !== "/en/") {
       const breadcrumb = {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: locale === "fr" ? "Accueil" : "Home", item: homeUrl },
-          { "@type": "ListItem", position: 2, name: route.name, item: canonicalUrl },
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: locale === "fr" ? "Accueil" : "Home",
+            item: homeUrl,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: route.name,
+            item: canonicalUrl,
+          },
         ],
       };
       if (breadcrumbIndex >= 0) graph[breadcrumbIndex] = breadcrumb;
@@ -197,7 +224,10 @@ const renderRouteSeo = (sourceHtml, route, locale, group) => {
     }
 
     schema["@graph"] = graph;
-    const serializedSchema = JSON.stringify(schema, null, 2).replaceAll("<", "\\u003c");
+    const serializedSchema = JSON.stringify(schema, null, 2).replaceAll(
+      "<",
+      "\\u003c",
+    );
     html = html.replace(schemaPattern, `$1\n      ${serializedSchema}\n    $3`);
   }
 
@@ -219,16 +249,28 @@ for (const group of seoRouteGroups) {
     const routeHtml = renderRouteSeo(defaultRouteHtml, route, locale, group);
     if (
       !routeHtml.includes(`<title>${escapeHtml(route.title)}</title>`) ||
-      !routeHtml.includes(`name="description" content="${escapeHtml(route.description)}"`)
+      !routeHtml.includes(
+        `name="description" content="${escapeHtml(route.description)}"`,
+      )
     ) {
-      throw new Error(`Plesk route SEO metadata was not rendered correctly: ${route.path}`);
+      throw new Error(
+        `Plesk route SEO metadata was not rendered correctly: ${route.path}`,
+      );
     }
-    if (seoOrigin && !routeHtml.includes(`<link rel="canonical" href="${escapeHtml(new URL(route.path, seoOrigin).href)}" />`)) {
-      throw new Error(`Plesk route canonical URL was not rendered correctly: ${route.path}`);
+    if (
+      seoOrigin &&
+      !routeHtml.includes(
+        `<link rel="canonical" href="${escapeHtml(new URL(route.path, seoOrigin).href)}" />`,
+      )
+    ) {
+      throw new Error(
+        `Plesk route canonical URL was not rendered correctly: ${route.path}`,
+      );
     }
-    const targetPath = route.path === "/"
-      ? publicIndexPath
-      : path.join(routeDirectory, "index.html");
+    const targetPath =
+      route.path === "/"
+        ? publicIndexPath
+        : path.join(routeDirectory, "index.html");
     await writeFile(targetPath, routeHtml);
   }
 }
@@ -245,10 +287,58 @@ for (const routePath of requiredPublicRoutePaths) {
     routePath.replace(/^\/+|\/+$/g, ""),
   );
   const html = await readFile(path.join(routeDirectory, "index.html"), "utf8");
-  if (!/<title>[^<]+<\/title>/.test(html) || !/<meta name="description" content="[^"]+"/.test(html)) {
+  if (
+    !/<title>[^<]+<\/title>/.test(html) ||
+    !/<meta name="description" content="[^"]+"/.test(html)
+  ) {
     throw new Error(`Plesk route is missing SEO metadata: ${routePath}`);
   }
 }
+
+const verification = spawnSync(
+  process.execPath,
+  [path.join(repoRoot, "scripts", "verify-plesk-build.mjs")],
+  {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: { ...process.env, PLESK_DIST_DIR: outputDist },
+  },
+);
+if (verification.stdout) process.stdout.write(verification.stdout);
+if (verification.stderr) process.stderr.write(verification.stderr);
+if (verification.error) {
+  throw new Error(
+    `Could not verify staged Plesk build: ${verification.error.message}`,
+  );
+}
+if (verification.status !== 0) {
+  throw new Error(
+    `Staged Plesk build verification failed with status ${verification.status}.`,
+  );
+}
+
+const previousDist = path.join(repoRoot, `.sendflow-dist-backup-${buildId}`);
+let previousDistMoved = false;
+try {
+  await rename(publishedDist, previousDist);
+  previousDistMoved = true;
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
+
+try {
+  await rename(outputDist, publishedDist);
+} catch (error) {
+  if (previousDistMoved) {
+    await rename(previousDist, publishedDist);
+  }
+  throw error;
+}
+
+if (previousDistMoved) {
+  await rm(previousDist, { recursive: true, force: true });
+}
+
 console.log(
-  `Plesk build ready: ${path.relative(repoRoot, path.join(outputDist, "index.cjs"))} (build ID: ${buildId})`,
+  `Plesk build ready: ${path.relative(repoRoot, path.join(publishedDist, "index.cjs"))} (build ID: ${buildId})`,
 );

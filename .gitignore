@@ -2,6 +2,8 @@
 
 # compiled output
 dist
+.sendflow-dist-stage-*
+.sendflow-dist-backup-*
 generated-artifacts/
 tmp
 out-tsc

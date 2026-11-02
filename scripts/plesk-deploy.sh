@@ -4,6 +4,9 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+source "$ROOT_DIR/scripts/clear-plesk-git-context.sh"
+clear_plesk_git_context
+
 required_inputs=(
   "package.json"
   "pnpm-lock.yaml"
@@ -85,6 +88,7 @@ echo "Running tests, type checks, and the Plesk production build..."
 "${PLESK_PNPM[@]}" run build
 
 echo "Plesk build is ready."
+echo "Source checkout: $ROOT_DIR"
 echo "Application root: dist"
 echo "Startup file: index.cjs (dist/index.cjs)"
 echo "Document root: dist/public"
