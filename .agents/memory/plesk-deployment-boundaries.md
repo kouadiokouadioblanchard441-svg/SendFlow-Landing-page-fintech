@@ -15,11 +15,11 @@ For cPanel Git deployments, use `.cpanel.yml` to run the build after cPanel upda
 
 **How to apply:** When a host reports ignored dependency build scripts, compare its pnpm version with the lockfile/workspace version; keep both pnpm config formats synchronized rather than broadening script trust.
 
-The control-panel screenshots for `sendflow.africa` identify Plesk, so its deployment must use the Plesk Git action rather than `.cpanel.yml`.
+The control-panel screenshots for `sendflow.africa` identify Plesk, so its runtime and document-root settings are Plesk-specific; `.cpanel.yml` does not apply.
 
 **Why:** The hosted Node application is configured through Plesk Passenger; cPanel deployment tasks do not run in that panel.
 
-**How to apply:** Follow the Plesk deploy hook and restart-file location when deploying this domain; use `.cpanel.yml` only for a separate cPanel-hosted checkout.
+**How to apply:** Follow the Plesk Passenger runtime and restart-file location when deploying this domain; use `.cpanel.yml` only for a separate cPanel-hosted checkout.
 
 For SendFlow production, preserve `/sendflow.africa` as the Plesk Git deployment target. The user reports that deploying to `/httpdocs` avoids the Git error but does not serve the site correctly; do not recommend switching to `/httpdocs` unless Plesk confirms it is the configured web root.
 
@@ -63,8 +63,8 @@ For SendFlow, treat Plesk as the production target and focus work on resolving t
 
 **How to apply:** Start from the actual Plesk failure and its deployment path. Separate repository changes from actions executed on Plesk, and report production as fixed only after Plesk deployment and live behavior are verified.
 
-GitHub `main` is protected and requires the `build` status check; local commits must go through a feature branch and pull request rather than a direct push to `main`.
+For SendFlow production, GitHub Actions builds and transfers the validated `dist/` archive to the physical `/sendflow.africa` target over SSH. Keep `dist/` ignored and do not require a Plesk Additional deployment action; Plesk's Git pull alone does not build generated artifacts.
 
-**Why:** GitHub rejected a direct update to `main` with `GH006` because the required `build` check had not run for that commit.
+**Why:** The user requires `dist/` to arrive automatically on source pushes, without a manual Plesk shell command or a non-versioned panel hook. The repository now contains the build/package/SSH delivery workflow, but the live transfer still depends on GitHub Actions SSH settings and Plesk-side runtime configuration.
 
-**How to apply:** Push the work to a non-protected branch, open a pull request targeting `main`, wait for the Plesk build check to pass, then merge; do not disable branch protection to force a push.
+**How to apply:** On each authorized push to `main`, let CI build and validate the bundle before SSH delivery. Never claim the artifact is on Plesk until the deployment job confirms it, and never claim the site is healthy without a live check. Preserve the user's established direct-push workflow; do not change branch protection without an explicit request.
