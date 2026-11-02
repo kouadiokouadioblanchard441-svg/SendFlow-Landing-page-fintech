@@ -116,6 +116,17 @@ bash scripts/plesk-deploy.sh
 
 Cette action s’exécute après que Plesk a publié les fichiers du checkout et avant que le marqueur Passenger de redémarrage soit créé. Elle choisit pnpm 10.26.1 par Corepack, sinon par npx, et n’accepte le pnpm global que s’il vaut exactement 10.26.1. Si seul le pnpm global 12.15.0 est disponible, elle s’arrête sans installer avec cette version. Le script ne lance aucune commande Git et ne dépend pas de `.git` dans le dossier livré. Il résout la racine du dépôt depuis son propre fichier, installe depuis le lockfile, exécute lint/tests/vérifications TypeScript, construit le frontend et l’API, puis vérifie le paquet avant de le publier dans `dist/`. Un échec de build garde l’ancien `dist/` en place ; Passenger est redémarré seulement après un build validé. Aucune migration de base de données n’est lancée.
 
+La commande doit être enregistrée dans Plesk : aucun fichier du dépôt ne peut
+activer l’**Additional deployment action** à distance. Après un déploiement réussi,
+la sortie doit contenir `PLESK_BUILD_HOOK_STARTED`, puis les chemins absolus
+`Plesk Application Root` et `Plesk Document Root`, et enfin
+`PLESK_BUILD_COMPLETE`. Si l’interface indique seulement que le pull et la
+publication Git ont réussi, mais que ces marqueurs sont absents, le hook de build
+n’a pas été exécuté : Git ne transfère pas `dist/`, car ce dossier est généré et
+ignoré. Si `PLESK_BUILD_HOOK_STARTED` apparaît sans `PLESK_BUILD_COMPLETE`,
+l’action a démarré mais le build ou la vérification a échoué; récupérer sa sortie
+complète au lieu de configurer Passenger sur un dossier partiel.
+
 Le log reçu montre que Plesk a exécuté `pnpm install` depuis `/httpdocs` avec pnpm 12.15.0. C’est le mauvais contexte d’installation : le `preinstall` du monorepo doit refuser cette version. Ne lance pas **Install Dependencies** sur le checkout source et ne supprime pas/contourne pas le contrôle. Exécute d’abord l’action de déploiement ci-dessus, qui installe le workspace avec pnpm 10.26.1 et produit `<checkout>/dist`.
 
 Après le premier build réussi, règle l’application Node Plesk sur `Application Root=<checkout>/dist`, `Startup File=index.cjs` et `Document Root=<checkout>/dist/public`. Plesk peut afficher pnpm 12.15.0 pour l’abonnement : ce pnpm ne doit pas installer le monorepo. Désactive toute installation automatique visant le checkout source si l’option existe; si Plesk lance une installation pour le runtime dans `dist`, le manifeste n’a ni `preinstall` ni dépendances et ne nécessite rien à installer. Ne configure pas l’application sur le checkout `/httpdocs` avec son manifeste workspace et ne démarre pas le wrapper source en attendant que `dist` soit créé.
@@ -221,6 +232,15 @@ dossier, pas le fichier de démarrage. Procède dans cet ordre :
    le mode `production`, puis **Restart**. Le build du monorepo a été fait
    avec pnpm 10.26.1 par l’action de déploiement ; pnpm 12.15.0 dans le
    sélecteur Plesk ne doit pas être utilisé pour installer les sources.
+
+Le Document Root doit viser `dist/public`, et non `dist` : `dist` contient le
+bundle Node, le manifeste Passenger et les métadonnées de build, tandis que les
+fichiers web sont dans `public/`. Si Plesk confirme dans son Gestionnaire de
+fichiers que la cible physique est exactement `/sendflow.africa`, les valeurs
+sont Application Root `/sendflow.africa/dist`, Startup File `index.cjs` et
+Document Root `/sendflow.africa/dist/public`. Si `/sendflow.africa` est seulement
+le libellé de la cible Git, remplace ce préfixe par le chemin absolu réellement
+affiché pour le checkout; ne déduis pas le chemin physique du libellé.
 
 `index.cjs` est le point de démarrage de l’application compilée ; ce n’est pas
 une commande de build ni une action Git. Le `index.cjs` à la racine des sources

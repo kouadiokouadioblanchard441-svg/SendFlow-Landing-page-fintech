@@ -112,6 +112,19 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
     deployScript,
     /"\$\{PLESK_PNPM\[@\]\}" run build/,
   );
+  assert.match(deployScript, /PLESK_BUILD_HOOK_STARTED/);
+  assert.match(deployScript, /PLESK_BUILD_COMPLETE/);
+  for (const output of [
+    "dist/index.cjs",
+    "dist/build-info.json",
+    "dist/public/index.html",
+    "dist/public/.htaccess",
+  ]) {
+    assert.ok(
+      deployScript.includes(`"${output}"`),
+      `the Plesk deploy action must verify ${output} before Passenger restart`,
+    );
+  }
   assert.match(deployScript, /run build/);
   assert.match(deployScript, /mkdir -p dist\/tmp/);
   assert.match(deployScript, /touch dist\/tmp\/restart\.txt/);

@@ -2,11 +2,15 @@
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+ACTION_CWD="$PWD"
 cd "$ROOT_DIR"
 
 source "$ROOT_DIR/scripts/clear-plesk-git-context.sh"
 clear_plesk_git_context
 
+echo "PLESK_BUILD_HOOK_STARTED"
+echo "Plesk action working directory: $ACTION_CWD"
+echo "Plesk monorepo root: $ROOT_DIR"
 echo "Building SendFlow from the Plesk Git checkout..."
 
 required_inputs=(
@@ -91,12 +95,28 @@ echo "Installing workspace dependencies..."
 echo "Running tests, type checks, and the Plesk production build..."
 "${PLESK_PNPM[@]}" run build
 
-echo "Plesk build is ready."
-echo "Source checkout: $ROOT_DIR"
-echo "Application root: dist"
-echo "Startup file: index.cjs (dist/index.cjs)"
-echo "Document root: dist/public"
+required_outputs=(
+  "dist/index.cjs"
+  "dist/build-info.json"
+  "dist/public/index.html"
+  "dist/public/.htaccess"
+)
+for output in "${required_outputs[@]}"; do
+  if [[ ! -s "$ROOT_DIR/$output" ]]; then
+    echo "Plesk build completed without its required output: $ROOT_DIR/$output" >&2
+    exit 1
+  fi
+done
+
+DIST_ROOT="$(cd "$ROOT_DIR/dist" && pwd -P)"
+DOCUMENT_ROOT="$(cd "$DIST_ROOT/public" && pwd -P)"
+BUILD_ID="$(node -p 'require("./dist/build-info.json").buildId')"
 
 mkdir -p dist/tmp
 touch dist/tmp/restart.txt
+echo "Plesk Application Root: $DIST_ROOT"
+echo "Plesk Startup File: index.cjs"
+echo "Plesk Document Root: $DOCUMENT_ROOT"
+echo "Plesk build ID: $BUILD_ID"
+echo "PLESK_BUILD_COMPLETE"
 echo "Passenger restart requested."
