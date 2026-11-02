@@ -38,6 +38,7 @@ jobs:
       PUBLIC_URL: ${{ vars.PUBLIC_URL }}
       PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
       BASE_PATH: /
+      NEON_DATABASE_URL: postgresql://sendflow_ci:sendflow_ci@127.0.0.1:5432/sendflow_ci
       PLESK_MEDIA_DIR: /tmp/sendflow-public-media-ci
 
     steps:
