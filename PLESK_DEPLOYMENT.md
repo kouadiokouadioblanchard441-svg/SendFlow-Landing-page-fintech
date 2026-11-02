@@ -2,11 +2,11 @@
 
 ## Structure livrée
 
-Le build de production produit un paquet `dist/` contenant le serveur Passenger et les fichiers web. GitHub Actions le construit depuis le checkout source, puis le transfère vers `/sendflow.africa/dist` par SSH. La capture prouve que **Application Root** et **Document Root** étaient réglés sur `/git`, mais ne prouve pas que `/git` soit le checkout Git.
+Le build de production produit un paquet `dist/` contenant le serveur Passenger et les fichiers web. GitHub Actions le construit depuis le checkout source, puis le transfère vers le dossier Plesk configuré explicitement dans `PLESK_DEPLOY_ROOT`.
 
-Les captures montrent aussi que **Application Root** et **Document Root** sont réglés sur `/git`, puis que Plesk ne trouve pas le startup file `/git/index.cjs`. Cette erreur est cohérente avec ces réglages : le bundle compilé n’est pas dans le dossier configuré `/git`. Cette capture ne démontre pas où se trouve le checkout source. Configure :
+La capture Plesk la plus récente montre **Application Root** et **Document Root** réglés sur `/dist`, puis l’absence de `/dist/index.cjs`. Elle prouve que le fichier de démarrage est absent du répertoire actuellement sélectionné; elle ne prouve pas que le build ait été livré dans le dossier de déploiement `/sendflow.africa`. Le libellé Git `/sendflow.africa` et le sélecteur de racines sont relatifs à l’abonnement et ne révèlent pas à eux seuls le chemin SSH absolu. Après confirmation d’une livraison dans la cible, configure :
 
-- **Cible du déploiement Git** : `/sendflow.africa`.
+- **Cible du déploiement/livraison** : `/sendflow.africa`.
 - **Application Root** : `/sendflow.africa/dist`, après une livraison CI réussie.
 - **Startup File** : `index.cjs`, résolu relativement à l’Application Root, donc `/sendflow.africa/dist/index.cjs`.
 - **Document Root** : `/sendflow.africa/dist/public`. Ne choisis ni `/git` ni le dossier `dist` lui-même comme Document Root : les fichiers web sont dans `dist/public`.
@@ -163,20 +163,23 @@ variables → Actions** :
 | Variable | `PLESK_SSH_HOST`        | Nom d’hôte SSH fourni/confirmé par Cybrancee (ne pas déduire l’hôte SSH de l’URL du panneau).                                                                     |
 | Variable | `PLESK_SSH_USER`        | Utilisateur système Plesk ayant accès en écriture à la cible.                                                                                                     |
 | Variable | `PLESK_SSH_PORT`        | Port SSH; facultatif, `22` par défaut.                                                                                                                            |
-| Variable | `PLESK_DEPLOY_ROOT`     | Chemin physique de la cible; par défaut `/var/www/vhosts/sendflow.africa/sendflow.africa`, observé dans les logs Node transmis.                                   |
+| Variable | `PLESK_DEPLOY_ROOT`     | Obligatoire : chemin absolu physique du dossier `sendflow.africa`, relevé dans le Gestionnaire de fichiers Plesk ou confirmé par Cybrancee. Aucun chemin par défaut n’est deviné. |
 | Variable | `PLESK_SSH_KNOWN_HOSTS` | Ligne `known_hosts` confirmée par Cybrancee pour cet hôte et ce port. Le job exige la vérification stricte de l’hôte; il n’utilise pas `ssh-keyscan` non vérifié. |
 | Secret   | `PLESK_SSH_PRIVATE_KEY` | Clé privée dédiée au déploiement, dont la clé publique est autorisée pour l’utilisateur système Plesk. Ne jamais la mettre dans Git ou dans le chat.              |
 
 Le job échoue explicitement si ces paramètres manquent ou si l’utilisateur SSH
-ne peut pas écrire dans la cible. Il n’y a aucune commande shell à saisir dans
+ne peut pas écrire dans la cible. Après remplacement, il exige aussi le marqueur
+`PLESK_RELEASE_DEPLOYED` renvoyé par le script distant et l’inscrit dans le
+résumé de l’exécution GitHub Actions. Il n’y a aucune commande shell à saisir dans
 Plesk et aucun secret n’est requis pour construire le paquet; la clé SSH ne sert
 qu’au transfert depuis le runner GitHub. L’accès SSH doit être activé par
 l’hébergeur pour l’utilisateur système concerné.
 
-Le chemin physique `/var/www/vhosts/sendflow.africa/sendflow.africa` vient d’un
-log fourni précédemment; confirme-le dans Plesk avant de définir la variable si
-la racine a changé. Le libellé `/sendflow.africa` dans le panneau n’est pas à
-lui seul une preuve du chemin physique.
+Le libellé `/sendflow.africa` affiché par le panneau est un chemin relatif à
+l’abonnement; il ne suffit pas à établir le chemin absolu utilisé par SSH. Le
+workflow exige donc `PLESK_DEPLOY_ROOT` et échoue avant le transfert si cette
+variable n’est pas définie. Renseigne uniquement le chemin absolu du dossier
+existant que le Gestionnaire de fichiers Plesk montre comme cible de livraison.
 
 Cette méthode contourne le transfert de fichiers du Git natif Plesk et peut
 livrer `dist/` même si son étape « Deploying files » échoue. Elle ne corrige pas

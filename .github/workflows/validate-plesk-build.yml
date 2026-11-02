@@ -419,7 +419,7 @@ jobs:
       PLESK_SSH_HOST: ${{ vars.PLESK_SSH_HOST }}
       PLESK_SSH_USER: ${{ vars.PLESK_SSH_USER }}
       PLESK_SSH_PORT: ${{ vars.PLESK_SSH_PORT || '22' }}
-      PLESK_DEPLOY_ROOT: ${{ vars.PLESK_DEPLOY_ROOT || '/var/www/vhosts/sendflow.africa/sendflow.africa' }}
+      PLESK_DEPLOY_ROOT: ${{ vars.PLESK_DEPLOY_ROOT }}
       RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out the validated commit
@@ -440,7 +440,7 @@ jobs:
           PLESK_SSH_KNOWN_HOSTS: ${{ vars.PLESK_SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
-          for name in PLESK_SSH_HOST PLESK_SSH_USER PLESK_SSH_PRIVATE_KEY PLESK_SSH_KNOWN_HOSTS; do
+          for name in PLESK_SSH_HOST PLESK_SSH_USER PLESK_DEPLOY_ROOT PLESK_SSH_PRIVATE_KEY PLESK_SSH_KNOWN_HOSTS; do
             if [[ -z "${!name}" ]]; then
               echo "::error::Missing GitHub Actions setting: $name. Configure the Plesk SSH deployment values described in PLESK_DEPLOYMENT.md."
               exit 1
@@ -513,5 +513,20 @@ jobs:
           scp "${scp_options[@]}" "$archive" "$PLESK_SSH_USER@$PLESK_SSH_HOST:$remote_archive"
           printf -v remote_command 'bash -s -- %q %q %q' \
             "$PLESK_DEPLOY_ROOT" "$RELEASE_ID" "$remote_archive"
-          ssh "${ssh_options[@]}" "$PLESK_SSH_USER@$PLESK_SSH_HOST" "$remote_command" \
-            < scripts/plesk-remote-deploy.sh
+          deploy_output="$(
+            ssh "${ssh_options[@]}" "$PLESK_SSH_USER@$PLESK_SSH_HOST" "$remote_command" \
+              < scripts/plesk-remote-deploy.sh
+          )"
+          printf '%s\n' "$deploy_output"
+          if ! grep -Fqx 'PLESK_RELEASE_DEPLOYED' <<<"$deploy_output"; then
+            echo "::error::Plesk did not confirm that the validated dist release was installed."
+            exit 1
+          fi
+          {
+            echo "## SendFlow Plesk delivery"
+            echo
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Build package: \`$archive\`"
+            echo "- Remote confirmation: \`PLESK_RELEASE_DEPLOYED\`"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -61,6 +61,7 @@ test("Plesk build and packaging use the sole active deployment script", () => {
     path.join(repoRoot, ".github/workflows/validate-plesk-build.yml"),
     "utf8",
   );
+  const gitignore = readFileSync(path.join(repoRoot, ".gitignore"), "utf8");
   const remoteDeployment = readFileSync(
     path.join(__dirname, "plesk-remote-deploy.sh"),
     "utf8",
@@ -83,7 +84,23 @@ test("Plesk build and packaging use the sole active deployment script", () => {
   assert.match(deploymentWorkflow, /deploy-plesk:/);
   assert.match(deploymentWorkflow, /secrets\.PLESK_SSH_PRIVATE_KEY/);
   assert.match(deploymentWorkflow, /vars\.PLESK_DEPLOY_ROOT/);
+  assert.match(
+    deploymentWorkflow,
+    /PLESK_DEPLOY_ROOT: \$\{\{ vars\.PLESK_DEPLOY_ROOT \}\}/,
+  );
+  assert.doesNotMatch(
+    deploymentWorkflow,
+    /PLESK_DEPLOY_ROOT:\s*\$\{\{\s*vars\.PLESK_DEPLOY_ROOT\s*\|\|/,
+  );
+  assert.match(deploymentWorkflow, /PLESK_DEPLOY_ROOT PLESK_SSH_PRIVATE_KEY/);
   assert.match(deploymentWorkflow, /scripts\/plesk-remote-deploy\.sh/);
+  assert.match(deploymentWorkflow, /pnpm run package:plesk/);
+  assert.match(deploymentWorkflow, /actions\/upload-artifact@v4/);
+  assert.match(deploymentWorkflow, /actions\/download-artifact@v4/);
+  assert.match(deploymentWorkflow, /scp "\$\{scp_options\[@\]\}"/);
+  assert.match(deploymentWorkflow, /PLESK_RELEASE_DEPLOYED/);
+  assert.match(gitignore, /^dist$/m);
+  assert.match(gitignore, /CI packages and delivers dist\/ to Plesk/);
   assert.doesNotMatch(remoteDeployment, /(?:^|[\s;&|])git(?:\s|$)/m);
 });
 
@@ -205,9 +222,10 @@ test("Plesk runtime paths match the Passenger startup and document root", () => 
     deploymentGuide,
     /Document Root.*`\/sendflow\.africa\/dist\/public`/,
   );
+  assert.match(deploymentGuide, /PLESK_DEPLOY_ROOT.*Obligatoire/);
   assert.match(
     deploymentGuide,
-    /PLESK_DEPLOY_ROOT.*\/var\/www\/vhosts\/sendflow\.africa\/sendflow\.africa/,
+    /Le libellé `\/sendflow\.africa` affiché par le panneau est un chemin relatif/,
   );
   assert.match(deploymentGuide, /PLESK_SSH_PRIVATE_KEY/);
   assert.match(deploymentGuide, /job `deploy-plesk`/);

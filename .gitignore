@@ -1,6 +1,6 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# compiled output
+# Build output stays out of source Git; CI packages and delivers dist/ to Plesk.
 dist
 .sendflow-dist-stage-*
 .sendflow-dist-backup-*
