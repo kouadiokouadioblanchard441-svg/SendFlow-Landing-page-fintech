@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -41,6 +42,38 @@ test("rejects pnpm versions that differ from the workspace pin", () => {
     validatePackageManagerUserAgent("pnpm/12.16.1 npm/? node/v24.22.1").message,
     /requires pnpm 10\.26\.1.*current installer is pnpm 12\.16\.1/,
   );
+});
+
+test("Plesk build and packaging use the sole active deployment script", () => {
+  const repoRoot = path.resolve(__dirname, "..");
+  const packageJson = JSON.parse(
+    readFileSync(path.join(repoRoot, "package.json"), "utf8"),
+  );
+  const deploymentGuide = readFileSync(
+    path.join(repoRoot, "PLESK_DEPLOYMENT.md"),
+    "utf8",
+  );
+  const deploymentSkill = readFileSync(
+    path.join(
+      repoRoot,
+      ".agents/skills/plesk-deployment-engineer/SKILL.md",
+    ),
+    "utf8",
+  );
+
+  assert.equal(
+    packageJson.scripts["deploy:plesk"],
+    "bash ./scripts/plesk-deploy.sh",
+  );
+  assert.match(
+    packageJson.scripts["package:plesk"],
+    /^bash \.\/scripts\/plesk-deploy\.sh && node \.\/scripts\/package-plesk-release\.mjs$/,
+  );
+  assert.equal(existsSync(path.join(__dirname, "plesk-git-deploy.sh")), false);
+  for (const source of [deploymentGuide, deploymentSkill]) {
+    assert.match(source, /scripts\/plesk-deploy\.sh/);
+    assert.doesNotMatch(source, /scripts\/plesk-git-deploy\.sh/);
+  }
 });
 
 test("Plesk deploy chain does not run Git or require a worktree", () => {
@@ -93,7 +126,7 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   }
 });
 
-test("Plesk deploy script runs externally, clears Git context, and propagates failures", () => {
+test("Plesk deploy script clears fake Git context and propagates child failures", () => {
   const repoRoot = path.resolve(__dirname, "..");
   const tempRoot = mkdtempSync(
     path.join(os.tmpdir(), "sendflow-plesk-hook-test-"),

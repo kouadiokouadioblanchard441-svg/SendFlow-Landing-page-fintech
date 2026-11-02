@@ -33,8 +33,7 @@ modifier les réglages de production lors du simple chargement de cette compéte
 
 Lire `PLESK_DEPLOYMENT.md`, puis vérifier les scripts qu’il cite :
 
-- `scripts/plesk-git-deploy.sh` : action après le déploiement Git.
-- `scripts/plesk-deploy.sh` : installation verrouillée, tests et build complet.
+- `scripts/plesk-deploy.sh` : action Plesk unique, installation verrouillée, tests, build complet et demande de redémarrage Passenger.
 - `scripts/prepare-plesk-build.mjs` : préparation du paquet et des fichiers publics.
 
 Utiliser les versions et commandes déclarées par le dépôt actuel, pas les

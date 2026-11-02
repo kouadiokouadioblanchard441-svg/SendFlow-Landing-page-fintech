@@ -21,11 +21,11 @@ The control-panel screenshots for `sendflow.africa` identify Plesk, so its deplo
 
 **How to apply:** Follow the Plesk deploy hook and restart-file location when deploying this domain; use `.cpanel.yml` only for a separate cPanel-hosted checkout.
 
-When Plesk reports `fatal: this operation must be run in a work tree` during its native `Deploying files` stage, the project post-deploy build hook has not caused that Git operation. A source-code change cannot repair Plesk's managed checkout or deployment target.
+The Plesk task label `Deploying files` does not by itself identify which subprocess failed; a custom deployment action may be grouped under that stage. The SendFlow build script contains no direct Git command, but the exact source of `fatal: this operation must be run in a work tree` is not proven until the task log identifies the command, current directory, and whether the build-start marker was printed.
 
-**Why:** The project hook only installs and builds from the delivered source tree; it runs no Git commands, while the Plesk task fails before that hook completes.
+**Why:** Plesk's UI groups work under a phase label, and the summarized error capture does not show the action's stdout/stderr or subprocess command.
 
-**How to apply:** Verify the Plesk checkout/worktree and target mapping first. Keep the build hook and Node startup configuration separate, and report the unresolved server-side repair explicitly when Plesk access is unavailable.
+**How to apply:** Inspect the full task log before attributing the error to native Git or the custom action. The repository can verify the build script and configuration, but not Plesk's internal checkout, environment, or actual saved action command.
 
 Plesk is the production target for SendFlow; Replit is only the development environment. Do not suggest publishing the production app to Replit.
 
