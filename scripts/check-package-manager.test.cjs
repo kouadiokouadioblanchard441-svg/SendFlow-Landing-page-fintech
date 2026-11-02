@@ -165,9 +165,12 @@ test("Plesk runtime paths match the Passenger startup and document root", () => 
   );
 
   assert.match(prepareBuild, /scripts:\s*\{\s*start:\s*"node \.\/index\.cjs"/);
+  assert.match(prepareBuild, /path\.join\(outputDist, "\.node-version"\)/);
   assert.match(verifyBuild, /const PLESK_STARTUP_FILE = "index\.cjs"/);
+  assert.match(verifyBuild, /verifyNodeVersionSelection/);
   assert.match(verifyBuild, /"public\/index\.html"/);
   assert.match(verifyBuild, /"index\.cjs"/);
+  assert.equal(readFileSync(path.join(repoRoot, ".node-version"), "utf8").trim(), "22");
   assert.match(deploymentGuide, /Application Root.*`<checkout Git>/);
   assert.match(deploymentGuide, /Startup File.*`index\.cjs`/);
   assert.match(deploymentGuide, /Document Root.*`<checkout Git>\/dist\/public`/);

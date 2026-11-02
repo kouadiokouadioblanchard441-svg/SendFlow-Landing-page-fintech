@@ -125,6 +125,25 @@ async function verifyRuntimePackage() {
   }
 }
 
+async function verifyNodeVersionSelection() {
+  const runtimeVersionPath = await requireFile(".node-version");
+  if (!runtimeVersionPath) return;
+
+  const sourceVersionPath = path.join(repoRoot, ".node-version");
+  const [runtimeVersion, sourceVersion] = await Promise.all([
+    readFile(runtimeVersionPath, "utf8"),
+    readFile(sourceVersionPath, "utf8"),
+  ]);
+  if (
+    !/^(20|22|24|26)$/.test(sourceVersion.trim()) ||
+    runtimeVersion.trim() !== sourceVersion.trim()
+  ) {
+    errors.push(
+      "dist/.node-version must match the repository's supported Node major so nodenv can select the runtime from the Plesk Application Root.",
+    );
+  }
+}
+
 async function verifyPublicAssets() {
   const publicFiles = await listFiles(publicRoot);
   if (publicFiles.length === 0) {
@@ -274,6 +293,7 @@ try {
     }
   }
   await verifyRuntimePackage();
+  await verifyNodeVersionSelection();
   await verifyPublicAssets();
   await verifyApacheFallback();
 

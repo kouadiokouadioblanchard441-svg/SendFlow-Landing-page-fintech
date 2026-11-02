@@ -5,10 +5,10 @@
 Le build de production produit `dist/` dans le checkout Git Plesk après l’action de déploiement, avec un `package.json` minimal pour le gestionnaire Node.js. GitHub Actions vérifie séparément que ce paquet se construit et démarre correctement. Le checkout Git, la racine de l’application Node.js et la racine web sont trois chemins distincts. Configure :
 
 - **Cible du déploiement Git** : conserve `/sendflow.africa`, comme demandé. Ce libellé de Plesk ne suffit pas à déterminer le chemin absolu du checkout.
-- **Application Root** : le dossier compilé `dist` sous le checkout Git réellement déployé.
+- **Application Root** : le dossier compilé `dist` sous le checkout Git réellement déployé. La racine du monorepo (`/sendflow.africa` dans le journal fourni) n’est pas la racine Node de production.
 - **Startup File** : `index.cjs`, relatif à l’Application Root. C’est `dist/index.cjs`, pas le wrapper `index.cjs` de la racine du dépôt.
 - **Document Root** : le sous-dossier `public` de l’Application Root, soit `<checkout Git>/dist/public`. Ne configure pas `dist` lui-même comme Document Root : les fichiers web sont dans `dist/public`.
-- **Node.js** : Node 24 recommandé (référence CI), Node 22.13+ ou Node 20.19+ sont également acceptés. Les autres versions paires LTS à partir de 24 le sont aussi. Les versions impaires, dont Node 21, sont refusées.
+- **Node.js** : sélectionne Node 22.23.4 dans Plesk. Le fichier `.node-version` contient `22`, afin que les shims `nodenv` sélectionnent la version majeure 22 depuis la racine du dépôt et depuis `dist`. Le build accepte Node 22.13+, 20.19+ et les autres versions paires LTS à partir de 24.
 - **Gestionnaire pour construire** : pnpm 10.26.1, épinglé par `packageManager` dans `package.json`. L’action de déploiement utilise explicitement `corepack pnpm@10.26.1`, puis `npx pnpm@10.26.1` si Corepack est absent. Un pnpm global différent est refusé ; le contrôle `preinstall` n’est pas contourné.
 - **Gestionnaire Plesk pour le runtime** : il n’est pas utilisé pour construire le monorepo. Le manifeste compilé `dist/package.json` ne contient ni dépendances ni script `preinstall`; aucun `pnpm install` n’est requis pour démarrer Passenger.
 - **Mode** : `production`.
@@ -18,6 +18,34 @@ Le build de production produit `dist/` dans le checkout Git Plesk après l’act
 Le build génère aussi `dist/public/.htaccess` : Apache renvoie les routes web inconnues vers `index.html` pour que le routeur React traite les accès directs et les actualisations. Une règle laisse explicitement `/api` et `/api/*` à Passenger ; le serveur répond en JSON pour les routes API inconnues et ne leur renvoie jamais le HTML de la SPA.
 
 Plesk doit démarrer le bundle avec `dist` comme répertoire courant : le serveur y cherche `build-info.json` et `public/`. La configuration retenue est donc : Application Root=`<checkout Git>/dist`, Startup File=`index.cjs`, Document Root=`<checkout Git>/dist/public`. Le wrapper source `index.cjs` à la racine du checkout n’est pas le Startup File recommandé ; il redirige vers `dist/index.cjs` seulement si Plesk est délibérément configuré pour démarrer depuis la racine source.
+
+### Erreur `nodenv: node: command not found` dans les commandes Node.js
+
+Le journal fourni indique `Scope: all 9 workspace projects` et lance le
+`preinstall` de la racine. Cela prouve que la commande Plesk a été exécutée avec
+le monorepo comme Application Root, au lieu du paquet compilé `dist/`. Le
+`pnpm run start` de la racine déclenche alors l’installation du workspace avant
+le démarrage. Le journal montre également que le shim `nodenv` ne sélectionne
+aucun Node dans ce contexte.
+
+Le dépôt fournit maintenant `.node-version` (`22`) à la racine et dans le paquet
+généré. Régle les paramètres Plesk comme suit, après un build réussi :
+
+- Version Node.js sélectionnée : `22.23.4`
+- Application Root : `<chemin physique du checkout>/dist`
+- Startup File : `index.cjs`
+- Document Root : `<chemin physique du checkout>/dist/public`
+
+Ainsi, les commandes Plesk s’exécutent dans le manifeste minimal de `dist/`,
+qui ne contient ni workspace, ni `preinstall`, ni dépendances à installer.
+Utilise le fichier Startup File Plesk pour démarrer Passenger; ne lance pas
+`pnpm run start` depuis la racine du monorepo. Pour vérifier le shell des
+commandes Node.js depuis `dist/`, exécute `pwd`, `cat .node-version`,
+`node --version` et `command -v node`. Le résultat attendu est Node 22.23.4 et
+un exécutable Node accessible. Si `nodenv` échoue encore depuis `dist/` malgré
+`.node-version` valant `22`, le problème restant est le shim/PATH fourni par
+Plesk et doit être corrigé dans la configuration serveur; le dépôt ne peut pas
+modifier le runtime installé.
 
 L’arborescence attendue dans l’application root Plesk est :
 
