@@ -98,6 +98,7 @@ echo "Running tests, type checks, and the Plesk production build..."
 required_outputs=(
   "dist/index.cjs"
   "dist/.node-version"
+  "dist/pnpm-workspace.yaml"
   "dist/build-info.json"
   "dist/public/index.html"
   "dist/public/.htaccess"

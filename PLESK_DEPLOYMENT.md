@@ -10,7 +10,7 @@ Le build de production produit `dist/` dans le checkout Git Plesk après l’act
 - **Document Root** : le sous-dossier `public` de l’Application Root, soit `<checkout Git>/dist/public`. Ne configure pas `dist` lui-même comme Document Root : les fichiers web sont dans `dist/public`.
 - **Node.js** : sélectionne Node 22.23.4 dans Plesk. Le fichier `.node-version` contient `22`, afin que les shims `nodenv` sélectionnent la version majeure 22 depuis la racine du dépôt et depuis `dist`. Le build accepte Node 22.13+, 20.19+ et les autres versions paires LTS à partir de 24.
 - **Gestionnaire pour construire** : pnpm 10.26.1, épinglé par `packageManager` dans `package.json`. L’action de déploiement utilise explicitement `corepack pnpm@10.26.1`, puis `npx pnpm@10.26.1` si Corepack est absent. Un pnpm global différent est refusé ; le contrôle `preinstall` n’est pas contourné.
-- **Gestionnaire Plesk pour le runtime** : il n’est pas utilisé pour construire le monorepo. Le manifeste compilé `dist/package.json` ne contient ni dépendances ni script `preinstall`; aucun `pnpm install` n’est requis pour démarrer Passenger.
+- **Gestionnaire Plesk pour le runtime** : il n’est pas utilisé pour construire le monorepo. Le manifeste compilé `dist/package.json` ne contient ni dépendances ni script `preinstall`, et `dist/pnpm-workspace.yaml` isole explicitement ce paquet du workspace source ; aucun install des neuf projets n’est requis pour démarrer Passenger.
 - **Mode** : `production`.
 - **URL de l’application** : `https://sendflow.africa` lorsque ce champ sert d’URL publique ; le build refuse une origine HTTP.
 - **Écoute réseau** : sous Plesk, le serveur détecte `PhusionPassenger` et utilise son socket avec `listen("passenger")`. Aucun `PORT` numérique n’est exigé sous Passenger. En exécution Node directe seulement, `PORT` reste obligatoire et le serveur écoute sur `0.0.0.0`.
@@ -36,8 +36,11 @@ généré. Régle les paramètres Plesk comme suit, après un build réussi :
 - Startup File : `index.cjs`
 - Document Root : `<chemin physique du checkout>/dist/public`
 
-Ainsi, les commandes Plesk s’exécutent dans le manifeste minimal de `dist/`,
-qui ne contient ni workspace, ni `preinstall`, ni dépendances à installer.
+Le paquet ajoute aussi un `pnpm-workspace.yaml` vide pour empêcher pnpm de
+remonter jusqu’au workspace source quand Plesk lance son installation depuis
+`dist/`. Ainsi, les commandes s’exécutent dans le manifeste minimal isolé de
+`dist/`, qui ne contient ni les neuf projets du workspace source, ni
+`preinstall`, ni dépendances à installer.
 Utilise le fichier Startup File Plesk pour démarrer Passenger; ne lance pas
 `pnpm run start` depuis la racine du monorepo. Pour vérifier le shell des
 commandes Node.js depuis `dist/`, exécute `pwd`, `cat .node-version`,
@@ -52,6 +55,8 @@ L’arborescence attendue dans l’application root Plesk est :
 ```text
 dist/
   package.json
+  .node-version
+  pnpm-workspace.yaml
   index.cjs
   build-info.json
   pino-worker.cjs
@@ -83,6 +88,7 @@ existants ; elle n'est pas une garantie de validation équivalente à la CI.
 | Contexte                                | Version / portée                                                                                                                      |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Workspace et CI GitHub                  | Node 24, avec tests, types, build et smoke-test du bundle                                                                             |
+| Runtime de l’application Plesk          | Node 22.23.4 ; `.node-version` sélectionne le major 22 dans le shim `nodenv`                                                           |
 | Contrôle de build Plesk et cPanel       | Node 20.19+, Node 22.13+, ou une branche LTS paire à partir de Node 24                                                                |
 | Compatibilité                           | Node 24 est vérifié en CI ; les autres branches acceptées passent le contrôle de version, mais doivent aussi être validées sur l'hôte |
 | Manifeste du bundle `dist/package.json` | Minimum runtime `>=20.19.0` ; ce manifeste sans dépendances ne décrit pas les prérequis du build du dépôt                             |
@@ -90,8 +96,9 @@ existants ; elle n'est pas une garantie de validation équivalente à la CI.
 Vite 7 demande Node 20.19+ ou 22.12+, mais ESLint 10 — exécuté pendant le build
 — demande Node 20.19+ ou 22.13+. Le contrôle du dépôt retient donc 22.13 comme
 minimum sur la branche 22. Node 21, 22.12 et les branches impaires sont refusés.
-Node 24 reste la version recommandée ; Node 20.19+ est conservé pour les
-hébergements existants. Les outils de développement non exécutés par le
+Node 24 reste la référence CI ; l’application Plesk actuelle est configurée
+sur Node 22.23.4. Node 20.19+ reste accepté pour les hébergements existants.
+Les outils de développement non exécutés par le
 déploiement, notamment Orval pour régénérer l’API, peuvent demander une version
 plus récente.
 

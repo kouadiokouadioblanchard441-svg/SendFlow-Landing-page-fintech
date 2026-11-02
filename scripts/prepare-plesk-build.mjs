@@ -35,6 +35,7 @@ await writeFile(
   path.join(outputDist, ".node-version"),
   (await readFile(path.join(repoRoot, ".node-version"), "utf8")).trim() + "\n",
 );
+await writeFile(path.join(outputDist, "pnpm-workspace.yaml"), "packages: []\n");
 await writeFile(
   path.join(outputDist, "build-info.json"),
   `${JSON.stringify({ buildId }, null, 2)}\n`,

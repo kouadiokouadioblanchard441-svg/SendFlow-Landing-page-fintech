@@ -116,6 +116,8 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   assert.match(deployScript, /PLESK_BUILD_COMPLETE/);
   for (const output of [
     "dist/index.cjs",
+    "dist/.node-version",
+    "dist/pnpm-workspace.yaml",
     "dist/build-info.json",
     "dist/public/index.html",
     "dist/public/.htaccess",
@@ -166,8 +168,10 @@ test("Plesk runtime paths match the Passenger startup and document root", () => 
 
   assert.match(prepareBuild, /scripts:\s*\{\s*start:\s*"node \.\/index\.cjs"/);
   assert.match(prepareBuild, /path\.join\(outputDist, "\.node-version"\)/);
+  assert.match(prepareBuild, /path\.join\(outputDist, "pnpm-workspace\.yaml"\)/);
   assert.match(verifyBuild, /const PLESK_STARTUP_FILE = "index\.cjs"/);
   assert.match(verifyBuild, /verifyNodeVersionSelection/);
+  assert.match(verifyBuild, /verifyRuntimeWorkspaceIsolation/);
   assert.match(verifyBuild, /"public\/index\.html"/);
   assert.match(verifyBuild, /"index\.cjs"/);
   assert.equal(readFileSync(path.join(repoRoot, ".node-version"), "utf8").trim(), "22");

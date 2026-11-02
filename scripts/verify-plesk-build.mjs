@@ -144,6 +144,17 @@ async function verifyNodeVersionSelection() {
   }
 }
 
+async function verifyRuntimeWorkspaceIsolation() {
+  const workspacePath = await requireFile("pnpm-workspace.yaml");
+  if (!workspacePath) return;
+
+  if ((await readFile(workspacePath, "utf8")).trim() !== "packages: []") {
+    errors.push(
+      "dist/pnpm-workspace.yaml must declare an empty workspace so Plesk package installation cannot climb into the source monorepo.",
+    );
+  }
+}
+
 async function verifyPublicAssets() {
   const publicFiles = await listFiles(publicRoot);
   if (publicFiles.length === 0) {
@@ -294,6 +305,7 @@ try {
   }
   await verifyRuntimePackage();
   await verifyNodeVersionSelection();
+  await verifyRuntimeWorkspaceIsolation();
   await verifyPublicAssets();
   await verifyApacheFallback();
 
