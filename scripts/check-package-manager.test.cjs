@@ -39,8 +39,8 @@ test("rejects npm and other package managers", () => {
 
 test("rejects pnpm versions that differ from the workspace pin", () => {
   assert.match(
-    validatePackageManagerUserAgent("pnpm/12.16.1 npm/? node/v24.22.1").message,
-    /requires pnpm 10\.26\.1.*current installer is pnpm 12\.16\.1/,
+    validatePackageManagerUserAgent("pnpm/12.15.0 npm/? node/v22.23.4").message,
+    /requires pnpm 10\.26\.1.*current installer is pnpm 12\.15\.0/,
   );
 });
 
@@ -101,6 +101,16 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   const deployScript = readFileSync(
     path.join(__dirname, "plesk-deploy.sh"),
     "utf8",
+  );
+  assert.match(deployScript, /source "\$ROOT_DIR\/scripts\/plesk-pnpm\.sh"/);
+  assert.match(deployScript, /resolve_plesk_pnpm "\$ROOT_DIR"/);
+  assert.match(
+    deployScript,
+    /"\$\{PLESK_PNPM\[@\]\}" install --frozen-lockfile --prod=false/,
+  );
+  assert.match(
+    deployScript,
+    /"\$\{PLESK_PNPM\[@\]\}" run build/,
   );
   assert.match(deployScript, /run build/);
   assert.match(deployScript, /mkdir -p dist\/tmp/);
@@ -177,7 +187,7 @@ if [ -n "\${GIT_DIR+x}\${GIT_WORK_TREE+x}\${GIT_INDEX_FILE+x}\${GIT_COMMON_DIR+x
   echo "Git context leaked to Corepack" >&2
   exit 99
 fi
-if [ "\${1:-}" = "pnpm" ] && [ "\${2:-}" = "--version" ]; then
+    if [ "\${1:-}" = "pnpm@10.26.1" ] && [ "\${2:-}" = "--version" ]; then
   echo "10.26.1"
   exit 0
 fi

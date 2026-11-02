@@ -13,7 +13,7 @@
     "lint": "eslint index.cjs eslint.config.mjs \"artifacts/**/*.{ts,tsx,mjs}\" \"scripts/**/*.{cjs,mjs,js,ts}\"",
     "test": "pnpm run lint && pnpm run test:deploy-node && pnpm run test:package-manager && pnpm run test:plesk-runtime-config && pnpm --filter @workspace/api-server run test:health && pnpm --filter @workspace/api-server run test:server-listener && pnpm --filter @workspace/api-server run test:app-fallback && pnpm --filter @workspace/api-server run test:request-validation && pnpm --filter @workspace/api-server run test:landing-visibility && pnpm --filter @workspace/api-server run test:public-storage && pnpm --filter @workspace/api-server run test:origin-security && pnpm --filter @workspace/api-server run test:resend && pnpm --filter @workspace/sendflow run test:panel-access && pnpm --filter @workspace/sendflow run test:landing-countries && pnpm --filter @workspace/sendflow run test:localized-routes && pnpm --filter @workspace/sendflow run test:seo",
     "test:deploy-node": "node --test scripts/check-deploy-node.test.cjs",
-    "test:package-manager": "node --test scripts/check-package-manager.test.cjs",
+    "test:package-manager": "node --test scripts/check-package-manager.test.cjs scripts/plesk-pnpm.test.cjs",
     "test:plesk-runtime-config": "node --test scripts/validate-plesk-runtime-config.test.cjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"

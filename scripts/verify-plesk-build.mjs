@@ -105,6 +105,21 @@ async function verifyRuntimePackage() {
         "dist/package.json must declare the supported Node.js runtime minimum.",
       );
     }
+    if (
+      manifest.packageManager ||
+      manifest.scripts?.preinstall ||
+      Object.keys(manifest.scripts ?? {}).some((name) => name !== "start") ||
+      [
+        "dependencies",
+        "devDependencies",
+        "optionalDependencies",
+        "peerDependencies",
+      ].some((name) => manifest[name] && Object.keys(manifest[name]).length > 0)
+    ) {
+      errors.push(
+        "dist/package.json must not trigger workspace installs or preinstall checks; the compiled Passenger runtime has no external package dependencies.",
+      );
+    }
   } catch (error) {
     errors.push(`Cannot parse dist/package.json: ${error.message}`);
   }
