@@ -17,7 +17,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  plesk-build:
+    name: Plesk build validation
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -296,3 +297,111 @@ jobs:
           path: generated-artifacts/sendflow-plesk-*.tar.gz
           if-no-files-found: error
           retention-days: 14
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the pushed commit
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Fail on high or critical dependency vulnerabilities
+        run: pnpm audit --audit-level high
+
+  static-analysis:
+    name: Static security analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the pushed commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan source with Semgrep security rules
+        env:
+          BASELINE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/main' }}
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/src" \
+            -w /src \
+            semgrep/semgrep:1.136.0 \
+            semgrep scan \
+              --config p/security-audit \
+              --baseline-commit "$BASELINE_REF" \
+              --error \
+              --metrics=off \
+              --exclude=attached_assets \
+              --exclude=generated-artifacts \
+              --exclude=dist \
+              --exclude=node_modules \
+              --exclude=.cache \
+              .
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the full commit history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository history with Gitleaks
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/repo" \
+            -w /repo \
+            zricethezav/gitleaks:v8.24.2 \
+            detect \
+              --source=/repo \
+              --redact \
+              --exit-code=1 \
+              --no-banner
+
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - plesk-build
+      - dependency-audit
+      - static-analysis
+      - secret-scan
+    if: always()
+    permissions:
+      contents: read
+    steps:
+      - name: Fail unless every validation passed
+        env:
+          PLESK_BUILD_RESULT: ${{ needs.plesk-build.result }}
+          DEPENDENCY_AUDIT_RESULT: ${{ needs.dependency-audit.result }}
+          STATIC_ANALYSIS_RESULT: ${{ needs.static-analysis.result }}
+          SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
+        run: |
+          set -euo pipefail
+          failed=0
+          for result in \
+            "$PLESK_BUILD_RESULT" \
+            "$DEPENDENCY_AUDIT_RESULT" \
+            "$STATIC_ANALYSIS_RESULT" \
+            "$SECRET_SCAN_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              echo "::error::A required validation did not pass (result: $result)."
+              failed=1
+            fi
+          done
+          exit "$failed"

@@ -21,3 +21,4 @@
 - [SendFlow fee configuration](sendflow-fee-configuration.md) — Keep operator fees persisted and editable in the CMS; do not silently fall back to public hardcoded rates.
 - [Git-ignored production assets](git-ignored-production-assets.md) — Workspace-level ignore rules can hide assets required by clean GitHub/Plesk builds; explicitly check and include production imports.
 - [Playwright on Replit](playwright-nix-runtime.md) — Prefer the preinstalled Chromium wrapper; downloaded browsers can mismatch the host libraries.
+- [Incremental Semgrep checks](incremental-semgrep-checks.md) — Compare security findings to the PR base so existing loopback-only HTTP calls do not block unrelated changes.
