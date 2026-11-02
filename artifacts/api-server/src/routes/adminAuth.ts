@@ -12,17 +12,19 @@ import {
   setAdminSessionCookie,
   verifyAdminPassword,
 } from "../middlewares/adminAuth";
-import { createRateLimiter, isAllowedMutationOrigin } from "../middlewares/security";
+import { createSharedRateLimiter, isAllowedMutationOrigin } from "../middlewares/security";
 import { adminLoginSchema, panelLookupSchema } from "../lib/requestValidation";
 
 const router: IRouter = Router();
 const SESSION_DAYS = 7;
-const loginRateLimit = createRateLimiter({
+const loginRateLimit = createSharedRateLimiter({
+  scope: "admin-login",
   windowMs: 15 * 60 * 1000,
   max: 8,
   message: "Trop de tentatives de connexion. Réessaie dans quelques minutes.",
 });
-const panelLookupRateLimit = createRateLimiter({
+const panelLookupRateLimit = createSharedRateLimiter({
+  scope: "admin-panel-lookup",
   windowMs: 10 * 60 * 1000,
   max: 30,
 });
@@ -36,8 +38,11 @@ function rejectUntrustedOrigin(req: Request, res: Response): boolean {
   return false;
 }
 
-router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void> => {
-  if (rejectUntrustedOrigin(req, res)) return;
+function requireTrustedOrigin(req: Request, res: Response, next: () => void): void {
+  if (!rejectUntrustedOrigin(req, res)) next();
+}
+
+router.post("/admin/auth/login", requireTrustedOrigin, loginRateLimit, async (req, res): Promise<void> => {
   const parsed = adminLoginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Panel access, email and password are invalid" });
@@ -70,8 +75,7 @@ router.post("/admin/auth/login", loginRateLimit, async (req, res): Promise<void>
   res.json({ user: { id: user.id, email: user.email } });
 });
 
-router.post("/admin/auth/panel/verify", panelLookupRateLimit, async (req, res): Promise<void> => {
-  if (rejectUntrustedOrigin(req, res)) return;
+router.post("/admin/auth/panel/verify", requireTrustedOrigin, panelLookupRateLimit, async (req, res): Promise<void> => {
   const parsed = panelLookupSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(404).json({ error: "Panel not found" });

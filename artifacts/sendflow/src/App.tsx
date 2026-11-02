@@ -83,6 +83,8 @@ import simpleExperienceIcon from './assets/sendflow-icon-simple-experience.svg';
 import visibleDetailsIcon from './assets/sendflow-icon-visible-details.svg';
 import privateIcon from './assets/sendflow-icon-private.svg';
 
+import { PublicSupportChat, type SupportChatSettings } from '@/components/public-support-chat';
+
 const NotFound = lazy(() => import('@/pages/not-found'));
 const AdminPage = lazy(() => import('@/pages/admin'));
 const AboutPage = lazy(() => import('@/pages/about'));
@@ -664,8 +666,24 @@ function AnimatedRoutes() {
         </div>
       )}
       {!isPrivateRoute && <RecaptchaRuntime />}
+      {!isPrivateRoute && <PublicSupportChatForRoute path={routePath} />}
     </>
   );
+}
+
+function PublicSupportChatForRoute({ path }: { path: string }) {
+  const { data } = usePublicLandingBundle();
+  const normalizedPath = path.replace(/\/+$/, '').toLowerCase() || '/';
+  const locale = getLocaleFromPath(path);
+  const page: 'home' | 'features' | 'security' | 'download' | 'about' | 'legal' | 'other' =
+    ['/', '/en'].includes(normalizedPath) ? 'home'
+      : ['/fonctionnalites', '/en/features'].includes(normalizedPath) ? 'features'
+        : ['/securite', '/en/security'].includes(normalizedPath) ? 'security'
+          : ['/download', '/en/download'].includes(normalizedPath) ? 'download'
+            : ['/a-propos', '/en/about'].includes(normalizedPath) ? 'about'
+              : ['/conditions-utilisation', '/en/terms', '/confidentialite', '/en/privacy', '/mentions-legales', '/en/legal-notice'].includes(normalizedPath) ? 'legal'
+                : 'other';
+  return <PublicSupportChat locale={locale} settings={data?.settings as SupportChatSettings | null | undefined} page={page} />;
 }
 
 function RecaptchaRuntime() {

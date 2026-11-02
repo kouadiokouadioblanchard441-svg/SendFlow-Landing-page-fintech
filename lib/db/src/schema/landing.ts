@@ -333,6 +333,12 @@ export const adminSessions = pgTable(
   }),
 );
 
+export const rateLimitBuckets = pgTable("rate_limit_buckets", {
+  bucketKey: varchar("bucket_key", { length: 64 }).primaryKey(),
+  count: integer("count").notNull(),
+  resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+});
+
 export const newsletterSubscribers = pgTable(
   "newsletter_subscribers",
   {

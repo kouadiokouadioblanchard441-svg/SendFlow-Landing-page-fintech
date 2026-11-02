@@ -10,13 +10,15 @@ const previousPublicSiteUrl = process.env.PUBLIC_SITE_URL;
 const previousAppUrl = process.env.APP_URL;
 const previousPublicUrl = process.env.PUBLIC_URL;
 const previousVitePublicSiteUrl = process.env.VITE_PUBLIC_SITE_URL;
+const previousSessionSecret = process.env.SESSION_SECRET;
 process.env.NODE_ENV = "production";
 delete process.env.PUBLIC_SITE_URL;
 process.env.APP_URL = "https://sendflow.example";
 process.env.NEON_DATABASE_URL ??=
   "postgresql://offline-test:offline-test@127.0.0.1:1/sendflow";
+process.env.SESSION_SECRET ??= "offline-test-session-secret";
 
-const { createRateLimiter, isAllowedMutationOrigin } =
+const { createRateLimiter, createSharedRateLimiter, isAllowedMutationOrigin } =
   await import("../src/middlewares/security.ts");
 const {
   ADMIN_SESSION_COOKIE,
@@ -25,7 +27,7 @@ const {
   setAdminSessionCookie,
 } =
   await import("../src/middlewares/adminAuth.ts");
-const { db } = await import("@workspace/db");
+const { db, pool } = await import("@workspace/db");
 const { default: adminAuthRouter } =
   await import("../src/routes/adminAuth.ts");
 const { default: landingRouter } =
@@ -286,6 +288,119 @@ test("the per-IP limiter bounds its bucket map under many unique addresses", () 
   assert.equal(nextCalls, callsBeforeRevisit + 1);
 });
 
+test("independent admin limiters share counts and ignore forwarded IP headers", async () => {
+  const databasePool = pool as unknown as {
+    query: (...args: unknown[]) => Promise<unknown>;
+  };
+  const originalQuery = Object.getOwnPropertyDescriptor(databasePool, "query");
+  const buckets = new Map<string, number>();
+  const seenKeys: string[] = [];
+  databasePool.query = async (...args: unknown[]) => {
+    const [statement, parameters] = args as [string, [string, number]];
+    assert.match(statement, /INSERT INTO rate_limit_buckets/);
+    assert.match(statement, /ON CONFLICT \(bucket_key\) DO UPDATE/);
+    const [key] = parameters;
+    seenKeys.push(key);
+    const count = (buckets.get(key) ?? 0) + 1;
+    buckets.set(key, count);
+    return {
+      rows: [{ count, reset_at: new Date(Date.now() + 60_000) }],
+    };
+  };
+
+  const app = express().set("trust proxy", false);
+  app.get(
+    "/worker-a",
+    createSharedRateLimiter({ scope: "test-shared", windowMs: 60_000, max: 1 }),
+    (_req, res) => res.sendStatus(204),
+  );
+  app.get(
+    "/worker-b",
+    createSharedRateLimiter({ scope: "test-shared", windowMs: 60_000, max: 1 }),
+    (_req, res) => res.sendStatus(204),
+  );
+  const server = createServer(app);
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const origin = `http://127.0.0.1:${address.port}`;
+
+    const first = await fetch(`${origin}/worker-a`, {
+      headers: { "X-Forwarded-For": "192.0.2.1" },
+    });
+    const second = await fetch(`${origin}/worker-b`, {
+      headers: { "X-Forwarded-For": "198.51.100.77" },
+    });
+
+    assert.equal(first.status, 204);
+    assert.equal(second.status, 429);
+    assert.equal(second.headers.get("retry-after") !== null, true);
+    assert.equal(seenKeys.length, 2);
+    assert.equal(seenKeys[0], seenKeys[1]);
+    assert.match(seenKeys[0], /^[a-f0-9]{64}$/);
+  } finally {
+    if (server.listening) {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+    if (originalQuery) {
+      Object.defineProperty(databasePool, "query", originalQuery);
+    } else {
+      delete (databasePool as { query?: unknown }).query;
+    }
+  }
+});
+
+test("shared admin limiter fails closed when PostgreSQL is unavailable", async () => {
+  const databasePool = pool as unknown as {
+    query: (...args: unknown[]) => Promise<unknown>;
+  };
+  const originalQuery = Object.getOwnPropertyDescriptor(databasePool, "query");
+  databasePool.query = async () => {
+    throw new Error("database unavailable");
+  };
+  const limit = createSharedRateLimiter({
+    scope: "test-failure",
+    windowMs: 60_000,
+    max: 1,
+  });
+  let statusCode = 200;
+  let nextCalls = 0;
+  const response = {
+    status(status: number) {
+      statusCode = status;
+      return this;
+    },
+    json() {
+      return this;
+    },
+  };
+
+  try {
+    await limit(
+      { socket: { remoteAddress: "127.0.0.1" } } as never,
+      response as never,
+      () => {
+        nextCalls += 1;
+      },
+    );
+    assert.equal(statusCode, 503);
+    assert.equal(nextCalls, 0);
+  } finally {
+    if (originalQuery) {
+      Object.defineProperty(databasePool, "query", originalQuery);
+    } else {
+      delete (databasePool as { query?: unknown }).query;
+    }
+  }
+});
+
 test.after(() => {
   if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
   else process.env.NODE_ENV = previousNodeEnv;
@@ -299,4 +414,6 @@ test.after(() => {
   else process.env.PUBLIC_URL = previousPublicUrl;
   if (previousVitePublicSiteUrl === undefined) delete process.env.VITE_PUBLIC_SITE_URL;
   else process.env.VITE_PUBLIC_SITE_URL = previousVitePublicSiteUrl;
+  if (previousSessionSecret === undefined) delete process.env.SESSION_SECRET;
+  else process.env.SESSION_SECRET = previousSessionSecret;
 });

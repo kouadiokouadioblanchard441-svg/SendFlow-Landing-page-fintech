@@ -68,3 +68,9 @@ For SendFlow production, GitHub Actions builds and transfers the validated `dist
 **Why:** The user requires `dist/` to arrive automatically on source pushes, without a manual Plesk shell command or a non-versioned panel hook. The repository now contains the build/package/SSH delivery workflow, but the live transfer still depends on GitHub Actions SSH settings and Plesk-side runtime configuration.
 
 **How to apply:** On each authorized push to `main`, let CI build and validate the bundle before SSH delivery. Never claim the artifact is on Plesk until the deployment job confirms it, and never claim the site is healthy without a live check. Preserve the user's established direct-push workflow; do not change branch protection without an explicit request.
+
+Do not use `X-Forwarded-For` as the client identity for SendFlow's Plesk-hosted API unless the live proxy configuration is verified to overwrite untrusted incoming values. Until then, use the TCP peer address and keep Express proxy trust disabled.
+
+**Why:** The repository cannot establish how the active Plesk/Passenger proxy forwards the original client address; trusting an unverified header lets callers forge their rate-limit identity.
+
+**How to apply:** Check the actual Plesk proxy configuration before enabling forwarded-IP trust. If verification is unavailable, accept that multiple clients may share the proxy's socket address rather than trusting spoofable headers.
