@@ -175,6 +175,7 @@ exit 42
             ...process.env,
             APP_URL: hook.appUrl,
             BASE_PATH: "/",
+            PLESK_MEDIA_DIR: path.join(tempRoot, "sendflow-media"),
             GIT_DIR: path.join(tempRoot, "internal-bare.git"),
             GIT_WORK_TREE: path.join(tempRoot, "worktree"),
             GIT_INDEX_FILE: path.join(tempRoot, "internal-index"),

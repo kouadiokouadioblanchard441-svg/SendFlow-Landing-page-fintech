@@ -4,7 +4,7 @@
 
 Le build de production produit `dist/` dans le checkout Git Plesk après l’action de déploiement, avec un `package.json` minimal pour le gestionnaire Node.js. GitHub Actions vérifie séparément que ce paquet se construit et démarre correctement. Le checkout Git et la racine de l’application Node.js sont deux chemins distincts. Configure :
 
-- **Application root** : le `dist` généré sous le checkout Git Plesk. Résous le chemin à partir du vrai dossier du dépôt affiché par Plesk ; ne suppose pas que ce chemin est `/httpdocs`.
+- **Application root** : le `dist` généré sous la racine de déploiement Git Plesk. Pour SendFlow, conserve `/sendflow.africa` comme cible Plesk : le site doit y être livré. Le chemin absolu sur le serveur doit être relevé dans Plesk ; ne le remplace pas par `/httpdocs` sans confirmer que ce dernier est bien la racine web configurée pour ce domaine.
 - **Application startup file** : `index.cjs` (le fichier compilé `dist/index.cjs`).
 - **Document root** : `public` sous l’application root, soit le chemin réel `<checkout-git>/dist/public`.
 - **Node.js** : Node 24 recommandé (référence CI), Node 22.13+ ou Node 20.19+ sont également acceptés. Les autres versions paires LTS à partir de 24 le sont aussi. Les versions impaires, dont Node 21, sont refusées.
@@ -132,9 +132,11 @@ Cela confirme que le pull a réussi et que la tâche a échoué pendant l’éta
 
 L’examen du dépôt confirme que `scripts/plesk-deploy.sh` et la préparation/vérification du build n’appellent aucune commande Git et ne requièrent aucun dossier `.git`. Le script est conçu pour s’exécuter depuis les fichiers livrés, même si Plesk ne copie pas son métadossier Git dans le répertoire de déploiement. Cela écarte un appel Git direct dans ces scripts, mais ne suffit pas à déterminer si Plesk les a lancés ni si un processus enfant a échoué.
 
-Pour cette capture, le réglage Plesk à examiner est **Git → dépôt SendFlow-Landing-page-fintech.git → Deployment / Deployment directory**, actuellement affiché comme `/sendflow.africa`, ainsi que le répertoire local associé au dépôt. Confirme dans les réglages et le Gestionnaire de fichiers les chemins absolus réellement résolus par Plesk. La cible doit recevoir la racine complète du monorepo — `package.json`, lockfile, `scripts/` et `artifacts/` — et non le dossier `dist` seul. Ne change pas la cible vers un chemin deviné.
+Pour cette installation, conserve dans **Git → dépôt SendFlow-Landing-page-fintech.git → Deployment / Deployment directory** la cible `/sendflow.africa`, nécessaire au fonctionnement du site. Le fait que Plesk termine l’opération quand la cible est `/httpdocs` ne prouve pas que le site est alors livré à sa racine web correcte ; ne bascule pas vers `/httpdocs` pour SendFlow sans confirmation explicite du document root du domaine. Dans Plesk et le Gestionnaire de fichiers, relève le chemin absolu réel auquel `/sendflow.africa` correspond. Cette cible doit recevoir la racine complète du monorepo — `package.json`, lockfile, `scripts/` et `artifacts/` — et non le dossier `dist` seul.
 
-Les captures Node.js antérieures ont également montré une racine d’application `/httpdocs`, tandis que la capture Git montre la cible `/sendflow.africa`. Ces valeurs peuvent être anciennes ou désigner des chemins différents ; elles ne prouvent pas à elles seules la cause de l’erreur Git. Après réparation du déploiement natif, aligne la racine Node sur le `dist` généré sous le chemin de déploiement réellement confirmé, et le Document Root sur son sous-dossier `public`.
+Les captures Node.js antérieures montrant `/httpdocs` ne suffisent pas à établir que ce chemin est le document root actuel du domaine. Aligne la racine Node sur `dist` sous le chemin absolu réel de la cible `/sendflow.africa`, puis configure le Document Root sur son sous-dossier `dist/public`, à condition que Plesk confirme que c’est bien la racine publique voulue.
+
+Le fait que l’erreur apparaisse avec une cible et pas l’autre désigne une différence dans la résolution du chemin, les permissions ou le traitement interne de la tâche Git Plesk. Un répertoire imbriqué ou absent ne prouve pas, à lui seul, la cause du message `this operation must be run in a work tree` : celui-ci indique qu’une commande Git exigeant un worktree a été lancée dans un contexte que Git ne reconnaît pas comme tel. Le dépôt ne permet pas d’identifier cette commande interne ni de confirmer si `/sendflow.africa` existe ou si le compte Plesk peut y écrire. Les scripts du projet ne lancent aucune commande Git et n’embarquent aucun de ces deux chemins.
 
 Pour diagnostiquer sans modifier les données :
 
@@ -214,9 +216,10 @@ dossier, pas le fichier de démarrage. Procède dans cet ordre :
 `index.cjs` est le point de démarrage de l’application compilée ; ce n’est pas
 une commande de build ni une action Git. Le `index.cjs` à la racine des sources
 est seulement un wrapper qui échoue explicitement si `dist/index.cjs` n’existe
-pas. N’utilise pas ce wrapper comme substitut au script de build. Ne configure pas
-`/httpdocs`, `/sendflow.africa` ou un autre chemin absolu sans vérifier dans
-Plesk le chemin réel de la racine déployée.
+pas. N’utilise pas ce wrapper comme substitut au script de build. Pour SendFlow,
+garde `/sendflow.africa` comme cible Plesk ; fais confirmer son chemin absolu
+réel dans Plesk avant de renseigner les chemins Application Root et Document
+Root dérivés de `dist`.
 
 Le workflow `.github/workflows/validate-plesk-build.yml` ne déploie pas sur Plesk et n’a besoin d’aucun secret SSH : il vérifie le build sur GitHub à chaque push sur `main`. Le déploiement de production est effectué par Plesk lorsque tu cliques **Deploy Now**.
 

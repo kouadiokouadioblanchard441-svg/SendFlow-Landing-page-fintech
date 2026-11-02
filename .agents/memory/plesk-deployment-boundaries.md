@@ -21,6 +21,12 @@ The control-panel screenshots for `sendflow.africa` identify Plesk, so its deplo
 
 **How to apply:** Follow the Plesk deploy hook and restart-file location when deploying this domain; use `.cpanel.yml` only for a separate cPanel-hosted checkout.
 
+For SendFlow production, preserve `/sendflow.africa` as the Plesk Git deployment target. The user reports that deploying to `/httpdocs` avoids the Git error but does not serve the site correctly; do not recommend switching to `/httpdocs` unless Plesk confirms it is the configured web root.
+
+**Why:** The user explicitly clarified that `/sendflow.africa` is the required production deployment location.
+
+**How to apply:** Keep the Plesk target configured for SendFlow and verify its resolved absolute path, domain document root, and writable ownership in Plesk before aligning Node's `dist` application root and `dist/public` document root.
+
 The Plesk task label `Deploying files` does not by itself identify which subprocess failed; a custom deployment action may be grouped under that stage. The SendFlow build script contains no direct Git command, but the exact source of `fatal: this operation must be run in a work tree` is not proven until the task log identifies the command, current directory, and whether the build-start marker was printed.
 
 **Why:** Plesk's UI groups work under a phase label, and the summarized error capture does not show the action's stdout/stderr or subprocess command.
