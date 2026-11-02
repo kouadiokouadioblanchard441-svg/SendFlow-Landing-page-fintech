@@ -343,6 +343,15 @@ export default function FeaturesPage() {
           codeLabel={publicContent('developer.api.codeLabel', language === 'fr' ? 'Requête JSON · Paiement entrant' : 'JSON request · Pay-in')}
           code={publicContent('developer.api.code', developerApiExample[language])}
         />
+        <div className="mx-auto -mt-6 mb-12 max-w-[1240px] px-5 text-right sm:px-8">
+          <Link
+            href={getLocalizedPath('/api-developpeur', language)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#6d35d8] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5822c3]"
+          >
+            {language === 'fr' ? 'Voir la page API développeur' : 'Explore the developer API page'}
+            <ChevronRight size={17} aria-hidden="true" />
+          </Link>
+        </div>
 
         <section className="sf-features-cta">
           <div>

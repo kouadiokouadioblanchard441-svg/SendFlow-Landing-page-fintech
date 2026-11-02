@@ -3,6 +3,7 @@ export type PublicLocale = 'fr' | 'en';
 const localizedRoutePairs = [
   { fr: '/', en: '/en/' },
   { fr: '/fonctionnalites', en: '/en/features' },
+  { fr: '/api-developpeur', en: '/en/developer-api' },
   { fr: '/securite', en: '/en/security' },
   { fr: '/download', en: '/en/download' },
   { fr: '/a-propos', en: '/en/about' },

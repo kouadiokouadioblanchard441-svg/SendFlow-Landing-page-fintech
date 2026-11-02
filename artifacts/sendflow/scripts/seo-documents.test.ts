@@ -6,8 +6,8 @@ import { absoluteSeoUrl, renderSeoDocuments } from './seo-documents.ts';
 import { getLocaleFromPath, getLocalizedAlternates, getLocalizedPath } from '../src/lib/localized-routes.ts';
 
 const root = new URL('../', import.meta.url);
-const [html, sitemap, robots, routeSeoJson] = await Promise.all(
-  ['index.html', 'public/sitemap.xml', 'public/robots.txt', 'src/lib/public-seo-routes.json'].map(file =>
+const [html, sitemap, robots, routeSeoJson, viteConfig] = await Promise.all(
+  ['index.html', 'public/sitemap.xml', 'public/robots.txt', 'src/lib/public-seo-routes.json', 'vite.config.ts'].map(file =>
     fs.readFile(new URL(file, root), 'utf8'),
   ),
 );
@@ -20,7 +20,7 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(normalizeSiteOrigin(''), undefined);
   const rendered = renderSeoDocuments(origin, { html, sitemap, robots });
   const locations = [...rendered.sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  assert.equal(locations.length, 18);
+  assert.equal(locations.length, 20);
   assert.deepEqual(locations, [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)]
     .map(match => `${origin}${match[1]}`));
   assert.ok(rendered.robots.includes(`Sitemap: ${origin}/sitemap.xml`));
@@ -55,6 +55,10 @@ test('home and feature SEO target developer payments in both languages', () => {
   assert.match(publicSeoRoutes.features.en.description, /payment API for developers/);
   assert.equal(publicSeoRoutes.home.fr.path, '/');
   assert.equal(publicSeoRoutes.home.en.path, '/en/');
+  assert.equal(publicSeoRoutes.developerApi.fr.path, '/api-developpeur');
+  assert.equal(publicSeoRoutes.developerApi.en.path, '/en/developer-api');
+  assert.ok(sitemap.includes('<loc>/api-developpeur</loc>'));
+  assert.ok(sitemap.includes('<loc>/en/developer-api</loc>'));
 });
 
 test('every localized public page has its own browser title beginning with its page name', () => {
@@ -80,6 +84,21 @@ test('public routes have stable reciprocal French and English URLs', () => {
     fr: '/france-senegal',
     en: '/en/france-senegal',
   });
+  assert.equal(getLocalizedPath('/api-developpeur', 'en'), '/en/developer-api');
+  assert.equal(getLocalizedPath('/en/developer-api', 'fr'), '/api-developpeur');
+  assert.deepEqual(getLocalizedAlternates('/api-developpeur'), {
+    fr: '/api-developpeur',
+    en: '/en/developer-api',
+  });
+});
+
+test('the developer API page is not intercepted by the backend API proxy', () => {
+  const proxyKey = viteConfig.match(/'(\^\/api\(\?:\/\|\$\))'\s*:/)?.[1];
+  assert.ok(proxyKey, 'Vite should proxy only the /api route and its subpaths');
+  const apiProxy = new RegExp(proxyKey);
+  assert.equal(apiProxy.test('/api/landing'), true);
+  assert.equal(apiProxy.test('/api'), true);
+  assert.equal(apiProxy.test('/api-developpeur'), false);
 });
 
 test('missing or invalid origins fail explicitly', () => {

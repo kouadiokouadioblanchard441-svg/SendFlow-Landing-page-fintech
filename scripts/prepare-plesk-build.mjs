@@ -273,6 +273,24 @@ for (const group of seoRouteGroups) {
         `Plesk route canonical URL was not rendered correctly: ${route.path}`,
       );
     }
+    if (seoOrigin) {
+      for (const [alternateLocale, alternatePath] of [
+        ["fr", group.fr.path],
+        ["en", group.en.path],
+        ["x-default", group.fr.path],
+      ]) {
+        const alternateUrl = escapeHtml(new URL(alternatePath, seoOrigin).href);
+        if (
+          !routeHtml.includes(
+            `<link rel="alternate" hreflang="${alternateLocale}" href="${alternateUrl}" />`,
+          )
+        ) {
+          throw new Error(
+            `Plesk route language alternate was not rendered correctly: ${route.path} (${alternateLocale}).`,
+          );
+        }
+      }
+    }
     const targetPath =
       route.path === "/"
         ? publicIndexPath

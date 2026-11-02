@@ -107,7 +107,7 @@ export default defineConfig(({ mode }) => ({
     host: '0.0.0.0',
     allowedHosts: true,
     proxy: {
-      '/api': {
+      '^/api(?:/|$)': {
         target: process.env.API_ORIGIN ?? 'http://127.0.0.1:8080',
         changeOrigin: true,
       },
