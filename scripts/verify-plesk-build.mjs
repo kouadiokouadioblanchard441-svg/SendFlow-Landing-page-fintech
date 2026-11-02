@@ -12,6 +12,7 @@ const distRoot = path.resolve(
 );
 const publicRoot = path.join(distRoot, "public");
 const distLabel = path.relative(repoRoot, distRoot) || ".";
+const PLESK_STARTUP_FILE = "index.cjs";
 const errors = [];
 
 async function requireFile(relativePath) {
@@ -93,10 +94,10 @@ async function verifyRuntimePackage() {
     const manifest = JSON.parse(await readFile(runtimeManifestPath, "utf8"));
     if (
       manifest.type !== "commonjs" ||
-      manifest.scripts?.start !== "node ./index.cjs"
+      manifest.scripts?.start !== `node ./${PLESK_STARTUP_FILE}`
     ) {
       errors.push(
-        "dist/package.json must be CommonJS and start with `node ./index.cjs`.",
+        `dist/package.json must be CommonJS and start with \`node ./${PLESK_STARTUP_FILE}\`.`,
       );
     }
     if (manifest.engines?.node !== ">=20.19.0") {
@@ -235,7 +236,7 @@ async function verifyApacheFallback() {
 
 try {
   const requiredFiles = [
-    "index.cjs",
+    PLESK_STARTUP_FILE,
     "build-info.json",
     "pino-worker.cjs",
     "pino-file.cjs",
@@ -272,7 +273,7 @@ try {
     const assetCount = (await listFiles(path.join(publicRoot, "assets")))
       .length;
     console.log(
-      `Plesk output verified: ${distLabel}/index.cjs, ${assetCount} frontend assets, ${buildInfo.buildId ?? "no build ID"}.`,
+      `Plesk output verified: Passenger startup ${distLabel}/${PLESK_STARTUP_FILE}, Document Root ${distLabel}/public, ${assetCount} frontend assets, ${buildInfo.buildId ?? "no build ID"}.`,
     );
   }
 } catch (error) {

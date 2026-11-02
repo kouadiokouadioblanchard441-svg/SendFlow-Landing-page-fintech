@@ -126,6 +126,31 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   }
 });
 
+test("Plesk runtime paths match the Passenger startup and document root", () => {
+  const repoRoot = path.resolve(__dirname, "..");
+  const prepareBuild = readFileSync(
+    path.join(__dirname, "prepare-plesk-build.mjs"),
+    "utf8",
+  );
+  const verifyBuild = readFileSync(
+    path.join(__dirname, "verify-plesk-build.mjs"),
+    "utf8",
+  );
+  const deploymentGuide = readFileSync(
+    path.join(repoRoot, "PLESK_DEPLOYMENT.md"),
+    "utf8",
+  );
+
+  assert.match(prepareBuild, /scripts:\s*\{\s*start:\s*"node \.\/index\.cjs"/);
+  assert.match(verifyBuild, /const PLESK_STARTUP_FILE = "index\.cjs"/);
+  assert.match(verifyBuild, /"public\/index\.html"/);
+  assert.match(verifyBuild, /"index\.cjs"/);
+  assert.match(deploymentGuide, /Application Root.*`<checkout Git>/);
+  assert.match(deploymentGuide, /Startup File.*`index\.cjs`/);
+  assert.match(deploymentGuide, /Document Root.*`<checkout Git>\/dist\/public`/);
+  assert.match(deploymentGuide, /conserve.*`\/sendflow\.africa`/);
+});
+
 test("Plesk deploy script clears fake Git context and propagates child failures", () => {
   const repoRoot = path.resolve(__dirname, "..");
   const tempRoot = mkdtempSync(
