@@ -54,10 +54,15 @@ test("Plesk build and packaging use the sole active deployment script", () => {
     "utf8",
   );
   const deploymentSkill = readFileSync(
-    path.join(
-      repoRoot,
-      ".agents/skills/plesk-deployment-engineer/SKILL.md",
-    ),
+    path.join(repoRoot, ".agents/skills/plesk-deployment-engineer/SKILL.md"),
+    "utf8",
+  );
+  const deploymentWorkflow = readFileSync(
+    path.join(repoRoot, ".github/workflows/validate-plesk-build.yml"),
+    "utf8",
+  );
+  const remoteDeployment = readFileSync(
+    path.join(__dirname, "plesk-remote-deploy.sh"),
     "utf8",
   );
 
@@ -70,10 +75,16 @@ test("Plesk build and packaging use the sole active deployment script", () => {
     /^bash \.\/scripts\/plesk-deploy\.sh && node \.\/scripts\/package-plesk-release\.mjs$/,
   );
   assert.equal(existsSync(path.join(__dirname, "plesk-git-deploy.sh")), false);
+  assert.match(deploymentGuide, /pnpm run deploy:plesk/);
+  assert.match(deploymentSkill, /scripts\/plesk-deploy\.sh/);
   for (const source of [deploymentGuide, deploymentSkill]) {
-    assert.match(source, /scripts\/plesk-deploy\.sh/);
     assert.doesNotMatch(source, /scripts\/plesk-git-deploy\.sh/);
   }
+  assert.match(deploymentWorkflow, /deploy-plesk:/);
+  assert.match(deploymentWorkflow, /secrets\.PLESK_SSH_PRIVATE_KEY/);
+  assert.match(deploymentWorkflow, /vars\.PLESK_DEPLOY_ROOT/);
+  assert.match(deploymentWorkflow, /scripts\/plesk-remote-deploy\.sh/);
+  assert.doesNotMatch(remoteDeployment, /(?:^|[\s;&|])git(?:\s|$)/m);
 });
 
 test("Plesk deploy chain does not run Git or require a worktree", () => {
@@ -105,20 +116,14 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   );
   assert.match(deployScript, /source "\$ROOT_DIR\/scripts\/plesk-pnpm\.sh"/);
   assert.match(deployScript, /resolve_plesk_pnpm "\$ROOT_DIR"/);
-  assert.match(
-    deployScript,
-    /resolve-plesk-deployment-root\.cjs "\$ROOT_DIR"/,
-  );
+  assert.match(deployScript, /resolve-plesk-deployment-root\.cjs "\$ROOT_DIR"/);
   assert.match(deployScript, /export PLESK_DEPLOYMENT_ROOT PLESK_DIST_DIR/);
   assert.match(deployScript, /PLESK_KEEP_PREVIOUS_DIST=1/);
   assert.match(
     deployScript,
     /"\$\{PLESK_PNPM\[@\]\}" install --frozen-lockfile --prod=false/,
   );
-  assert.match(
-    deployScript,
-    /"\$\{PLESK_PNPM\[@\]\}" run build/,
-  );
+  assert.match(deployScript, /"\$\{PLESK_PNPM\[@\]\}" run build/);
   assert.match(deployScript, /PLESK_BUILD_HOOK_STARTED/);
   assert.match(deployScript, /PLESK_BUILD_COMPLETE/);
   for (const output of [
@@ -175,7 +180,10 @@ test("Plesk runtime paths match the Passenger startup and document root", () => 
 
   assert.match(prepareBuild, /scripts:\s*\{\s*start:\s*"node \.\/index\.cjs"/);
   assert.match(prepareBuild, /path\.join\(outputDist, "\.node-version"\)/);
-  assert.match(prepareBuild, /path\.join\(outputDist, "pnpm-workspace\.yaml"\)/);
+  assert.match(
+    prepareBuild,
+    /path\.join\(outputDist, "pnpm-workspace\.yaml"\)/,
+  );
   assert.match(prepareBuild, /process\.env\.PLESK_DIST_DIR/);
   assert.match(prepareBuild, /PLESK_KEEP_PREVIOUS_DIST/);
   assert.match(verifyBuild, /const PLESK_STARTUP_FILE = "index\.cjs"/);
@@ -183,16 +191,26 @@ test("Plesk runtime paths match the Passenger startup and document root", () => 
   assert.match(verifyBuild, /verifyRuntimeWorkspaceIsolation/);
   assert.match(verifyBuild, /"public\/index\.html"/);
   assert.match(verifyBuild, /"index\.cjs"/);
-  assert.equal(readFileSync(path.join(repoRoot, ".node-version"), "utf8").trim(), "22");
-  assert.match(deploymentGuide, /Cible du déploiement Git.*`\/sendflow\.africa`/);
-  assert.match(deploymentGuide, /Application Root.*`\/sendflow\.africa\/dist`/);
-  assert.match(deploymentGuide, /Startup File.*`index\.cjs`/);
-  assert.match(deploymentGuide, /Document Root.*`\/sendflow\.africa\/dist\/public`/);
-  assert.match(deploymentGuide, /PLESK_REQUIRE_DEPLOYMENT_ROOT=1/);
+  assert.equal(
+    readFileSync(path.join(repoRoot, ".node-version"), "utf8").trim(),
+    "22",
+  );
   assert.match(
     deploymentGuide,
-    /PLESK_DEPLOYMENT_ROOT=\/var\/www\/vhosts\/sendflow\.africa\/sendflow\.africa/,
+    /Cible du déploiement Git.*`\/sendflow\.africa`/,
   );
+  assert.match(deploymentGuide, /Application Root.*`\/sendflow\.africa\/dist`/);
+  assert.match(deploymentGuide, /Startup File.*`index\.cjs`/);
+  assert.match(
+    deploymentGuide,
+    /Document Root.*`\/sendflow\.africa\/dist\/public`/,
+  );
+  assert.match(
+    deploymentGuide,
+    /PLESK_DEPLOY_ROOT.*\/var\/www\/vhosts\/sendflow\.africa\/sendflow\.africa/,
+  );
+  assert.match(deploymentGuide, /PLESK_SSH_PRIVATE_KEY/);
+  assert.match(deploymentGuide, /job `deploy-plesk`/);
 });
 
 test("Plesk deploy script clears fake Git context and propagates child failures", () => {

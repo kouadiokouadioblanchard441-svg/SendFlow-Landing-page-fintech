@@ -405,3 +405,113 @@ jobs:
             fi
           done
           exit "$failed"
+
+  deploy-plesk:
+    name: Deploy validated build to Plesk
+    runs-on: ubuntu-latest
+    needs:
+      - plesk-build
+      - build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    env:
+      PLESK_SSH_HOST: ${{ vars.PLESK_SSH_HOST }}
+      PLESK_SSH_USER: ${{ vars.PLESK_SSH_USER }}
+      PLESK_SSH_PORT: ${{ vars.PLESK_SSH_PORT || '22' }}
+      PLESK_DEPLOY_ROOT: ${{ vars.PLESK_DEPLOY_ROOT || '/var/www/vhosts/sendflow.africa/sendflow.africa' }}
+      RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Check out the validated commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download the validated Plesk package
+        uses: actions/download-artifact@v4
+        with:
+          name: sendflow-plesk-${{ github.sha }}
+          path: generated-artifacts
+
+      - name: Validate Plesk SSH settings
+        env:
+          PLESK_SSH_PRIVATE_KEY: ${{ secrets.PLESK_SSH_PRIVATE_KEY }}
+          PLESK_SSH_KNOWN_HOSTS: ${{ vars.PLESK_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          for name in PLESK_SSH_HOST PLESK_SSH_USER PLESK_SSH_PRIVATE_KEY PLESK_SSH_KNOWN_HOSTS; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing GitHub Actions setting: $name. Configure the Plesk SSH deployment values described in PLESK_DEPLOYMENT.md."
+              exit 1
+            fi
+          done
+          if [[ ! "$PLESK_SSH_HOST" =~ ^[A-Za-z0-9.-]+$ ]]; then
+            echo "::error::PLESK_SSH_HOST must be a hostname or IPv4 address."
+            exit 1
+          fi
+          if [[ ! "$PLESK_SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::PLESK_SSH_USER contains unsupported characters."
+            exit 1
+          fi
+          if [[ ! "$PLESK_SSH_PORT" =~ ^[0-9]{1,5}$ ]]; then
+            echo "::error::PLESK_SSH_PORT must be a TCP port number."
+            exit 1
+          fi
+          port_number=$((10#$PLESK_SSH_PORT))
+          if (( port_number < 1 || port_number > 65535 )); then
+            echo "::error::PLESK_SSH_PORT must be between 1 and 65535."
+            exit 1
+          fi
+          if [[ ! "$PLESK_DEPLOY_ROOT" =~ ^/[A-Za-z0-9._/-]+$ || "$PLESK_DEPLOY_ROOT" == *"/../"* ]]; then
+            echo "::error::PLESK_DEPLOY_ROOT must be an absolute path without spaces or parent-directory segments."
+            exit 1
+          fi
+          if [[ "$(basename -- "$PLESK_DEPLOY_ROOT")" != "sendflow.africa" ]]; then
+            echo "::error::PLESK_DEPLOY_ROOT must be the sendflow.africa deployment directory."
+            exit 1
+          fi
+          archive="$(find generated-artifacts -maxdepth 2 -type f -name 'sendflow-plesk-*.tar.gz' -print -quit)"
+          if [[ -z "$archive" || ! -s "$archive" ]]; then
+            echo "::error::The validated Plesk release archive was not downloaded."
+            exit 1
+          fi
+          echo "Plesk SSH configuration and release package are present."
+
+      - name: Install the pinned Plesk SSH host key and deploy key
+        env:
+          PLESK_SSH_PRIVATE_KEY: ${{ secrets.PLESK_SSH_PRIVATE_KEY }}
+          PLESK_SSH_KNOWN_HOSTS: ${{ vars.PLESK_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          umask 077
+          printf '%s\n' "$PLESK_SSH_PRIVATE_KEY" > "$HOME/.ssh/sendflow-plesk"
+          printf '%s\n' "$PLESK_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          test -s "$HOME/.ssh/sendflow-plesk"
+          test -s "$HOME/.ssh/known_hosts"
+
+      - name: Upload the release and atomically replace dist on Plesk
+        run: |
+          set -euo pipefail
+          archive="$(find generated-artifacts -maxdepth 2 -type f -name 'sendflow-plesk-*.tar.gz' -print -quit)"
+          remote_archive="$PLESK_DEPLOY_ROOT/.sendflow-upload-${RELEASE_ID}.tar.gz"
+          ssh_options=(
+            -i "$HOME/.ssh/sendflow-plesk"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+            -p "$PLESK_SSH_PORT"
+          )
+          scp_options=(
+            -i "$HOME/.ssh/sendflow-plesk"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+            -P "$PLESK_SSH_PORT"
+          )
+          scp "${scp_options[@]}" "$archive" "$PLESK_SSH_USER@$PLESK_SSH_HOST:$remote_archive"
+          printf -v remote_command 'bash -s -- %q %q %q' \
+            "$PLESK_DEPLOY_ROOT" "$RELEASE_ID" "$remote_archive"
+          ssh "${ssh_options[@]}" "$PLESK_SSH_USER@$PLESK_SSH_HOST" "$remote_command" \
+            < scripts/plesk-remote-deploy.sh
