@@ -3,8 +3,8 @@ name: Playwright on Nix
 description: Running headless Chromium locally in Replit's NixOS environment.
 ---
 
-Playwright's `install --with-deps` expects apt and sudo, which are unavailable in this workspace. Download the browser without `--with-deps`, install missing shared libraries through Nix, then expose library directories with `LD_LIBRARY_PATH` when launching tests.
+Prefer the Chromium wrapper at `/repl/tools/bin/chromium` for local Playwright runs and pass it as `executablePath`. Playwright-downloaded Chromium can lack host-compatible shared libraries; combining arbitrary Nix libraries through `LD_LIBRARY_PATH` can also break Node or create glibc version conflicts.
 
-**Why:** Chromium may download successfully but still fail at launch because NixOS does not expose all runtime shared libraries to the shell by default.
+**Why:** The preinstalled Replit browser runs against the container's system libraries, while a downloaded browser may not match the container's glibc and library versions.
 
-**How to apply:** Use this only for local browser runs in Replit; GitHub Actions on Ubuntu can use Playwright's `install --with-deps` normally.
+**How to apply:** Use `/repl/tools/bin/chromium` for local browser runs in Replit; keep the default Playwright browser for CI, where the workflow installs Chromium and its dependencies.
