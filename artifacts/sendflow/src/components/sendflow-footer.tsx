@@ -1,8 +1,8 @@
 import { Instagram, Linkedin } from 'lucide-react';
 import { Link } from 'wouter';
 import type { ReactNode } from 'react';
-import sendflowMark from '@assets/sendflow-mark-original.png';
-import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
+import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
+import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import bceaoLogo from '@assets/image_search/bceao-logo-official.png';
 import facebookLogo from '@assets/facebook-logo-clean-icon-png_1789582951886.png';
 import whatsappLogo from '@assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg';

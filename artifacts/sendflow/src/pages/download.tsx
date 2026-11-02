@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowDownToLine, ArrowRight, ChevronRight, Globe2, Headphones, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
-import sendflowMark from '@assets/sendflow-mark-original.png';
-import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
+import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
+import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import androidMaterialIcon from '@assets/google-android-material-icon.svg';
 import stepDownloadArt from '@assets/generated_images/sendflow-step-download-clean.png';
 import stepAccountArt from '@assets/generated_images/sendflow-step-account-clean.png';

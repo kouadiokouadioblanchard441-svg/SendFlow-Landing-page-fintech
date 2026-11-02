@@ -25,8 +25,8 @@ import {
   REGISTRATION_CTA_URL_KEY,
 } from '@/lib/registration-cta';
 import { ProtectedImage } from '@/components/protected-image';
-import sendflowMark from '@assets/sendflow-mark-original.png';
-import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
+import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
+import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import heroPlaceholder from '@assets/generated_images/sendflow-hero-placeholder.png';
 import heroGlobe from '@assets/generated_images/sendflow-earth-globe-transparent.png';
 import heroWomanConnection from '@assets/generated_images/sendflow-hero-woman.webp';

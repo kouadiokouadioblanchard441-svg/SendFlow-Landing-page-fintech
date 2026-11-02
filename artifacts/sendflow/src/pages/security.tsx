@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, ChevronRight, Globe2, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
-import sendflowMark from '@assets/sendflow-mark-original.png';
-import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
+import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
+import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import securityLockIcon from '@assets/generated_images/sendflow-security-lock-icon-clean.png';
 import securityCheckIcon from '../assets/sendflow-security-check.svg';
 import securityHeroArt from '@assets/generated_images/sendflow-security-hero-3d-clean.png';

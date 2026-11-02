@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'wouter';
-import sendflowMark from '@assets/sendflow-mark-original.png';
-import sendflowWordmark from '@assets/sendflow-wordmark-original.png';
+import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
+import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import { ProtectedImage } from '@/components/protected-image';
 import { getTelHref, getWhatsAppHref } from '@/lib/contact';
 

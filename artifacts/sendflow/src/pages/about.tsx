@@ -16,7 +16,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { SiGmail } from 'react-icons/si';
-import sendflowMark from '@assets/sendflow-mark-original.png';
+import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
 import founderPortrait from '@assets/file_00000000d41881f4b07497287b39201e_1789085205545.png';
 import aboutHeroHandshake from '@assets/file_00000000f8e081f489c8c5b8c185ca4e_1789621548418.png';
 import { ABOUT_HERO_ASSETS, ABOUT_HERO_ASSET_BY_KEY } from '@/lib/aboutCarouselAssets';
