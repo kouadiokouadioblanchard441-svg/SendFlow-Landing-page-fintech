@@ -165,8 +165,8 @@ jobs:
               echo "::error::The stylesheet referenced by $route did not load as a CSS resource."
               exit 1
             fi
-            if ! grep -Fq "$marker" "$smoke_dir/app.js"; then
-              echo "::error::The production bundle for $route is missing its expected localized content marker: $marker"
+            if ! grep -R -Fq --include='*.js' "$marker" dist/public/assets; then
+              echo "::error::The production JavaScript chunks are missing the expected localized content marker for $route: $marker"
               exit 1
             fi
 
