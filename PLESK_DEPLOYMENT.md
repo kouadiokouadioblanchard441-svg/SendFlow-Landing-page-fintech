@@ -111,7 +111,7 @@ Avant le déploiement, configure une seule action de déploiement Plesk pour con
 bash scripts/plesk-git-deploy.sh
 ```
 
-Plesk effectue d’abord son opération Git native ; l’action de build ne démarre qu’après la réussite de cette étape. Cette action ne lance aucune commande Git et ne dépend pas de `.git` dans le dossier livré. Les deux scripts d’entrée Plesk nettoient les variables Git de contexte que Plesk pourrait transmettre depuis son dépôt interne bare, afin qu’elles ne contaminent pas pnpm et ses processus enfants. Ils résolvent le dépôt par chemin absolu depuis leur propre fichier et reviennent à sa racine, quelle que soit la valeur initiale de `PWD`. Le build vérifie les sources, Node, pnpm et l’URL publique, installe depuis le lockfile, exécute lint/tests/vérifications TypeScript, construit le frontend et l’API, puis vérifie le paquet avant de le publier dans `dist/`. Un échec de build garde l’ancien `dist/` en place ; Passenger est redémarré seulement après un build validé. Aucune migration de base de données n’est lancée.
+Plesk récupère le dépôt puis affiche une étape de déploiement des fichiers. La capture de cette étape ne permet pas, à elle seule, de savoir si l’action de build personnalisée a démarré : le journal détaillé doit le confirmer. Le hook ci-dessous ne lance aucune commande Git et ne dépend pas de `.git` dans le dossier livré. Les deux scripts d’entrée Plesk nettoient les variables Git de contexte que Plesk pourrait transmettre depuis son dépôt interne bare, afin qu’elles ne contaminent pas pnpm et ses processus enfants. Ils résolvent le dépôt par chemin absolu depuis leur propre fichier et reviennent à sa racine, quelle que soit la valeur initiale de `PWD`. Le build vérifie les sources, Node, pnpm et l’URL publique, installe depuis le lockfile, exécute lint/tests/vérifications TypeScript, construit le frontend et l’API, puis vérifie le paquet avant de le publier dans `dist/`. Un échec de build garde l’ancien `dist/` en place ; Passenger est redémarré seulement après un build validé. Aucune migration de base de données n’est lancée.
 
 Le dépôt ignore `dist/` volontairement. Le Git natif ne transfère donc pas ce
 répertoire, même s’il existe dans un poste local ou dans Replit. En déploiement
@@ -128,9 +128,9 @@ Deploying files to sendflow.africa ... Failed
 fatal: this operation must be run in a work tree
 ```
 
-Cela localise l’échec dans la phase **Git native de déploiement vers la cible Plesk**, après le pull et avant toute preuve que le build SendFlow s’est lancé. Le message signifie qu’une opération Git nécessitant un worktree a été exécutée dans un contexte que Git ne reconnaît pas comme worktree. Il ne révèle pas à lui seul lequel des chemins internes Plesk est fautif. Il n’indique pas une erreur Node.js, pnpm, Express, `index.cjs` ou Vite.
+Cela confirme que le pull a réussi et que la tâche a échoué pendant l’étape Plesk intitulée **Deploying files**. Cette étiquette ne prouve pas si l’échec vient de l’opération Git interne de Plesk ou d’une action de déploiement lancée pendant cette étape. Le message signifie qu’une opération Git nécessitant un worktree a été exécutée dans un contexte que Git ne reconnaît pas comme worktree ; il ne révèle ni la commande fautive ni le répertoire courant.
 
-L’examen du dépôt confirme que la chaîne `scripts/plesk-git-deploy.sh` → `scripts/plesk-deploy.sh` → préparation/vérification du build n’appelle aucune commande Git et ne requiert aucun dossier `.git`. Elle est conçue pour s’exécuter depuis les fichiers livrés, même si Plesk ne copie pas son métadossier Git dans le répertoire de déploiement. Le hook du projet ne peut donc pas réparer l’opération native qui échoue avant son exécution.
+L’examen du dépôt confirme que la chaîne `scripts/plesk-git-deploy.sh` → `scripts/plesk-deploy.sh` → préparation/vérification du build n’appelle aucune commande Git et ne requiert aucun dossier `.git`. Elle est conçue pour s’exécuter depuis les fichiers livrés, même si Plesk ne copie pas son métadossier Git dans le répertoire de déploiement. Cela écarte un appel Git direct dans ces scripts, mais ne suffit pas à déterminer si Plesk les a lancés ni si un processus enfant a échoué.
 
 Pour cette capture, le réglage Plesk à examiner est **Git → dépôt SendFlow-Landing-page-fintech.git → Deployment / Deployment directory**, actuellement affiché comme `/sendflow.africa`, ainsi que le répertoire local associé au dépôt. Confirme dans les réglages et le Gestionnaire de fichiers les chemins absolus réellement résolus par Plesk. La cible doit recevoir la racine complète du monorepo — `package.json`, lockfile, `scripts/` et `artifacts/` — et non le dossier `dist` seul. Ne change pas la cible vers un chemin deviné.
 
@@ -139,7 +139,8 @@ Les captures Node.js antérieures ont également montré une racine d’applicat
 Pour diagnostiquer sans modifier les données :
 
 1. Dans **Websites & Domains → Git**, ouvre les réglages du dépôt et relève le chemin réel du dépôt local ainsi que le répertoire de déploiement. N’infère pas ces chemins à partir du nom du domaine. Repère aussi la commande d’action de déploiement configurée.
-2. Avec le terminal Plesk ou l’aide de l’administrateur/hébergeur, exécute ces commandes de lecture seule sur le chemin réel du dépôt local :
+2. Demande le journal détaillé de la tâche `ext-git-task\deployment`. Vérifie si la sortie contient `Building SendFlow from the Plesk Git checkout...`. Si le marqueur apparaît, le hook a démarré ; s’il n’apparaît pas, cela ne suffit pas seul à conclure, mais le journal doit alors montrer l’opération antérieure qui a échoué. Demande la commande exacte, le répertoire courant et le stderr du processus fautif.
+3. Avec le terminal Plesk ou l’aide de l’administrateur/hébergeur, exécute ces commandes de lecture seule sur le chemin réel du dépôt local :
 
 ```sh
 git -C "<chemin-réel-du-dépôt-local>" rev-parse --show-toplevel
@@ -148,7 +149,7 @@ git -C "<chemin-réel-du-dépôt-local>" rev-parse --is-bare-repository
 git -C "<chemin-réel-du-dépôt-local>" worktree list --porcelain
 ```
 
-Ces résultats doivent être interprétés selon le mode de stockage Plesk : un dépôt interne bare peut être normal et ne doit pas être converti ou supprimé à l’aveugle. Si Plesk est censé faire un checkout dans un répertoire précis, vérifie ce répertoire séparément avec `git -C "<chemin-réel-du-checkout>" rev-parse --show-toplevel` et `git -C "<chemin-réel-du-checkout>" rev-parse --is-inside-work-tree`. Si l’étape échoue encore alors que les chemins affichés paraissent cohérents, l’administrateur/l’hébergeur doit examiner le détail de la tâche `ext-git-task\deployment` et le journal de l’extension pour identifier le chemin courant et la commande Git qui a échoué. Ne lance pas `reset --hard`, `clean`, ne supprime pas le dépôt et ne change pas son remote pour tester.
+Ces résultats doivent être interprétés selon le mode de stockage Plesk : un dépôt interne bare peut être normal et ne doit pas être converti ou supprimé à l’aveugle. Si Plesk est censé faire un checkout dans un répertoire précis, vérifie ce répertoire séparément avec `git -C "<chemin-réel-du-checkout>" rev-parse --show-toplevel` et `git -C "<chemin-réel-du-checkout>" rev-parse --is-inside-work-tree`. Ne lance pas `reset --hard`, `clean`, ne supprime pas le dépôt et ne change pas son remote pour tester.
 
 Le flux complet est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now**, confirmer que le déploiement Git Plesk réussit, vérifier la sortie du hook de build, puis cliquer **Restart** si Passenger ne redémarre pas automatiquement.
 
