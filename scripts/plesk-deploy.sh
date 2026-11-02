@@ -22,6 +22,7 @@ required_inputs=(
   "artifacts/api-server/build.mjs"
   "scripts/prepare-plesk-build.mjs"
   "scripts/verify-plesk-build.mjs"
+  "scripts/resolve-plesk-deployment-root.cjs"
   "scripts/plesk-pnpm.sh"
   "scripts/validate-plesk-runtime-config.cjs"
 )
@@ -39,6 +40,16 @@ fi
 
 node scripts/check-deploy-node.cjs
 node scripts/validate-plesk-runtime-config.cjs
+
+PLESK_DEPLOYMENT_ROOT="$(
+  node scripts/resolve-plesk-deployment-root.cjs "$ROOT_DIR"
+)"
+PLESK_DIST_DIR="$PLESK_DEPLOYMENT_ROOT/dist"
+export PLESK_DEPLOYMENT_ROOT PLESK_DIST_DIR
+export PLESK_KEEP_PREVIOUS_DIST=1
+
+echo "Plesk source checkout: $ROOT_DIR"
+echo "Plesk website deployment target: $PLESK_DEPLOYMENT_ROOT"
 
 source "$ROOT_DIR/scripts/plesk-pnpm.sh"
 resolve_plesk_pnpm "$ROOT_DIR"
@@ -96,26 +107,26 @@ echo "Running tests, type checks, and the Plesk production build..."
 "${PLESK_PNPM[@]}" run build
 
 required_outputs=(
-  "dist/index.cjs"
-  "dist/.node-version"
-  "dist/pnpm-workspace.yaml"
-  "dist/build-info.json"
-  "dist/public/index.html"
-  "dist/public/.htaccess"
+  "$PLESK_DIST_DIR/index.cjs"
+  "$PLESK_DIST_DIR/.node-version"
+  "$PLESK_DIST_DIR/pnpm-workspace.yaml"
+  "$PLESK_DIST_DIR/build-info.json"
+  "$PLESK_DIST_DIR/public/index.html"
+  "$PLESK_DIST_DIR/public/.htaccess"
 )
 for output in "${required_outputs[@]}"; do
-  if [[ ! -s "$ROOT_DIR/$output" ]]; then
-    echo "Plesk build completed without its required output: $ROOT_DIR/$output" >&2
+  if [[ ! -s "$output" ]]; then
+    echo "Plesk build completed without its required output: $output" >&2
     exit 1
   fi
 done
 
-DIST_ROOT="$(cd "$ROOT_DIR/dist" && pwd -P)"
+DIST_ROOT="$(cd "$PLESK_DIST_DIR" && pwd -P)"
 DOCUMENT_ROOT="$(cd "$DIST_ROOT/public" && pwd -P)"
-BUILD_ID="$(node -p 'require("./dist/build-info.json").buildId')"
+BUILD_ID="$(node -p 'require(process.env.PLESK_DIST_DIR + "/build-info.json").buildId')"
 
-mkdir -p dist/tmp
-touch dist/tmp/restart.txt
+mkdir -p "$PLESK_DIST_DIR/tmp"
+touch "$PLESK_DIST_DIR/tmp/restart.txt"
 echo "Plesk Application Root: $DIST_ROOT"
 echo "Plesk Startup File: index.cjs"
 echo "Plesk Document Root: $DOCUMENT_ROOT"

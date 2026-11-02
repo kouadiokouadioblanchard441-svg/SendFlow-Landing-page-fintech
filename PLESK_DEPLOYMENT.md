@@ -2,12 +2,14 @@
 
 ## Structure livrée
 
-Le build de production produit `dist/` dans le checkout Git Plesk après l’action de déploiement, avec un `package.json` minimal pour le gestionnaire Node.js. GitHub Actions vérifie séparément que ce paquet se construit et démarre correctement. Le checkout Git, la racine de l’application Node.js et la racine web sont trois chemins distincts. Configure :
+Le build de production produit un paquet `dist/` contenant le serveur Passenger et les fichiers web. La capture prouve que **Application Root** et **Document Root** sont réglés sur `/git`, mais ne prouve pas que `/git` soit le checkout Git ni la racine du projet. Elle montre que le fichier de démarrage y manque. Le build retrouve sa vraie racine source à partir du script exécuté et doit écrire dans la cible Git distincte `/sendflow.africa/dist`.
 
-- **Cible du déploiement Git** : conserve `/sendflow.africa`, comme demandé. Ce libellé de Plesk ne suffit pas à déterminer le chemin absolu du checkout.
-- **Application Root** : le dossier compilé `dist` sous le checkout Git réellement déployé. La racine du monorepo (`/sendflow.africa` dans le journal fourni) n’est pas la racine Node de production.
-- **Startup File** : `index.cjs`, relatif à l’Application Root. C’est `dist/index.cjs`, pas le wrapper `index.cjs` de la racine du dépôt.
-- **Document Root** : le sous-dossier `public` de l’Application Root, soit `<checkout Git>/dist/public`. Ne configure pas `dist` lui-même comme Document Root : les fichiers web sont dans `dist/public`.
+Les captures montrent aussi que **Application Root** et **Document Root** sont réglés sur `/git`, puis que Plesk ne trouve pas le startup file `/git/index.cjs`. Cette erreur est cohérente avec ces réglages : le bundle compilé n’est pas dans le dossier configuré `/git`. Cette capture ne démontre pas où se trouve le checkout source. Configure :
+
+- **Cible du déploiement Git** : `/sendflow.africa`.
+- **Application Root** : `/sendflow.africa/dist`, une fois l’action de build réussie.
+- **Startup File** : `index.cjs`, résolu relativement à l’Application Root, donc `/sendflow.africa/dist/index.cjs`.
+- **Document Root** : `/sendflow.africa/dist/public`. Ne choisis ni `/git` ni le dossier `dist` lui-même comme Document Root : les fichiers web sont dans `dist/public`.
 - **Node.js** : sélectionne Node 22.23.4 dans Plesk. Le fichier `.node-version` contient `22`, afin que les shims `nodenv` sélectionnent la version majeure 22 depuis la racine du dépôt et depuis `dist`. Le build accepte Node 22.13+, 20.19+ et les autres versions paires LTS à partir de 24.
 - **Gestionnaire pour construire** : pnpm 10.26.1, épinglé par `packageManager` dans `package.json`. L’action de déploiement utilise explicitement `corepack pnpm@10.26.1`, puis `npx pnpm@10.26.1` si Corepack est absent. Un pnpm global différent est refusé ; le contrôle `preinstall` n’est pas contourné.
 - **Gestionnaire Plesk pour le runtime** : il n’est pas utilisé pour construire le monorepo. Le manifeste compilé `dist/package.json` ne contient ni dépendances ni script `preinstall`, et `dist/pnpm-workspace.yaml` isole explicitement ce paquet du workspace source ; aucun install des neuf projets n’est requis pour démarrer Passenger.
@@ -17,7 +19,7 @@ Le build de production produit `dist/` dans le checkout Git Plesk après l’act
 
 Le build génère aussi `dist/public/.htaccess` : Apache renvoie les routes web inconnues vers `index.html` pour que le routeur React traite les accès directs et les actualisations. Une règle laisse explicitement `/api` et `/api/*` à Passenger ; le serveur répond en JSON pour les routes API inconnues et ne leur renvoie jamais le HTML de la SPA.
 
-Plesk doit démarrer le bundle avec `dist` comme répertoire courant : le serveur y cherche `build-info.json` et `public/`. La configuration retenue est donc : Application Root=`<checkout Git>/dist`, Startup File=`index.cjs`, Document Root=`<checkout Git>/dist/public`. Le wrapper source `index.cjs` à la racine du checkout n’est pas le Startup File recommandé ; il redirige vers `dist/index.cjs` seulement si Plesk est délibérément configuré pour démarrer depuis la racine source.
+Plesk doit démarrer le bundle avec `/sendflow.africa/dist` comme répertoire courant : le serveur y cherche `build-info.json` et `public/`. La configuration retenue est donc Application Root=`/sendflow.africa/dist`, Startup File=`index.cjs`, Document Root=`/sendflow.africa/dist/public`. Le `index.cjs` compilé est créé par le build. Le wrapper source à la racine Git n’est pas le startup file à sélectionner dans cette configuration.
 
 ### Erreur `nodenv: node: command not found` dans les commandes Node.js
 
@@ -25,25 +27,26 @@ Le journal fourni indique `Scope: all 9 workspace projects` et lance le
 `preinstall` de la racine. Cela prouve que la commande Plesk a été exécutée avec
 le monorepo comme Application Root, au lieu du paquet compilé `dist/`. Le
 `pnpm run start` de la racine déclenche alors l’installation du workspace avant
-le démarrage. Le journal montre également que le shim `nodenv` ne sélectionne
-aucun Node dans ce contexte.
+le démarrage. Les captures récentes montrent précisément que le startup file
+est résolu sous `/git`, où `/git/index.cjs` n’existe pas.
 
-Le dépôt fournit maintenant `.node-version` (`22`) à la racine et dans le paquet
-généré. Régle les paramètres Plesk comme suit, après un build réussi :
+Le dépôt fournit `.node-version` (`22`) à la racine et dans le paquet généré.
+Régle les paramètres Plesk comme suit, après un build réussi dans la cible :
 
 - Version Node.js sélectionnée : `22.23.4`
-- Application Root : `<chemin physique du checkout>/dist`
+- Application Root : `/sendflow.africa/dist`
 - Startup File : `index.cjs`
-- Document Root : `<chemin physique du checkout>/dist/public`
+- Document Root : `/sendflow.africa/dist/public`
 
 Le paquet ajoute aussi un `pnpm-workspace.yaml` vide pour empêcher pnpm de
 remonter jusqu’au workspace source quand Plesk lance son installation depuis
 `dist/`. Ainsi, les commandes s’exécutent dans le manifeste minimal isolé de
 `dist/`, qui ne contient ni les neuf projets du workspace source, ni
 `preinstall`, ni dépendances à installer.
-Utilise le fichier Startup File Plesk pour démarrer Passenger; ne lance pas
-`pnpm run start` depuis la racine du monorepo. Pour vérifier le shell des
-commandes Node.js depuis `dist/`, exécute `pwd`, `cat .node-version`,
+Dans **Startup File**, indique `index.cjs` : Plesk lance alors `node ./index.cjs`
+depuis l’Application Root. N’utilise pas `pnpm run start` depuis `/git` ou la
+racine du monorepo pour démarrer Passenger. Pour vérifier le shell des commandes
+Node.js depuis `dist/`, exécute `pwd`, `cat .node-version`,
 `node --version` et `command -v node`. Le résultat attendu est Node 22.23.4 et
 un exécutable Node accessible. Si `nodenv` échoue encore depuis `dist/` malgré
 `.node-version` valant `22`, le problème restant est le shim/PATH fourni par
@@ -139,17 +142,37 @@ invalide signalée pendant le build.
 
 ## Déploiement depuis Plesk Git
 
-Le dépôt est un monorepo : le dossier livré par Git doit conserver sa racine et contenir `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `scripts/` et `artifacts/`. Le build écrit `dist/` dans cette racine ; `dist/` n’est pas suivi par Git.
-
-Plesk distingue le dépôt local/checkout géré par son extension, le dossier où il déploie les fichiers et la racine de l’application Node.js. Vérifie leurs chemins réels dans les paramètres du dépôt et le Gestionnaire de fichiers ; ne déduis pas un chemin absolu à partir du seul nom de domaine. Le dossier déployé doit contenir toute la racine du monorepo pour que l’action ci-dessous trouve le lockfile et le build.
+Le dépôt est un monorepo : le checkout contient `package.json`,
+`pnpm-lock.yaml`, `pnpm-workspace.yaml`, `scripts/` et `artifacts/`.
+`dist/` est généré et ignoré par Git. `/git` est le **Application Root** montré
+dans la capture, mais cette capture ne prouve pas que ce soit le checkout Git.
+Le script retrouve la racine source depuis son propre emplacement; le chemin
+de la cible de production doit, lui, être explicite.
 
 Configure cette commande comme l’unique **Additional deployment action** du dépôt Git Plesk :
 
 ```sh
-bash scripts/plesk-deploy.sh
+PLESK_REQUIRE_DEPLOYMENT_ROOT=1 PLESK_DEPLOYMENT_ROOT=/var/www/vhosts/sendflow.africa/sendflow.africa bash scripts/plesk-deploy.sh
 ```
 
-Cette action s’exécute après que Plesk a publié les fichiers du checkout et avant que le marqueur Passenger de redémarrage soit créé. Elle choisit pnpm 10.26.1 par Corepack, sinon par npx, et n’accepte le pnpm global que s’il vaut exactement 10.26.1. Si seul le pnpm global 12.15.0 est disponible, elle s’arrête sans installer avec cette version. Le script ne lance aucune commande Git et ne dépend pas de `.git` dans le dossier livré. Il résout la racine du dépôt depuis son propre fichier, installe depuis le lockfile, exécute lint/tests/vérifications TypeScript, construit le frontend et l’API, puis vérifie le paquet avant de le publier dans `dist/`. Un échec de build garde l’ancien `dist/` en place ; Passenger est redémarré seulement après un build validé. Aucune migration de base de données n’est lancée.
+La dernière sortie Node.js Plesk fournie a affiché
+`/var/www/vhosts/sendflow.africa/sendflow.africa` comme répertoire d’application.
+Si le Gestionnaire de fichiers confirme que c’est toujours le chemin physique
+de la cible Git `/sendflow.africa`, la commande ci-dessus est exacte. Sinon,
+remplace uniquement la valeur de `PLESK_DEPLOYMENT_ROOT` par le chemin physique
+existant confirmé dans Plesk. Ne la déduis pas de l’Application Root `/git`.
+`PLESK_REQUIRE_DEPLOYMENT_ROOT=1` fait échouer le hook si le chemin n’est pas
+fourni ou ne se termine pas par le dossier `sendflow.africa`; le script ne
+devine jamais le dossier cible.
+
+L’action choisit pnpm 10.26.1 par Corepack, sinon par npx, et refuse une version
+globale différente. Elle installe depuis le checkout, exécute tests,
+vérifications TypeScript, frontend et API, puis construit directement un
+répertoire de staging dans la cible et le publie sous
+`/sendflow.africa/dist`. Une version antérieure est conservée dans un dossier
+de sauvegarde ; aucun dossier de production n’est supprimé. Passenger reçoit
+son fichier de redémarrage seulement après la vérification du nouveau paquet.
+Aucune migration de base de données n’est lancée.
 
 La commande doit être enregistrée dans Plesk : aucun fichier du dépôt ne peut
 activer l’**Additional deployment action** à distance. Après un déploiement réussi,
@@ -162,18 +185,26 @@ ignoré. Si `PLESK_BUILD_HOOK_STARTED` apparaît sans `PLESK_BUILD_COMPLETE`,
 l’action a démarré mais le build ou la vérification a échoué; récupérer sa sortie
 complète au lieu de configurer Passenger sur un dossier partiel.
 
-Le log reçu montre que Plesk a exécuté `pnpm install` depuis `/httpdocs` avec pnpm 12.15.0. C’est le mauvais contexte d’installation : le `preinstall` du monorepo doit refuser cette version. Ne lance pas **Install Dependencies** sur le checkout source et ne supprime pas/contourne pas le contrôle. Exécute d’abord l’action de déploiement ci-dessus, qui installe le workspace avec pnpm 10.26.1 et produit `<checkout>/dist`.
+Un ancien log montre que Plesk a exécuté `pnpm install` depuis la racine du
+monorepo avec pnpm 12.15.0. Ne lance pas **Install Dependencies** sur le
+checkout source et ne contourne pas ce contrôle. L’action ci-dessus utilise
+pnpm 10.26.1 pour les sources et crée le runtime isolé dans la cible du site.
 
-Après le premier build réussi, règle l’application Node Plesk sur `Application Root=<checkout>/dist`, `Startup File=index.cjs` et `Document Root=<checkout>/dist/public`. Plesk peut afficher pnpm 12.15.0 pour l’abonnement : ce pnpm ne doit pas installer le monorepo. Désactive toute installation automatique visant le checkout source si l’option existe; si Plesk lance une installation pour le runtime dans `dist`, le manifeste n’a ni `preinstall` ni dépendances et ne nécessite rien à installer. Ne configure pas l’application sur le checkout `/httpdocs` avec son manifeste workspace et ne démarre pas le wrapper source en attendant que `dist` soit créé.
+Après le premier build réussi, règle Plesk sur `Application Root=/sendflow.africa/dist`,
+`Startup File=index.cjs` et `Document Root=/sendflow.africa/dist/public`.
+Plesk peut afficher pnpm 12.15.0 pour le runtime : le manifeste de `dist` n’a
+ni `preinstall` ni dépendances. Ne configure pas l’application sur `/git` et ne
+démarre pas le wrapper source en attendant que `dist` soit créé.
 
 Le dépôt ignore `dist/` volontairement. Le Git natif ne transfère donc pas ce
 répertoire, même s’il existe dans un poste local ou dans Replit. En déploiement
 Git normal, c’est l’action `bash scripts/plesk-deploy.sh` qui doit le
-reconstruire dans `<racine-déployée-du-monorepo>/dist`. Si l’étape native
+reconstruire dans `<cible-de-déploiement>/dist`. Si l’étape native
 « Deploying files » échoue, ne considère pas le hook exécuté et ne configure
 pas Passenger sur un `dist` supposé présent.
 
-Les captures Plesk fournies montrent le dépôt `SendFlow-Landing-page-fintech.git`, la branche `main`, la cible de déploiement affichée comme `/sendflow.africa`, puis le résultat exact :
+Une ancienne capture Plesk montrait le dépôt `SendFlow-Landing-page-fintech.git`,
+la branche `main`, et l’échec Git natif suivant :
 
 ```text
 Pulling a Git repository ... Done
@@ -181,21 +212,39 @@ Deploying files to sendflow.africa ... Failed
 fatal: this operation must be run in a work tree
 ```
 
-Cela confirme que le pull a réussi et que la tâche a échoué pendant l’étape Plesk intitulée **Deploying files**. Cette étiquette ne prouve pas si l’échec vient de l’opération Git interne de Plesk ou d’une action de déploiement lancée pendant cette étape. Le message signifie qu’une opération Git nécessitant un worktree a été exécutée dans un contexte que Git ne reconnaît pas comme worktree ; il ne révèle ni la commande fautive ni le répertoire courant.
+Cette ancienne erreur reste distincte de la nouvelle erreur de startup. Le code
+du hook et des outils de build ne lance aucune commande Git; seule la sortie
+détaillée de Plesk/Cybrancee peut établir la cause de l’erreur native.
 
-L’examen du dépôt confirme que `scripts/plesk-deploy.sh` et la préparation/vérification du build n’appellent aucune commande Git et ne requièrent aucun dossier `.git`. Le script est conçu pour s’exécuter depuis les fichiers livrés, même si Plesk ne copie pas son métadossier Git dans le répertoire de déploiement. Cela écarte un appel Git direct dans ces scripts, mais ne suffit pas à déterminer si Plesk les a lancés ni si un processus enfant a échoué.
+Les captures récentes établissent que Plesk cherche le startup sous `/git` et
+que `/git/index.cjs` manque; l’arborescence montre séparément `/httpdocs` et
+`/sendflow.africa`. Elles ne prouvent pas que `/git` soit le checkout source.
+La correction de configuration est donc d’utiliser
+`/sendflow.africa/dist` comme Application Root et `/sendflow.africa/dist/public`
+comme Document Root après que l’action a créé ces fichiers.
 
-Pour cette installation, conserve dans **Git → dépôt SendFlow-Landing-page-fintech.git → Deployment / Deployment directory** la cible `/sendflow.africa`, nécessaire au fonctionnement du site. Le fait que Plesk termine l’opération quand la cible est `/httpdocs` ne prouve pas que le site est alors livré à sa racine web correcte ; ne bascule pas vers `/httpdocs` pour SendFlow sans confirmation explicite du document root du domaine. Dans Plesk et le Gestionnaire de fichiers, relève le chemin absolu réel auquel `/sendflow.africa` correspond. Cette cible doit recevoir la racine complète du monorepo — `package.json`, lockfile, `scripts/` et `artifacts/` — et non le dossier `dist` seul.
+Vérifie le build et le chemin de destination sans modifier de données :
 
-Les captures Node.js antérieures montrant `/httpdocs` ne suffisent pas à établir que ce chemin est le document root actuel du domaine. Aligne la racine Node sur `dist` sous le chemin absolu réel de la cible `/sendflow.africa`, puis configure le Document Root sur son sous-dossier `dist/public`, à condition que Plesk confirme que c’est bien la racine publique voulue.
+1. Dans **Websites & Domains → Git**, garde `/sendflow.africa` comme cible et configure l’action indiquée ci-dessus.
+2. Après **Pull** puis **Deploy Now**, vérifie que les logs indiquent la cible physique finissant par `/sendflow.africa` et `PLESK_BUILD_COMPLETE`.
+3. Dans le Gestionnaire de fichiers, vérifie que les trois fichiers suivants sont dans le dossier cible : `dist/index.cjs`, `dist/build-info.json` et `dist/public/index.html`.
+4. Si l’ancienne erreur Git native revient, demande à Cybrancee la commande fautive, le répertoire courant et le stderr du processus `ext-git-task\deployment`. Les scripts du dépôt ne peuvent pas révéler le checkout interne ou les permissions de ce serveur.
+5. Dans le terminal Plesk, vérifie les chemins et le runtime depuis le dossier d’application :
 
-Le fait que l’erreur apparaisse avec une cible et pas l’autre désigne une différence dans la résolution du chemin, les permissions ou le traitement interne de la tâche Git Plesk. Un répertoire imbriqué ou absent ne prouve pas, à lui seul, la cause du message `this operation must be run in a work tree` : celui-ci indique qu’une commande Git exigeant un worktree a été lancée dans un contexte que Git ne reconnaît pas comme tel. Le dépôt ne permet pas d’identifier cette commande interne ni de confirmer si `/sendflow.africa` existe ou si le compte Plesk peut y écrire. Les scripts du projet ne lancent aucune commande Git et n’embarquent aucun de ces deux chemins.
+```sh
+pwd
+ls -la /sendflow.africa/dist
+node --version
+command -v node
+```
 
-Pour diagnostiquer sans modifier les données :
+Le sélecteur Plesk peut afficher un chemin relatif à l’abonnement, tandis que
+le shell exige un chemin physique. Si le chemin affiché comme
+`/sendflow.africa` n’est pas ce chemin physique, utilise celui relevé dans le
+Gestionnaire de fichiers ou par `pwd -P` depuis le dossier cible.
 
-1. Dans **Websites & Domains → Git**, ouvre les réglages du dépôt et relève le chemin réel du dépôt local ainsi que le répertoire de déploiement. N’infère pas ces chemins à partir du nom du domaine. Repère aussi la commande d’action de déploiement configurée.
-2. Demande le journal détaillé de la tâche `ext-git-task\deployment`. Vérifie si la sortie contient `Building SendFlow from the Plesk Git checkout...`. Si le marqueur apparaît, le script de déploiement a démarré ; s’il n’apparaît pas, cela ne suffit pas seul à conclure, mais le journal doit alors montrer l’opération antérieure qui a échoué. Demande la commande exacte, le répertoire courant et le stderr du processus fautif.
-3. Avec le terminal Plesk ou l’aide de l’administrateur/hébergeur, exécute ces commandes de lecture seule sur le chemin réel du dépôt local :
+Pour les diagnostics Git natifs, exécute les commandes en lecture seule sur le
+chemin réel du dépôt local :
 
 ```sh
 git -C "<chemin-réel-du-dépôt-local>" rev-parse --show-toplevel
@@ -204,7 +253,9 @@ git -C "<chemin-réel-du-dépôt-local>" rev-parse --is-bare-repository
 git -C "<chemin-réel-du-dépôt-local>" worktree list --porcelain
 ```
 
-Ces résultats doivent être interprétés selon le mode de stockage Plesk : un dépôt interne bare peut être normal et ne doit pas être converti ou supprimé à l’aveugle. Si Plesk est censé faire un checkout dans un répertoire précis, vérifie ce répertoire séparément avec `git -C "<chemin-réel-du-checkout>" rev-parse --show-toplevel` et `git -C "<chemin-réel-du-checkout>" rev-parse --is-inside-work-tree`. Ne lance pas `reset --hard`, `clean`, ne supprime pas le dépôt et ne change pas son remote pour tester.
+Un dépôt Plesk interne bare peut être normal et ne doit pas être converti ou
+supprimé à l’aveugle. Ne lance pas `reset --hard`, `clean`, ne supprime pas le
+dépôt et ne change pas son remote pour tester.
 
 Le flux complet est : pousser le commit sur GitHub, cliquer **Pull** puis **Deploy Now**, confirmer que le déploiement Git Plesk réussit, vérifier la sortie du hook de build, puis cliquer **Restart** si Passenger ne redémarre pas automatiquement.
 
@@ -250,32 +301,16 @@ interne de l’extension Plesk.
 
 ### Première livraison et réglages Node.js
 
-Si `dist/` n’existe pas encore sur le serveur, il est normal qu’il soit absent
-dans le sélecteur de dossiers Plesk. Ce sélecteur **Document Root** choisit un
-dossier, pas le fichier de démarrage. Procède dans cet ordre :
+Si `dist/` n’existe pas encore, il est normal qu’il soit absent du sélecteur.
+Exécute d’abord l’action de build avec sa cible `/sendflow.africa`, puis
+confirme la présence des fichiers dans le Gestionnaire de fichiers. Configure
+ensuite **Application Root** sur `/sendflow.africa/dist`, **Startup File** sur
+`index.cjs`, **Document Root** sur `/sendflow.africa/dist/public`, le mode sur
+`production` et Node.js sur `22.23.4`.
 
-1. Configure l’action de build ci-dessus sur la racine déployée du monorepo.
-2. Vérifie que la copie Git Plesk fonctionne, puis exécute **Pull** et **Deploy Now**.
-3. Vérifie que le script réussit et crée `dist/index.cjs`, `dist/build-info.json`
-   et `dist/public/index.html`.
-4. Dans les réglages Node.js, configure **Application Root** avec le chemin
-   réel `<racine-déployée-du-monorepo>/dist`. Le **Startup File** est
-   `index.cjs`, relatif à cette racine.
-5. Configure **Document Root** avec
-   `<racine-déployée-du-monorepo>/dist/public`.
-6. Utilise Node 24 (recommandé), ou Node 22.13+ / Node 20.19+,
-   le mode `production`, puis **Restart**. Le build du monorepo a été fait
-   avec pnpm 10.26.1 par l’action de déploiement ; pnpm 12.15.0 dans le
-   sélecteur Plesk ne doit pas être utilisé pour installer les sources.
-
-Le Document Root doit viser `dist/public`, et non `dist` : `dist` contient le
-bundle Node, le manifeste Passenger et les métadonnées de build, tandis que les
-fichiers web sont dans `public/`. Si Plesk confirme dans son Gestionnaire de
-fichiers que la cible physique est exactement `/sendflow.africa`, les valeurs
-sont Application Root `/sendflow.africa/dist`, Startup File `index.cjs` et
-Document Root `/sendflow.africa/dist/public`. Si `/sendflow.africa` est seulement
-le libellé de la cible Git, remplace ce préfixe par le chemin absolu réellement
-affiché pour le checkout; ne déduis pas le chemin physique du libellé.
+Le Document Root vise `dist/public`, et non `dist` : le dossier `dist` contient
+le bundle Node, le manifeste Passenger et les métadonnées de build; les fichiers
+web sont dans son sous-dossier `public`.
 
 `index.cjs` est le point de démarrage de l’application compilée ; ce n’est pas
 une commande de build ni une action Git. Le `index.cjs` à la racine des sources
@@ -284,27 +319,23 @@ pas. Le dépôt ne fournit pas `.plesk.startup.cjs` : ne sélectionne pas ce nom
 comme Startup File. Si Plesk l’a généré ou ajouté sur le serveur, vérifie son
 contenu ; la configuration documentée lance directement `dist/index.cjs`.
 
-Pour les captures où les champs affichent `/httpdocs`, si le checkout Git réel
-est bien `/var/www/vhosts/sendflow.africa/httpdocs`, les valeurs Plesk sont :
+Valeurs Plesk à utiliser d’après les captures actuelles :
 
 | Champ Plesk | Valeur |
 | --- | --- |
-| Cible du déploiement Git | Garde `/sendflow.africa` comme actuellement configuré ; ne la remplace pas par `/httpdocs` sur la base de ces réglages Node.js. |
-| Application Root | `/httpdocs/dist` |
+| Cible du déploiement Git | `/sendflow.africa` |
+| Application Root | `/sendflow.africa/dist` |
 | Startup File | `index.cjs` |
-| Document Root | `/httpdocs/dist/public` |
+| Document Root | `/sendflow.africa/dist/public` |
 | Application Mode | `production` |
 | Node.js | `22.23.4` est accepté (minimum de la ligne 22 : `22.13+`). |
 | Package Manager | Plesk peut afficher pnpm 12.15.0, mais ne l’utilise pas sur le checkout; l’action Git sélectionne pnpm 10.26.1. Le manifeste `dist` n’a rien à installer. |
 
-Dans Plesk, Application Root et Document Root sont sélectionnés relativement à
-l’abonnement. Si la cible Git `/sendflow.africa` résout vers un autre chemin
-physique que `/httpdocs`, remplace le préfixe `/httpdocs` du tableau par le
-chemin de checkout réellement confirmé ; garde les suffixes `/dist` et
-`/dist/public`. Après l’action de build, vérifie que
-`dist/index.cjs`, `dist/build-info.json` et `dist/public/index.html` existent,
-puis redémarre l’application Node.js. Le nom affiché par Git ne prouve pas le
-chemin absolu de destination.
+Dans le shell Plesk, les valeurs peuvent être affichées relativement à
+l’abonnement. Si Plesk demande des chemins absolus, utilise le chemin physique
+réel de `/sendflow.africa` relevé dans le Gestionnaire de fichiers, puis ajoute
+`/dist` ou `/dist/public`. Si `dist` n’apparaît pas après un déploiement, vérifie
+la sortie de l’action : le sélecteur ne génère pas ce dossier lui-même.
 
 Le workflow `.github/workflows/validate-plesk-build.yml` ne déploie pas sur Plesk et n’a besoin d’aucun secret SSH : il vérifie le build sur GitHub à chaque push sur `main`. Le déploiement de production est effectué par Plesk lorsque tu cliques **Deploy Now**.
 

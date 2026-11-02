@@ -10,8 +10,23 @@ const repoRoot = path.resolve(
 );
 const sourceDist = path.join(repoRoot, "artifacts", "api-server", "dist");
 const buildId = randomUUID();
-const outputDist = path.join(repoRoot, `.sendflow-dist-stage-${buildId}`);
-const publishedDist = path.join(repoRoot, "dist");
+const publishedDist = path.resolve(
+  process.env.PLESK_DIST_DIR ?? path.join(repoRoot, "dist"),
+);
+if (
+  path.basename(publishedDist) !== "dist" ||
+  publishedDist === path.resolve(sourceDist)
+) {
+  throw new Error(
+    `PLESK_DIST_DIR must select a deployment directory named dist, not ${publishedDist}.`,
+  );
+}
+const outputParent = path.dirname(publishedDist);
+const outputDist = path.join(
+  outputParent,
+  `.sendflow-dist-stage-${buildId}`,
+);
+await mkdir(outputParent, { recursive: true });
 
 await rm(outputDist, { recursive: true, force: true });
 await mkdir(outputDist, { recursive: true });
@@ -469,7 +484,10 @@ if (verification.status !== 0) {
   );
 }
 
-const previousDist = path.join(repoRoot, `.sendflow-dist-backup-${buildId}`);
+const previousDist = path.join(
+  outputParent,
+  `.sendflow-dist-backup-${buildId}`,
+);
 let previousDistMoved = false;
 try {
   await rename(publishedDist, previousDist);
@@ -488,9 +506,15 @@ try {
 }
 
 if (previousDistMoved) {
-  await rm(previousDist, { recursive: true, force: true });
+  if (process.env.PLESK_KEEP_PREVIOUS_DIST === "1") {
+    console.log(
+      `Previous Plesk build retained at ${previousDist}`,
+    );
+  } else {
+    await rm(previousDist, { recursive: true, force: true });
+  }
 }
 
 console.log(
-  `Plesk build ready: ${path.relative(repoRoot, path.join(publishedDist, "index.cjs"))} (build ID: ${buildId})`,
+  `Plesk build ready: ${path.join(publishedDist, "index.cjs")} (build ID: ${buildId})`,
 );

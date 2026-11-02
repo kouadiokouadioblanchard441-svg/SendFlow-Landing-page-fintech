@@ -46,9 +46,11 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
     const featureHtml = await featureResponse.text();
     const featureNonce = featureHtml.match(/nonce="([^"]+)"/)?.[1];
     assert.ok(featureNonce);
-    assert.match(
-      featureHtml,
-      new RegExp(`<script type="module" crossorigin src="/assets/features\\.js" nonce="${featureNonce}"></script>`),
+    assert.ok(
+      featureHtml.includes(
+        `<script type="module" crossorigin src="/assets/features.js" nonce="${featureNonce}"></script>`,
+      ),
+      "feature HTML should keep the exact nonce on the module script",
     );
     assert.ok(!featureHtml.includes("__SEND_FLOW_CSP_NONCE__"));
     assert.equal(featureResponse.headers.get("cache-control"), "no-store");

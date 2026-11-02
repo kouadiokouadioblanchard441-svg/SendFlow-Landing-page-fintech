@@ -83,6 +83,7 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
     "clear-plesk-git-context.sh",
     "prepare-plesk-build.mjs",
     "verify-plesk-build.mjs",
+    "resolve-plesk-deployment-root.cjs",
   ];
   for (const file of deploymentFiles) {
     const source = readFileSync(path.join(__dirname, file), "utf8");
@@ -106,6 +107,12 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   assert.match(deployScript, /resolve_plesk_pnpm "\$ROOT_DIR"/);
   assert.match(
     deployScript,
+    /resolve-plesk-deployment-root\.cjs "\$ROOT_DIR"/,
+  );
+  assert.match(deployScript, /export PLESK_DEPLOYMENT_ROOT PLESK_DIST_DIR/);
+  assert.match(deployScript, /PLESK_KEEP_PREVIOUS_DIST=1/);
+  assert.match(
+    deployScript,
     /"\$\{PLESK_PNPM\[@\]\}" install --frozen-lockfile --prod=false/,
   );
   assert.match(
@@ -115,12 +122,12 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
   assert.match(deployScript, /PLESK_BUILD_HOOK_STARTED/);
   assert.match(deployScript, /PLESK_BUILD_COMPLETE/);
   for (const output of [
-    "dist/index.cjs",
-    "dist/.node-version",
-    "dist/pnpm-workspace.yaml",
-    "dist/build-info.json",
-    "dist/public/index.html",
-    "dist/public/.htaccess",
+    "$PLESK_DIST_DIR/index.cjs",
+    "$PLESK_DIST_DIR/.node-version",
+    "$PLESK_DIST_DIR/pnpm-workspace.yaml",
+    "$PLESK_DIST_DIR/build-info.json",
+    "$PLESK_DIST_DIR/public/index.html",
+    "$PLESK_DIST_DIR/public/.htaccess",
   ]) {
     assert.ok(
       deployScript.includes(`"${output}"`),
@@ -128,8 +135,8 @@ test("Plesk deploy chain does not run Git or require a worktree", () => {
     );
   }
   assert.match(deployScript, /run build/);
-  assert.match(deployScript, /mkdir -p dist\/tmp/);
-  assert.match(deployScript, /touch dist\/tmp\/restart\.txt/);
+  assert.match(deployScript, /mkdir -p "\$PLESK_DIST_DIR\/tmp"/);
+  assert.match(deployScript, /touch "\$PLESK_DIST_DIR\/tmp\/restart\.txt"/);
   assert.match(deployScript, /clear_plesk_git_context/);
 
   const contextCleaner = readFileSync(
@@ -169,16 +176,23 @@ test("Plesk runtime paths match the Passenger startup and document root", () => 
   assert.match(prepareBuild, /scripts:\s*\{\s*start:\s*"node \.\/index\.cjs"/);
   assert.match(prepareBuild, /path\.join\(outputDist, "\.node-version"\)/);
   assert.match(prepareBuild, /path\.join\(outputDist, "pnpm-workspace\.yaml"\)/);
+  assert.match(prepareBuild, /process\.env\.PLESK_DIST_DIR/);
+  assert.match(prepareBuild, /PLESK_KEEP_PREVIOUS_DIST/);
   assert.match(verifyBuild, /const PLESK_STARTUP_FILE = "index\.cjs"/);
   assert.match(verifyBuild, /verifyNodeVersionSelection/);
   assert.match(verifyBuild, /verifyRuntimeWorkspaceIsolation/);
   assert.match(verifyBuild, /"public\/index\.html"/);
   assert.match(verifyBuild, /"index\.cjs"/);
   assert.equal(readFileSync(path.join(repoRoot, ".node-version"), "utf8").trim(), "22");
-  assert.match(deploymentGuide, /Application Root.*`<checkout Git>/);
+  assert.match(deploymentGuide, /Cible du déploiement Git.*`\/sendflow\.africa`/);
+  assert.match(deploymentGuide, /Application Root.*`\/sendflow\.africa\/dist`/);
   assert.match(deploymentGuide, /Startup File.*`index\.cjs`/);
-  assert.match(deploymentGuide, /Document Root.*`<checkout Git>\/dist\/public`/);
-  assert.match(deploymentGuide, /conserve.*`\/sendflow\.africa`/);
+  assert.match(deploymentGuide, /Document Root.*`\/sendflow\.africa\/dist\/public`/);
+  assert.match(deploymentGuide, /PLESK_REQUIRE_DEPLOYMENT_ROOT=1/);
+  assert.match(
+    deploymentGuide,
+    /PLESK_DEPLOYMENT_ROOT=\/var\/www\/vhosts\/sendflow\.africa\/sendflow\.africa/,
+  );
 });
 
 test("Plesk deploy script clears fake Git context and propagates child failures", () => {
