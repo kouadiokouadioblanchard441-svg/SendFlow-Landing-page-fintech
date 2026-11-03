@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight, Globe2, Menu, ShieldCheck, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
-import collectionArt from '@/assets/fees/collection-3d.webp';
-import transferArt from '@/assets/fees/transfer-3d.webp';
 import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
 import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import { ProtectedImage } from '@/components/protected-image';
@@ -42,11 +40,6 @@ const copy = {
     language: 'EN',
     menuOpen: 'Ouvrir le menu',
     menuClose: 'Fermer le menu',
-    eyebrow: 'Une lecture claire, avant chaque mouvement',
-    title: 'Les tarifs, sans détour.',
-    intro: 'Retrouvez les tarifs publiés pour les opérateurs associés en Côte d’Ivoire.',
-    country: 'Côte d’Ivoire',
-    published: 'Tarifs publiés',
     unavailableTitle: 'Les tarifs ne sont pas disponibles',
     unavailableBody: 'Les tarifs publiés ne peuvent pas être vérifiés pour le moment. Aucun montant ne sera affiché sans données complètes.',
     errorTitle: 'Impossible de charger les tarifs',
@@ -54,7 +47,6 @@ const copy = {
     emptyTitle: 'Aucun opérateur publié',
     emptyBody: 'Aucun opérateur visible n’est actuellement associé à la Côte d’Ivoire.',
     loading: 'Chargement des tarifs publiés',
-    note: 'Les montants affichés proviennent des tarifs publiés pour la Côte d’Ivoire.',
   },
   en: {
     home: 'Home',
@@ -62,11 +54,6 @@ const copy = {
     language: 'FR',
     menuOpen: 'Open menu',
     menuClose: 'Close menu',
-    eyebrow: 'Clear information, before every move',
-    title: 'Fees, without the guesswork.',
-    intro: 'Explore the published fees for associated operators in Côte d’Ivoire.',
-    country: 'Côte d’Ivoire',
-    published: 'Published fees',
     unavailableTitle: 'Fees are unavailable',
     unavailableBody: 'Published fees cannot be verified right now. No amount will be shown without complete data.',
     errorTitle: 'Fees could not be loaded',
@@ -74,7 +61,6 @@ const copy = {
     emptyTitle: 'No operators published',
     emptyBody: 'There are currently no visible operators associated with Côte d’Ivoire.',
     loading: 'Loading published fees',
-    note: 'Amounts shown are the published fees for Côte d’Ivoire.',
   },
 } as const;
 
@@ -230,7 +216,7 @@ export default function PricingPage() {
         .sf-pricing-orbit { position:absolute; width:310px; height:110px; border:1px solid rgba(109,53,216,.24); border-radius:50%; transform:rotate(-23deg); }
         .sf-pricing-orbit::after { content:''; position:absolute; width:9px; height:9px; border-radius:50%; top:17px; right:35px; background:#9c76e8; box-shadow:0 0 0 7px rgba(156,118,232,.12); }
         @keyframes sf-pricing-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
-        .sf-pricing-main { padding:60px 24px 88px; }
+        .sf-pricing-main { padding:0 0 24px; }
         .sf-pricing-main-inner { width:min(1120px,100%); margin:0 auto; }
         .sf-pricing-section-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin:0 0 24px; }
         .sf-pricing-section-heading p { margin:0; color:var(--sf-muted); font-size:13px; }
@@ -278,6 +264,7 @@ export default function PricingPage() {
         .sf-pricing-footer-space { height:1px; }
         @media (max-width:900px) { .sf-pricing-card { grid-template-columns:1fr; } .sf-pricing-card-visual { height:150px; padding:6px 8px; align-items:center; } .sf-pricing-card-visual img { width:160px; height:150px; } .sf-pricing-visual-orbit { top:22px; } .sf-pricing-visual-index { bottom:14px; left:17px; } .sf-pricing-card-content { padding:21px 20px 22px; } .sf-pricing-card h2 { margin:12px 0 17px; } }
         @media (max-width:680px) { .sf-pricing-header { height:66px; } .sf-pricing-header-inner { width:calc(100% - 34px); } .sf-pricing-nav { display:none; } .sf-pricing-menu-button { display:flex; } .sf-pricing-hero { padding:50px 20px 35px; } .sf-pricing-hero-inner { grid-template-columns:1fr; gap:0; } .sf-pricing-hero h1 { font-size:clamp(45px,12vw,65px); } .sf-pricing-hero-copy { margin-top:17px; font-size:15px; } .sf-pricing-country-pill { margin-top:20px; } .sf-pricing-hero-art { height:200px; margin-top:3px; } .sf-pricing-art-disc { width:176px; height:176px; } .sf-pricing-hero-art img { width:214px; height:214px; } .sf-pricing-orbit { width:250px; height:85px; } .sf-pricing-main { padding:37px 16px 58px; } .sf-pricing-section-heading { align-items:flex-start; flex-direction:column; gap:11px; margin-bottom:17px; } .sf-pricing-section-heading h2 { font-size:21px; } .sf-pricing-cards,.sf-pricing-skeletons { grid-template-columns:1fr; gap:15px; } .sf-pricing-card { grid-template-columns:34% minmax(0,1fr); min-height:0; } .sf-pricing-card-visual { height:auto; min-height:100%; align-items:flex-start; padding:18px 3px; } .sf-pricing-card-visual img { width:150px; height:150px; } .sf-pricing-visual-orbit { width:160px; top:60px; } .sf-pricing-card-content { padding:20px 16px 17px; } .sf-pricing-card h2 { font-size:23px; margin:12px 0 17px; } .sf-pricing-operator { grid-template-columns:32px minmax(0,1fr) auto; gap:7px; min-height:51px; } .sf-pricing-operator-mark { width:31px; height:31px; border-radius:10px; } .sf-pricing-operator-name { font-size:12px; } .sf-pricing-amount { font-size:13px; } .sf-pricing-bank-row { grid-template-columns:32px minmax(0,1fr); gap:7px; } .sf-pricing-bank-icon { width:31px; height:31px; } .sf-pricing-bank-row .sf-pricing-amount { grid-column:2; margin-top:-3px; } .sf-pricing-state { padding:34px 18px; } .sf-pricing-backdrop { position:fixed; inset:0; z-index:60; background:rgba(28,18,45,.38); } .sf-pricing-panel { position:absolute; top:0; right:0; bottom:0; display:flex; width:min(370px,88vw); flex-direction:column; padding:22px; background:#fbf9ff; box-shadow:-18px 0 50px rgba(25,15,43,.18); } .sf-pricing-panel-top { display:flex; align-items:center; justify-content:space-between; } .sf-pricing-close { display:grid; width:40px; height:40px; place-items:center; border:1px solid var(--sf-line); border-radius:13px; background:#fff; color:#5e4a78; } .sf-pricing-mobile-links { display:grid; gap:8px; margin-top:35px; } .sf-pricing-mobile-links a { display:flex; align-items:center; justify-content:space-between; padding:15px 12px; border-radius:13px; color:#40334f; font-weight:650; text-decoration:none; } .sf-pricing-mobile-links a.is-active { background:#f0e8fb; color:var(--sf-violet); } .sf-pricing-language { display:flex; align-items:center; gap:8px; margin-top:auto; padding:14px 12px; border:1px solid var(--sf-line); border-radius:13px; background:#fff; color:#4d3a67; font-family:'Work Sans',sans-serif; font-size:14px; font-weight:650; } }
+        @media (max-width:680px) { .sf-pricing-main { padding:0 0 20px; } }
         @media (max-width:390px) { .sf-pricing-card { grid-template-columns:1fr; } .sf-pricing-card-visual { height:122px; min-height:0; padding:0; } .sf-pricing-card-visual img { width:145px; height:145px; } .sf-pricing-visual-orbit { top:33px; } .sf-pricing-visual-index { bottom:10px; } .sf-pricing-card-content { padding:18px 17px; } }
         @media (prefers-reduced-motion:reduce) { .sf-pricing-hero-art img,.sf-pricing-skeleton { animation:none; } .sf-pricing-card { transition:none; } }
       `}</style>
@@ -328,33 +315,9 @@ export default function PricingPage() {
       )}
 
       <main>
-        <section className="sf-pricing-hero" aria-labelledby="sf-pricing-title">
-          <div className="sf-pricing-hero-inner">
-            <div>
-              <p className="sf-pricing-eyebrow">{t.eyebrow}</p>
-              <h1 id="sf-pricing-title">{language === 'fr' ? <>Les tarifs,<br /><span>sans détour.</span></> : <>Fees,<br /><span>without the guesswork.</span></>}</h1>
-              <p className="sf-pricing-hero-copy">{t.intro}</p>
-              <div className="sf-pricing-country-pill"><span aria-hidden="true"><Globe2 size={15} /></span>{countryIsValid && country ? country[language === 'fr' ? 'nameFr' : 'nameEn'] : t.country}</div>
-            </div>
-            <div className="sf-pricing-hero-art" aria-hidden="true">
-              <div className="sf-pricing-art-disc" />
-              <div className="sf-pricing-orbit" />
-              <img className="sf-pricing-hero-art-primary" src={collectionArt} alt="" />
-              <img className="sf-pricing-hero-art-secondary" src={transferArt} alt="" />
-            </div>
-          </div>
-        </section>
-
-        <section className="sf-pricing-main" aria-labelledby="sf-pricing-categories">
+        <h1 className="sr-only">{language === 'fr' ? 'Tarifs SendFlow' : 'SendFlow pricing'}</h1>
+        <section className="sf-pricing-main" aria-label={language === 'fr' ? 'Tarifs' : 'Pricing'}>
           <div className="sf-pricing-main-inner">
-            <div className="sf-pricing-section-heading">
-              <div>
-                <p>{language === 'fr' ? 'Côte d’Ivoire · XOF' : 'Côte d’Ivoire · XOF'}</p>
-                <h2 id="sf-pricing-categories">{language === 'fr' ? 'Deux catégories de frais' : 'Two fee categories'}</h2>
-              </div>
-              <div className="sf-pricing-public-badge"><span aria-hidden="true" />{t.published}</div>
-            </div>
-
             {isLoading ? (
               <div className="sf-pricing-skeletons" aria-label={t.loading} role="status" data-testid="status-pricing-loading">
                 <div className="sf-pricing-skeleton" />
@@ -382,10 +345,7 @@ export default function PricingPage() {
                 <p>{t.emptyBody}</p>
               </div>
             ) : feeSectionConfig ? (
-              <>
-                <OperatorFeesSection language={language} config={feeSectionConfig} defaultOpen />
-                <p className="sf-pricing-note"><ShieldCheck size={15} aria-hidden="true" />{t.note}</p>
-              </>
+              <OperatorFeesSection language={language} config={feeSectionConfig} defaultOpen />
             ) : null}
           </div>
         </section>

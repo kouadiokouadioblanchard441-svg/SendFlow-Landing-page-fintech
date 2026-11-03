@@ -100,8 +100,19 @@ test('the pricing page reuses the home fee cards and published fee data', () => 
   assert.match(feeLogosSource, /mtn:/);
   assert.match(feeLogosSource, /'moov-africa':/);
   assert.match(feeLogosSource, /wave:/);
-  assert.match(pricingPageSource, /collection-3d\.webp/);
-  assert.match(pricingPageSource, /transfer-3d\.webp/);
+  assert.doesNotMatch(pricingPageSource, /Retrouvez les tarifs publiés pour les opérateurs associés/);
+  assert.doesNotMatch(pricingPageSource, /Une lecture claire, avant chaque mouvement/);
+  assert.doesNotMatch(pricingPageSource, /className="sf-pricing-eyebrow"/);
+  assert.doesNotMatch(pricingPageSource, /className="sf-pricing-country-pill"/);
+  assert.doesNotMatch(pricingPageSource, /className="sf-pricing-hero-copy"/);
+  assert.doesNotMatch(pricingPageSource, /Les montants affichés proviennent des tarifs publiés pour la Côte d’Ivoire/);
+  assert.doesNotMatch(pricingPageSource, /Les tarifs,<br/);
+  assert.doesNotMatch(pricingPageSource, /Côte d’Ivoire · XOF/);
+  assert.doesNotMatch(pricingPageSource, /Deux catégories de frais/);
+  assert.doesNotMatch(pricingPageSource, /className="sf-pricing-public-badge"/);
+  assert.match(pricingPageSource, /className="sr-only"/);
+  assert.doesNotMatch(pricingPageSource, /collection-3d\.webp/);
+  assert.doesNotMatch(pricingPageSource, /transfer-3d\.webp/);
 });
 
 test('every localized public page has its own browser title beginning with its page name', () => {
