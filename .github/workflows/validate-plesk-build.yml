@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "dist/**"
   pull_request:
     branches:
       - main
@@ -56,13 +58,6 @@ jobs:
         with:
           node-version: "24"
           cache: pnpm
-
-      - name: Confirm the build does not depend on a checked-in dist
-        run: |
-          if [[ -e dist ]]; then
-            echo "::error::A clean Git checkout should not contain dist; the release must be built from tracked source."
-            exit 1
-          fi
 
       - name: Install workspace dependencies for the disposable CI database
         run: pnpm install --frozen-lockfile --prod=false
@@ -412,127 +407,63 @@ jobs:
           done
           exit "$failed"
 
-  deploy-plesk:
-    name: Deploy validated build to Plesk
+  publish-plesk-dist:
+    name: Publish built dist to main for Plesk Git
     runs-on: ubuntu-latest
     needs:
       - plesk-build
       - build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
-      contents: read
-    env:
-      PLESK_SSH_HOST: ${{ vars.PLESK_SSH_HOST }}
-      PLESK_SSH_USER: ${{ vars.PLESK_SSH_USER }}
-      PLESK_SSH_PORT: ${{ vars.PLESK_SSH_PORT || '22' }}
-      PLESK_DEPLOY_ROOT: ${{ vars.PLESK_DEPLOY_ROOT }}
-      RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      contents: write
     steps:
-      - name: Check out the validated commit
+      - name: Check out the exact validated main commit
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
-          persist-credentials: false
+          fetch-depth: 0
 
-      - name: Download the validated Plesk package
+      - name: Download the validated production package
         uses: actions/download-artifact@v4
         with:
           name: sendflow-plesk-${{ github.sha }}
           path: generated-artifacts
 
-      - name: Validate Plesk SSH settings
-        env:
-          PLESK_SSH_PRIVATE_KEY: ${{ secrets.PLESK_SSH_PRIVATE_KEY }}
-          PLESK_SSH_KNOWN_HOSTS: ${{ vars.PLESK_SSH_KNOWN_HOSTS }}
+      - name: Replace the checkout dist with the validated build
         run: |
           set -euo pipefail
-          for name in PLESK_SSH_HOST PLESK_SSH_USER PLESK_DEPLOY_ROOT PLESK_SSH_PRIVATE_KEY PLESK_SSH_KNOWN_HOSTS; do
-            if [[ -z "${!name}" ]]; then
-              echo "::error::Missing GitHub Actions setting: $name. Configure the Plesk SSH deployment values described in PLESK_DEPLOYMENT.md."
-              exit 1
-            fi
-          done
-          if [[ ! "$PLESK_SSH_HOST" =~ ^[A-Za-z0-9.-]+$ ]]; then
-            echo "::error::PLESK_SSH_HOST must be a hostname or IPv4 address."
-            exit 1
-          fi
-          if [[ ! "$PLESK_SSH_USER" =~ ^[A-Za-z0-9._-]+$ ]]; then
-            echo "::error::PLESK_SSH_USER contains unsupported characters."
-            exit 1
-          fi
-          if [[ ! "$PLESK_SSH_PORT" =~ ^[0-9]{1,5}$ ]]; then
-            echo "::error::PLESK_SSH_PORT must be a TCP port number."
-            exit 1
-          fi
-          port_number=$((10#$PLESK_SSH_PORT))
-          if (( port_number < 1 || port_number > 65535 )); then
-            echo "::error::PLESK_SSH_PORT must be between 1 and 65535."
-            exit 1
-          fi
-          if [[ ! "$PLESK_DEPLOY_ROOT" =~ ^/[A-Za-z0-9._/-]+$ || "$PLESK_DEPLOY_ROOT" == *"/../"* ]]; then
-            echo "::error::PLESK_DEPLOY_ROOT must be an absolute path without spaces or parent-directory segments."
-            exit 1
-          fi
-          if [[ "$(basename -- "$PLESK_DEPLOY_ROOT")" != "sendflow.africa" ]]; then
-            echo "::error::PLESK_DEPLOY_ROOT must be the sendflow.africa deployment directory."
-            exit 1
-          fi
           archive="$(find generated-artifacts -maxdepth 2 -type f -name 'sendflow-plesk-*.tar.gz' -print -quit)"
           if [[ -z "$archive" || ! -s "$archive" ]]; then
-            echo "::error::The validated Plesk release archive was not downloaded."
+            echo "::error::The validated production package was not downloaded."
             exit 1
           fi
-          echo "Plesk SSH configuration and release package are present."
+          rm -rf -- dist
+          tar -xzf "$archive" -C "$GITHUB_WORKSPACE"
+          node scripts/verify-plesk-build.mjs
 
-      - name: Install the pinned Plesk SSH host key and deploy key
-        env:
-          PLESK_SSH_PRIVATE_KEY: ${{ secrets.PLESK_SSH_PRIVATE_KEY }}
-          PLESK_SSH_KNOWN_HOSTS: ${{ vars.PLESK_SSH_KNOWN_HOSTS }}
+      - name: Commit the validated production build to main
         run: |
           set -euo pipefail
-          install -d -m 700 "$HOME/.ssh"
-          umask 077
-          printf '%s\n' "$PLESK_SSH_PRIVATE_KEY" > "$HOME/.ssh/sendflow-plesk"
-          printf '%s\n' "$PLESK_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          test -s "$HOME/.ssh/sendflow-plesk"
-          test -s "$HOME/.ssh/known_hosts"
-
-      - name: Upload the release and atomically replace dist on Plesk
-        run: |
-          set -euo pipefail
-          archive="$(find generated-artifacts -maxdepth 2 -type f -name 'sendflow-plesk-*.tar.gz' -print -quit)"
-          remote_archive="$PLESK_DEPLOY_ROOT/.sendflow-upload-${RELEASE_ID}.tar.gz"
-          ssh_options=(
-            -i "$HOME/.ssh/sendflow-plesk"
-            -o IdentitiesOnly=yes
-            -o StrictHostKeyChecking=yes
-            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
-            -p "$PLESK_SSH_PORT"
-          )
-          scp_options=(
-            -i "$HOME/.ssh/sendflow-plesk"
-            -o IdentitiesOnly=yes
-            -o StrictHostKeyChecking=yes
-            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
-            -P "$PLESK_SSH_PORT"
-          )
-          scp "${scp_options[@]}" "$archive" "$PLESK_SSH_USER@$PLESK_SSH_HOST:$remote_archive"
-          printf -v remote_command 'bash -s -- %q %q %q' \
-            "$PLESK_DEPLOY_ROOT" "$RELEASE_ID" "$remote_archive"
-          deploy_output="$(
-            ssh "${ssh_options[@]}" "$PLESK_SSH_USER@$PLESK_SSH_HOST" "$remote_command" \
-              < scripts/plesk-remote-deploy.sh
-          )"
-          printf '%s\n' "$deploy_output"
-          if ! grep -Fqx 'PLESK_RELEASE_DEPLOYED' <<<"$deploy_output"; then
-            echo "::error::Plesk did not confirm that the validated dist release was installed."
+          git fetch origin main
+          remote_main="$(git rev-parse origin/main)"
+          if [[ "$remote_main" != "$GITHUB_SHA" ]]; then
+            echo "::error::main advanced during this build; refusing to publish an outdated dist. Re-run the workflow for the latest main commit."
             exit 1
           fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- dist
+          if git diff --cached --quiet -- dist; then
+            echo "Validated dist already matches main; no generated-build commit is needed."
+            exit 0
+          fi
+          git commit -m "Build SendFlow production dist for Plesk"
+          git push origin HEAD:main
+          release_commit="$(git rev-parse HEAD)"
+          echo "Published the validated dist to main. Plesk Git can now pull the compiled application."
           {
-            echo "## SendFlow Plesk delivery"
+            echo "## Build available for Plesk Git pull"
             echo
-            echo "- Commit: \`$GITHUB_SHA\`"
-            echo "- Build package: \`$archive\`"
-            echo "- Remote confirmation: \`PLESK_RELEASE_DEPLOYED\`"
-            echo
+            echo "- Source commit: \`$GITHUB_SHA\`"
+            echo "- Build commit containing \`dist/\`: \`$release_commit\`"
           } >> "$GITHUB_STEP_SUMMARY"

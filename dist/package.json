@@ -1,0 +1,11 @@
+{
+  "name": "sendflow-plesk-runtime",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "start": "node ./index.cjs"
+  }
+}

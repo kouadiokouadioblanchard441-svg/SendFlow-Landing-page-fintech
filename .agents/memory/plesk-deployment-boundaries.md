@@ -63,11 +63,11 @@ For SendFlow, treat Plesk as the production target and focus work on resolving t
 
 **How to apply:** Start from the actual Plesk failure and its deployment path. Separate repository changes from actions executed on Plesk, and report production as fixed only after Plesk deployment and live behavior are verified.
 
-For SendFlow production, GitHub Actions builds and transfers the validated `dist/` archive to the physical `/sendflow.africa` target over SSH. Keep `dist/` ignored and do not require a Plesk Additional deployment action; Plesk's Git pull alone does not build generated artifacts.
+For SendFlow production, the validated root `dist/` must be included in `main` so Plesk's native Git pull receives the compiled application. Do not make SSH transfer or a Plesk Additional deployment action a prerequisite. Keep package-internal build folders ignored.
 
-**Why:** The user requires `dist/` to arrive automatically on source pushes, without a manual Plesk shell command or a non-versioned panel hook. The repository now contains the build/package/SSH delivery workflow, but the live transfer still depends on GitHub Actions SSH settings and Plesk-side runtime configuration.
+**Why:** The user wants the build to be present through the existing Git push/pull workflow and rejected relying on a separate SSH delivery setup or manual Plesk shell action.
 
-**How to apply:** On each authorized push to `main`, let CI build and validate the bundle before SSH delivery. Never claim the artifact is on Plesk until the deployment job confirms it, and never claim the site is healthy without a live check. Preserve the user's established direct-push workflow; do not change branch protection without an explicit request.
+**How to apply:** On each source push to `main`, run CI tests and build first, then publish the validated root `dist/` as a regular non-forced commit to `main`; Plesk must pull that commit. Keep unrelated nested package `dist/` outputs excluded. Never claim the files are on Plesk until a successful server-side pull is confirmed, and never claim the site is healthy without a live check. Preserve the user's established direct-push workflow; do not change branch protection without an explicit request.
 
 Do not use `X-Forwarded-For` as the client identity for SendFlow's Plesk-hosted API unless the live proxy configuration is verified to overwrite untrusted incoming values. Until then, use the TCP peer address and keep Express proxy trust disabled.
 

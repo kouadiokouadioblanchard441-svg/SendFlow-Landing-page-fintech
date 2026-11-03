@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Modèle : la compilation génère les URLs absolues depuis VITE_PUBLIC_SITE_URL. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://sendflow.africa/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://sendflow.africa/fonctionnalites</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/api-developpeur</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/securite</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/download</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/a-propos</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://sendflow.africa/conditions-utilisation</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://sendflow.africa/confidentialite</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://sendflow.africa/mentions-legales</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://sendflow.africa/en/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://sendflow.africa/en/features</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/en/developer-api</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/en/security</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/en/download</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sendflow.africa/en/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://sendflow.africa/en/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://sendflow.africa/en/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://sendflow.africa/en/legal-notice</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://sendflow.africa/france-senegal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://sendflow.africa/en/france-senegal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://sendflow.africa/tarifs</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://sendflow.africa/en/pricing</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+</urlset>

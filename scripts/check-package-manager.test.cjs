@@ -81,24 +81,19 @@ test("Plesk build and packaging use the sole active deployment script", () => {
   for (const source of [deploymentGuide, deploymentSkill]) {
     assert.doesNotMatch(source, /scripts\/plesk-git-deploy\.sh/);
   }
-  assert.match(deploymentWorkflow, /deploy-plesk:/);
-  assert.match(deploymentWorkflow, /secrets\.PLESK_SSH_PRIVATE_KEY/);
-  assert.match(deploymentWorkflow, /vars\.PLESK_DEPLOY_ROOT/);
-  assert.match(
-    deploymentWorkflow,
-    /PLESK_DEPLOY_ROOT: \$\{\{ vars\.PLESK_DEPLOY_ROOT \}\}/,
-  );
+  assert.match(deploymentWorkflow, /publish-plesk-dist:/);
+  assert.match(deploymentWorkflow, /contents: write/);
+  assert.match(deploymentWorkflow, /paths-ignore:/);
+  assert.match(deploymentWorkflow, /- "dist\/\*\*"/);
+  assert.match(deploymentWorkflow, /tar -xzf "\$archive"/);
+  assert.match(deploymentWorkflow, /git add -A -- dist/);
+  assert.match(deploymentWorkflow, /git push origin HEAD:main/);
   assert.doesNotMatch(
     deploymentWorkflow,
-    /PLESK_DEPLOY_ROOT:\s*\$\{\{\s*vars\.PLESK_DEPLOY_ROOT\s*\|\|/,
+    /PLESK_SSH|PLESK_DEPLOY_ROOT|scp |scripts\/plesk-remote-deploy\.sh/,
   );
-  assert.match(deploymentWorkflow, /PLESK_DEPLOY_ROOT PLESK_SSH_PRIVATE_KEY/);
-  assert.match(deploymentWorkflow, /scripts\/plesk-remote-deploy\.sh/);
   assert.match(deploymentWorkflow, /pnpm run package:plesk/);
-  assert.match(
-    deploymentWorkflow,
-    /pnpm --filter @workspace\/db run push/,
-  );
+  assert.match(deploymentWorkflow, /pnpm --filter @workspace\/db run push/);
   assert.match(
     deploymentWorkflow,
     /Create schema in the disposable CI PostgreSQL service/,
@@ -106,10 +101,26 @@ test("Plesk build and packaging use the sole active deployment script", () => {
   assert.doesNotMatch(deploymentWorkflow, /push-force|run seed|run migrate/);
   assert.match(deploymentWorkflow, /actions\/upload-artifact@v4/);
   assert.match(deploymentWorkflow, /actions\/download-artifact@v4/);
-  assert.match(deploymentWorkflow, /scp "\$\{scp_options\[@\]\}"/);
-  assert.match(deploymentWorkflow, /PLESK_RELEASE_DEPLOYED/);
-  assert.match(gitignore, /^dist$/m);
-  assert.match(gitignore, /CI packages and delivers dist\/ to Plesk/);
+  assert.match(gitignore, /^\*\*\/dist\/$/m);
+  assert.match(gitignore, /^!\/dist\/$/m);
+  assert.doesNotMatch(
+    gitignore,
+    /^dist$/m,
+    "the production dist at the repository root must not be excluded",
+  );
+  const rootDistIgnore = spawnSync(
+    "git",
+    ["check-ignore", "--no-index", "-v", "dist/index.cjs"],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  assert.equal(rootDistIgnore.status, 1, rootDistIgnore.stdout);
+  const nestedDistIgnore = spawnSync(
+    "git",
+    ["check-ignore", "--no-index", "-v", "artifacts/sendflow/dist/index.html"],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  assert.equal(nestedDistIgnore.status, 0, nestedDistIgnore.stdout);
+  assert.match(nestedDistIgnore.stdout, /\*\*\/dist\//);
   assert.doesNotMatch(remoteDeployment, /(?:^|[\s;&|])git(?:\s|$)/m);
 });
 
@@ -231,13 +242,9 @@ test("Plesk runtime paths match the Passenger startup and document root", () => 
     deploymentGuide,
     /Document Root.*`\/sendflow\.africa\/dist\/public`/,
   );
-  assert.match(deploymentGuide, /PLESK_DEPLOY_ROOT.*Obligatoire/);
-  assert.match(
-    deploymentGuide,
-    /Le libellé `\/sendflow\.africa` affiché par le panneau est un chemin relatif/,
-  );
-  assert.match(deploymentGuide, /PLESK_SSH_PRIVATE_KEY/);
-  assert.match(deploymentGuide, /job `deploy-plesk`/);
+  assert.match(deploymentGuide, /nouveau `dist\/` sur `main`/i);
+  assert.match(deploymentGuide, /pull natif Plesk/i);
+  assert.match(deploymentGuide, /aucune clé à configurer dans GitHub/);
 });
 
 test("Plesk deploy script clears fake Git context and propagates child failures", () => {

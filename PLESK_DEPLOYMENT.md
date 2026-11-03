@@ -2,9 +2,9 @@
 
 ## Structure livrée
 
-Le build de production produit un paquet `dist/` contenant le serveur Passenger et les fichiers web. GitHub Actions le construit depuis le checkout source, puis le transfère vers le dossier Plesk configuré explicitement dans `PLESK_DEPLOY_ROOT`.
+Le build de production produit `dist/`, qui contient le serveur Passenger et les fichiers web. GitHub Actions construit ce dossier depuis les sources, le valide puis le commit dans `main`. Le Git natif Plesk récupère ensuite ce `dist/` suivi par Git avec le reste du dépôt.
 
-La capture Plesk la plus récente montre **Application Root** et **Document Root** réglés sur `/dist`, puis l’absence de `/dist/index.cjs`. Elle prouve que le fichier de démarrage est absent du répertoire actuellement sélectionné; elle ne prouve pas que le build ait été livré dans le dossier de déploiement `/sendflow.africa`. Le libellé Git `/sendflow.africa` et le sélecteur de racines sont relatifs à l’abonnement et ne révèlent pas à eux seuls le chemin SSH absolu. Après confirmation d’une livraison dans la cible, configure :
+La capture Plesk la plus récente montre **Application Root** et **Document Root** réglés sur `/dist`, puis l’absence de `/dist/index.cjs`. Elle prouve que le fichier de démarrage est absent du répertoire actuellement sélectionné; elle ne prouve pas que le build ait été livré dans le dossier de déploiement `/sendflow.africa`. Le libellé Git `/sendflow.africa` et le sélecteur de racines sont relatifs à l’abonnement et ne révèlent pas à eux seuls le chemin physique réel. Après confirmation d’une livraison dans la cible, configure :
 
 - **Cible du déploiement/livraison** : `/sendflow.africa`.
 - **Application Root** : `/sendflow.africa/dist`, après une livraison CI réussie.
@@ -72,11 +72,11 @@ dist/
     robots.txt
 ```
 
-Le répertoire `dist/` reste exclu de Git. GitHub Actions le construit depuis les sources suivies, puis transmet l’archive vérifiée à la cible Plesk par SSH. Le déploiement ne lance aucune migration de base de données et demande le redémarrage Passenger via `dist/tmp/restart.txt`.
+Seul le `dist/` de production à la racine du dépôt est versionné; les sorties de build internes aux paquets restent ignorées. GitHub Actions construit et vérifie le paquet depuis les sources, puis publie le `dist/` validé sur `main`. Le pull Git Plesk reçoit ainsi les fichiers compilés, dont `dist/tmp/restart.txt` pour demander le redémarrage Passenger. Ce flux ne lance aucune migration de base de données.
 
 Chaque paquet contient un `build-info.json` qui ne stocke qu’un UUID aléatoire
-non sensible. Le script affiche cet identifiant dans la sortie de l’action de
-déploiement. L’API renvoie le même identifiant dans `buildId` sur
+non sensible. Le workflow affiche cet identifiant pendant la validation CI.
+L’API renvoie le même identifiant dans `buildId` sur
 `/api/healthz`; elle ne renvoie ni variables d’environnement, ni secrets, ni
 chemins, ni données d’administration.
 
@@ -135,45 +135,35 @@ de production ; le marqueur `use client`, inutile dans cette application Vite
 client, a été retiré du composant tooltip pour éviter la référence de source
 invalide signalée pendant le build.
 
-## Livraison automatique à Plesk depuis GitHub Actions
+## Build publié dans Git pour le pull natif Plesk
 
-Le dépôt source est un monorepo et `dist/` est un build généré de 39 Mo; il
-reste ignoré par Git et n’est pas ajouté à l’historique. Le Git natif Plesk
-transfère les sources suivies, mais ne construit pas automatiquement ce
-monorepo. La production reçoit donc le paquet depuis GitHub Actions, pas via une
-**Additional deployment action** Plesk.
+Le dossier de production `dist/` est ignoré par défaut dans beaucoup de projets,
+mais SendFlow doit le livrer par le pull Git natif de Plesk. Il est donc suivi
+dans ce dépôt et n’est plus exclu par `.gitignore`.
 
-À chaque push sur `main`, `.github/workflows/validate-plesk-build.yml` exécute
-les tests, le typecheck, les builds frontend/API et les smoke-tests. Après leur
-réussite, le job `deploy-plesk` téléverse l’archive validée en SSH/SCP vers la
-cible `/sendflow.africa`, vérifie les fichiers attendus, conserve le dernier
-`dist/` valide dans `.sendflow-dist-backup` (un seul rollback build est gardé)
-et crée `dist/tmp/restart.txt` pour
-Passenger. Le script distant ne lance aucune commande Git et ne supprime pas
-l’ancien build pendant le remplacement : une sauvegarde précédente, générée par
-ce script, est remplacée seulement après validation complète de la nouvelle
-archive. Le pull manuel dans Plesk ne déclenche pas GitHub Actions; le
-push sur GitHub est le déclencheur de la build et de la livraison.
+À chaque push source vers `main`, `.github/workflows/validate-plesk-build.yml`
+exécute les tests, le typecheck, les builds frontend/API, les contrôles du
+paquet et les smoke-tests. Seulement après leur réussite, le job
+`publish-plesk-dist` extrait le paquet validé et crée un commit normal contenant
+le nouveau `dist/` sur `main`. Ce commit bot ne relance pas inutilement le
+workflow, car les pushes qui ne changent que `dist/**` sont ignorés. Le push CI
+est normal et non forcé; si `main` avance pendant le build, la publication
+échoue au lieu d’écraser le commit plus récent.
 
-Pour activer le transfert, configure dans **GitHub → Settings → Secrets and
-variables → Actions** :
+Le dépôt sur Plesk doit suivre la branche `main` et déployer dans
+`/sendflow.africa`. Après le succès du workflow et l’apparition du commit
+« Build SendFlow production dist for Plesk » sur `main`, utilise Pull now dans
+Plesk (ou laisse son déploiement automatique terminer). Le pull reçoit alors le
+`dist/` versionné avec `index.cjs`, `build-info.json` et `public/`. Il n’y a
+aucun transfert SSH, aucune clé à configurer dans GitHub, et aucune commande de
+build manuelle à saisir dans Plesk.
 
-| Type     | Nom                     | Valeur                                                                                                                                                            |
-| -------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Variable | `PLESK_SSH_HOST`        | Nom d’hôte SSH fourni/confirmé par Cybrancee (ne pas déduire l’hôte SSH de l’URL du panneau).                                                                     |
-| Variable | `PLESK_SSH_USER`        | Utilisateur système Plesk ayant accès en écriture à la cible.                                                                                                     |
-| Variable | `PLESK_SSH_PORT`        | Port SSH; facultatif, `22` par défaut.                                                                                                                            |
-| Variable | `PLESK_DEPLOY_ROOT`     | Obligatoire : chemin absolu physique du dossier `sendflow.africa`, relevé dans le Gestionnaire de fichiers Plesk ou confirmé par Cybrancee. Aucun chemin par défaut n’est deviné. |
-| Variable | `PLESK_SSH_KNOWN_HOSTS` | Ligne `known_hosts` confirmée par Cybrancee pour cet hôte et ce port. Le job exige la vérification stricte de l’hôte; il n’utilise pas `ssh-keyscan` non vérifié. |
-| Secret   | `PLESK_SSH_PRIVATE_KEY` | Clé privée dédiée au déploiement, dont la clé publique est autorisée pour l’utilisateur système Plesk. Ne jamais la mettre dans Git ou dans le chat.              |
-
-Le job échoue explicitement si ces paramètres manquent ou si l’utilisateur SSH
-ne peut pas écrire dans la cible. Après remplacement, il exige aussi le marqueur
-`PLESK_RELEASE_DEPLOYED` renvoyé par le script distant et l’inscrit dans le
-résumé de l’exécution GitHub Actions. Il n’y a aucune commande shell à saisir dans
-Plesk et aucun secret n’est requis pour construire le paquet; la clé SSH ne sert
-qu’au transfert depuis le runner GitHub. L’accès SSH doit être activé par
-l’hébergeur pour l’utilisateur système concerné.
+**Ordre important :** ne lance pas le pull Plesk immédiatement après le push
+source. Attends d’abord la réussite du job `Plesk build validation`, puis celle
+de `Publish built dist to main for Plesk` et le commit généré sur `main`. C’est
+ce second commit qui contient le dossier compilé. Le succès CI confirme que
+`dist/` a été publié dans GitHub; il ne prouve pas à lui seul que Plesk a déjà
+terminé son pull.
 
 Le workflow crée le schéma nécessaire uniquement dans son conteneur PostgreSQL
 jetable afin que le smoke-test navigateur puisse appeler `/api/landing`. Il
@@ -181,23 +171,18 @@ n’utilise pas la base Plesk, n’exécute pas de seed et ne lance pas de migra
 de production. Les smoke-tests indiquent aussi la méthode et l’URL d’une API qui
 retourne HTTP 500 au lieu d’un message navigateur générique.
 
-Le libellé `/sendflow.africa` affiché par le panneau est un chemin relatif à
-l’abonnement; il ne suffit pas à établir le chemin absolu utilisé par SSH. Le
-workflow exige donc `PLESK_DEPLOY_ROOT` et échoue avant le transfert si cette
-variable n’est pas définie. Renseigne uniquement le chemin absolu du dossier
-existant que le Gestionnaire de fichiers Plesk montre comme cible de livraison.
-
-Cette méthode contourne le transfert de fichiers du Git natif Plesk et peut
-livrer `dist/` même si son étape « Deploying files » échoue. Elle ne corrige pas
-le défaut interne `fatal: this operation must be run in a work tree`; cette
-erreur reste à traiter par Cybrancee séparément. Le fichier de démarrage
-Passenger reste distinct de la livraison du build : les réglages exacts suivent
-ci-dessous.
+Le libellé `/sendflow.africa` affiché par le panneau est relatif à l’abonnement.
+Le dépôt ne peut pas confirmer le chemin physique du serveur; sélectionne le
+dossier de déploiement réel déjà utilisé par Plesk. Cette méthode fait parvenir
+`dist/` via les fichiers suivis de Git, au lieu de demander à Plesk de construire
+le monorepo. Si Plesk échoue avant ou pendant le pull, le commit de build reste
+disponible sur GitHub, mais le dossier ne sera pas présent sur le serveur tant
+que Plesk n’aura pas terminé un pull réussi.
 
 ### Première livraison et réglages Node.js
 
 Si `dist/` n’existe pas encore, il est normal qu’il soit absent du sélecteur.
-Après la première livraison réussie du job GitHub Actions, confirme sa présence
+Après le commit de build généré par GitHub Actions, confirme sa présence
 dans le Gestionnaire de fichiers. Configure ensuite **Application Root** sur
 `/sendflow.africa/dist`, **Startup File** sur
 `index.cjs`, **Document Root** sur `/sendflow.africa/dist/public`, le mode sur
@@ -229,9 +214,9 @@ Valeurs Plesk à utiliser d’après les captures actuelles :
 Dans le shell Plesk, les valeurs peuvent être affichées relativement à
 l’abonnement. Si Plesk demande des chemins absolus, utilise le chemin physique
 réel de `/sendflow.africa` relevé dans le Gestionnaire de fichiers, puis ajoute
-`/dist` ou `/dist/public`. Si `dist` n’apparaît pas après une livraison CI,
-vérifie le job **Deploy validated build to Plesk** et son marqueur
-`PLESK_RELEASE_DEPLOYED`.
+`/dist` ou `/dist/public`. Si `dist` n’apparaît pas après un pull Plesk réussi,
+vérifie d’abord que le commit « Build SendFlow production dist for Plesk » est
+bien présent sur la branche `main` du dépôt source.
 
 ## Variables d’environnement Plesk
 
@@ -253,15 +238,17 @@ Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les p
 Les réglages d’environnement du build GitHub et ceux de l’application Node Plesk
 sont séparés. `APP_URL` et `PLESK_MEDIA_DIR` ont des valeurs de validation CI
 non sensibles pour construire et tester le paquet; configure les valeurs de
-production déjà utilisées par l’application dans Plesk. Le transfert SSH ne lit
-ni la base de données ni les secrets applicatifs et ne les copie pas dans
-`dist/`.
+production déjà utilisées par l’application dans Plesk. Aucun secret
+d’application ni identifiant de base de données n’est copié dans `dist/`.
 
 ## Commandes et vérifications
 
-Le build est effectué dans GitHub Actions. Après le push, le job CI transfère
-`dist/` et met à jour `tmp/restart.txt`; Passenger redémarre selon son mécanisme
-de surveillance. Aucune **Additional deployment action** Plesk n’est nécessaire.
+Le build est effectué dans GitHub Actions. Après le push source, attends le
+commit généré `Build SendFlow production dist for Plesk`, puis lance Pull now
+dans Plesk si le déploiement automatique n’a pas déjà récupéré ce commit.
+Passenger redémarre selon son mécanisme de surveillance du fichier
+`dist/tmp/restart.txt`. Aucune **Additional deployment action** ni commande de
+build manuelle dans Plesk n’est nécessaire.
 
 Après une livraison réussie, vérifier dans le File Manager que l’Application
 Root Node.js contient `index.cjs`, `build-info.json`, les workers Pino et
@@ -280,8 +267,8 @@ Pour confirmer quel paquet est réellement servi après la livraison CI :
    paquet préparé par ce workflow. S’ils diffèrent, ou si `buildId` vaut
    `null`/est absent, le paquet servi n’est pas celui attendu (ou le paquet
    préparé n’inclut pas encore les métadonnées). Vérifier les journaux du job
-   **Deploy validated build to Plesk**, puis refaire le contrôle après le
-   redémarrage Passenger.
+   **Publish built dist to main for Plesk**, vérifier que Plesk a bien tiré le
+   commit, puis refaire le contrôle après le redémarrage Passenger.
 
 Les pages protégées nécessitant une authentification ne sont pas vérifiables sans session. Une réponse HTTP 200 à `/api/healthz` vérifie que le processus sert l’API, mais ne prouve pas à elle seule que chaque intégration tierce fonctionne.
 
