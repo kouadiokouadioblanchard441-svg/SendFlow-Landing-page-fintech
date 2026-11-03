@@ -117,6 +117,68 @@
 .orbit-dot-small { animation: orbitSmall 9s linear infinite; }
 .marquee-track { animation: marquee 30s linear infinite; }
 .marquee-track--reverse { animation: marqueeReverse 30s linear infinite; }
+.sf-floating-whatsapp-drag {
+  position: fixed;
+  top: clamp(150px, 45vh, 420px);
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 60;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.sf-floating-whatsapp-drag:active { cursor: grabbing; }
+.sf-floating-whatsapp {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  padding: 0;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: #25d366;
+  background-color: #25d366;
+  opacity: 1;
+  filter: none;
+  box-shadow: 0 14px 34px rgba(18, 110, 58, .38), 0 0 0 3px rgba(37, 211, 102, .24);
+  animation: sf-floating-whatsapp 2.4s ease-in-out infinite;
+  transition: box-shadow .2s ease, scale .2s ease;
+}
+.sf-floating-whatsapp:hover,
+.sf-floating-whatsapp:focus-visible {
+  scale: 1.08;
+  animation-play-state: paused;
+  box-shadow: 0 16px 36px rgba(18, 110, 58, .36), 0 0 0 4px rgba(37, 211, 102, .2);
+}
+.sf-floating-whatsapp:focus-visible {
+  outline: 3px solid #211d2c;
+  outline-offset: 4px;
+}
+.sf-floating-whatsapp:disabled {
+  cursor: not-allowed;
+  opacity: .86;
+}
+.sf-floating-whatsapp__logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  object-fit: cover;
+}
+@keyframes sf-floating-whatsapp {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); }
+  50% { transform: translate3d(-3px, -8px, 0) rotate(2deg); }
+}
+@media (max-width: 640px) {
+  .sf-floating-whatsapp-drag {
+    right: max(10px, env(safe-area-inset-right));
+  }
+  .sf-floating-whatsapp {
+    width: 64px;
+    height: 64px;
+  }
+}
+.sf-floating-whatsapp img { pointer-events: none; }
 .noise::after { content: ''; pointer-events: none; position: fixed; inset: 0; opacity: .035; z-index: 50; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E"); }
 .link-underline { position: relative; }
 .link-underline::after { content: ''; position: absolute; left: 0; right: 0; bottom: -5px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .25s ease; }
@@ -632,7 +694,8 @@ a[data-testid="button-hero-discover"]:hover {
   .hero-globe-spin,
   .hero-globe-motion::before,
   .hero-globe-motion::after,
-  .hero-globe-motion__meridian { animation: none; }
+  .hero-globe-motion__meridian,
+  .sf-floating-whatsapp { animation: none; }
   .marquee-track { animation: none; }
 }
 

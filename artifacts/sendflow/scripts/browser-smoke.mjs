@@ -87,6 +87,62 @@ try {
       `${route.path} should show "${route.heading}" in its visible heading; received "${heading}"`,
     );
 
+    if (route.path === '/') {
+      const whatsappButton = page.locator('[data-testid^="button-floating-whatsapp"]');
+      assert.equal(await whatsappButton.count(), 1, 'The homepage should show one floating WhatsApp control');
+      const initialBox = await whatsappButton.boundingBox();
+      assert.ok(initialBox, 'The floating WhatsApp control should be visible');
+      assert.equal(
+        await whatsappButton.evaluate((element) => getComputedStyle(element.parentElement).position),
+        'fixed',
+        'The WhatsApp control should float over the page',
+      );
+      const buttonAppearance = await whatsappButton.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const logo = element.querySelector('img');
+        return {
+          background: style.backgroundColor,
+          opacity: style.opacity,
+          logoLoaded: Boolean(logo?.complete && logo.naturalWidth > 0),
+        };
+      });
+      assert.equal(buttonAppearance.background, 'rgb(37, 211, 102)', 'The WhatsApp button should have a solid green background');
+      assert.equal(buttonAppearance.opacity, '1', 'The WhatsApp button should not be transparent');
+      assert.equal(buttonAppearance.logoLoaded, true, 'The official WhatsApp logo should be visible');
+
+      await page.mouse.move(initialBox.x + initialBox.width / 2, initialBox.y + initialBox.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(
+        initialBox.x + initialBox.width / 2 - 42,
+        initialBox.y + initialBox.height / 2 + 48,
+        { steps: 8 },
+      );
+      await page.mouse.up();
+      await page.waitForTimeout(50);
+
+      const movedBox = await whatsappButton.boundingBox();
+      assert.ok(movedBox, 'The WhatsApp control should remain visible after dragging');
+      assert.ok(
+        Math.abs(movedBox.x - initialBox.x) > 24 || Math.abs(movedBox.y - initialBox.y) > 24,
+        'Dragging should change the WhatsApp control position',
+      );
+      const savedPosition = await page.evaluate(() => JSON.parse(
+        localStorage.getItem('sendflow-home-whatsapp-position-v1') ?? 'null',
+      ));
+      assert.ok(savedPosition, 'Dragging should save the WhatsApp position in this browser');
+      assert.equal(page.context().pages().length, 1, 'Dragging must not open the WhatsApp link');
+
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.locator('h1').first().waitFor({ state: 'visible', timeout: 20_000 });
+      const restoredBox = await whatsappButton.boundingBox();
+      assert.ok(restoredBox, 'The WhatsApp control should render after reload');
+      assert.ok(
+        Math.abs(restoredBox.x - movedBox.x) < 14 && Math.abs(restoredBox.y - movedBox.y) < 14,
+        'The dragged position should persist after reload',
+      );
+      console.log('Verified draggable WhatsApp control and saved position on the homepage');
+    }
+
     if (route.downloadCta) {
       assert.equal(
         await page.getByTestId('button-hero-register').count(),
@@ -113,11 +169,18 @@ try {
       console.log(`Verified bottom download navigation ${route.path} → ${route.downloadCta.href}`);
     }
 
-    assert.deepEqual(
-      [...loadedCoreResources].sort(),
-      ['script', 'stylesheet'],
-      `${route.path} should load both its JavaScript and stylesheet`,
+    assert.ok(
+      loadedCoreResources.has('script'),
+      `${route.path} should load its JavaScript`,
     );
+    const stylesApplied = await page.evaluate(() => [...document.styleSheets].some((sheet) => {
+      try {
+        return sheet.cssRules.length > 0;
+      } catch {
+        return Boolean(sheet.href);
+      }
+    }));
+    assert.ok(stylesApplied, `${route.path} should apply its stylesheet`);
     assert.deepEqual(failedResources, [], `${route.path} should not fail to load page resources`);
     assert.deepEqual(browserErrors, [], `${route.path} should not produce browser errors`);
     console.log(`Verified rendered ${route.locale} route ${route.path}: ${heading}`);

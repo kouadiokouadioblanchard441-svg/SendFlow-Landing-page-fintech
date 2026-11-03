@@ -173,6 +173,10 @@ test("site settings accept a configurable HTTPS documentation URL", () => {
     ...base,
     documentationUrl: "http://docs.sendflow.africa",
   }).success, false);
+  assert.equal(siteSettingsSchema.safeParse({
+    ...base,
+    homeContactWhatsapp: "+225 07 00 00 00 00",
+  }).success, true);
 });
 
 test("country coordinates and colors are bounded before persistence", () => {

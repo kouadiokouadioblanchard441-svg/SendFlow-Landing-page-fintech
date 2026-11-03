@@ -913,6 +913,7 @@ function SiteSettingsEditor({
         {field('homeContactEmail', 'Email de contact · accueil', 'email')}
         {field('homeContactPhone', 'Téléphone · accueil', 'tel')}
         {field('homeContactWhatsapp', 'WhatsApp · accueil', 'tel', '+225 07 00 00 00 00')}
+        <p className="sendflow-admin-muted sendflow-admin-field-wide">Ce numéro alimente le bouton WhatsApp flottant de l’accueil. Après l’avoir renseigné avec l’indicatif du pays et enregistré les paramètres, le bouton ouvre la conversation WhatsApp.</p>
         <div className="sendflow-admin-settings-group-title">Fonctionnalités</div>
         {field('featuresContactEmail', 'Email de contact · fonctionnalités', 'email')}
         {field('featuresContactPhone', 'Téléphone · fonctionnalités', 'tel')}
