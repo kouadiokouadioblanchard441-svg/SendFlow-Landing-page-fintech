@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent } from 'react';
-import whatsappLogo from '@assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg';
+import whatsappLogo from '@/assets/whatsapp-mark.png';
 import { ProtectedImage } from '@/components/protected-image';
 
 type FloatingWhatsAppButtonProps = {

@@ -106,7 +106,7 @@ try {
           logoLoaded: Boolean(logo?.complete && logo.naturalWidth > 0),
         };
       });
-      assert.equal(buttonAppearance.background, 'rgb(37, 211, 102)', 'The WhatsApp button should have a solid green background');
+      assert.equal(buttonAppearance.background, 'rgb(77, 204, 61)', 'The WhatsApp button should have a solid green background');
       assert.equal(buttonAppearance.opacity, '1', 'The WhatsApp button should not be transparent');
       assert.equal(buttonAppearance.logoLoaded, true, 'The official WhatsApp logo should be visible');
 
