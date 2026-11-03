@@ -6,7 +6,7 @@
   "scripts": {
     "preinstall": "node ./scripts/check-package-manager.cjs",
     "dev": "node ./scripts/dev.mjs",
-    "build": "pnpm run test && pnpm run typecheck && pnpm --filter @workspace/sendflow run build && node ./scripts/verify-frontend-security.mjs && pnpm --filter @workspace/api-server run build && node ./scripts/prepare-plesk-build.mjs && node ./scripts/verify-plesk-build.mjs",
+    "build": "pnpm run test && pnpm run typecheck && pnpm --filter @workspace/sendflow run build && node ./scripts/verify-frontend-security.mjs && pnpm --filter @workspace/api-server run build && node ./scripts/prepare-plesk-build.mjs && node ./scripts/verify-frontend-security.mjs dist/public && node ./scripts/verify-plesk-build.mjs",
     "deploy:plesk": "bash ./scripts/plesk-deploy.sh",
     "package:plesk": "bash ./scripts/plesk-deploy.sh && node ./scripts/package-plesk-release.mjs",
     "start": "node ./index.cjs",

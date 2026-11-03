@@ -159,12 +159,6 @@ test("every protected admin route rejects requests without a session", async () 
         error: "Origin not allowed",
       }, `POST ${path}`);
     }
-  } finally {
-    if (server.listening) {
-      await new Promise<void>((resolve, reject) => {
-        server.close((error) => (error ? reject(error) : resolve()));
-      });
-    }
 
     const retiredPanelLookup = await fetch(`${origin}/admin/auth/panel/verify`, {
       method: "POST",
@@ -175,6 +169,12 @@ test("every protected admin route rejects requests without a session", async () 
       body: JSON.stringify({ token: "not-in-url", email: "admin@sendflow.example" }),
     });
     assert.equal(retiredPanelLookup.status, 404);
+  } finally {
+    if (server.listening) {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
   }
 });
 

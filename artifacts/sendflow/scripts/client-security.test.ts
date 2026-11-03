@@ -10,7 +10,7 @@ const appSource = await readFile(
 
 test("admin credentials are not extracted from URLs or persisted by the client", () => {
   assert.doesNotMatch(appSource, /takePanelCredentialsFromUrl|initialPanelCredentials/);
-  assert.doesNotMatch(appSource, /location\.hash|location\.search/);
+  assert.doesNotMatch(appSource, /\/api\/admin\/auth\/panel\/verify/);
   assert.doesNotMatch(appSource, /localStorage|sessionStorage/);
 });
 

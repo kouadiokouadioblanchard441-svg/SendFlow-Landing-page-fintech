@@ -55,9 +55,9 @@ test("frontend scanner rejects credential formats and private key material", asy
 
 test("frontend scanner rejects source maps and sourceMappingURL references", async () => {
   await withBuild({ "assets/app.js": "const app=true;\n//# sourceMappingURL=app.js.map" }, async (directory) => {
-    await assert.rejects(scanFrontendBuild(directory), /Source map/);
+    await assert.rejects(scanFrontendBuild(directory), /source map/i);
   });
   await withBuild({ "assets/app.js.map": "{}" }, async (directory) => {
-    await assert.rejects(scanFrontendBuild(directory), /Source map/);
+    await assert.rejects(scanFrontendBuild(directory), /source map/i);
   });
 });

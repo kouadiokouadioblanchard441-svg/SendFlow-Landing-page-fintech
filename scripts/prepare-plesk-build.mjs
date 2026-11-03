@@ -86,6 +86,8 @@ await writeFile(
   [
     "<IfModule mod_rewrite.c>",
     "RewriteEngine On",
+    "# Retire historical admin links that placed access credentials in the path.",
+    "RewriteRule ^panel/[^/]+/[^/]+/?$ /panel [R=302,L,NC]",
     "RewriteRule ^favicon\\.ico$ favicon.svg [L]",
     "# Keep API requests for the Passenger application; never rewrite them to the SPA.",
     "RewriteRule ^api(/|$) - [L,NC]",
@@ -105,6 +107,7 @@ await writeFile(
     'Header always set X-Frame-Options "DENY"',
     "Header always set Content-Security-Policy \"frame-ancestors 'none'\"",
     'Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"',
+    'Header always set X-Robots-Tag "noindex, nofollow" env=sendflow_legacy_panel',
     'Header always set Referrer-Policy "no-referrer" env=sendflow_legacy_panel',
     'Header always set Cache-Control "no-store" env=sendflow_legacy_panel',
     "</IfModule>",

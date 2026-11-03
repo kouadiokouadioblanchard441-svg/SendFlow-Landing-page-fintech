@@ -80,7 +80,7 @@ export async function scanFrontendBuild(buildRoot = defaultBuildRoot) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const result = await scanFrontendBuild(
-      process.env.SENDFLOW_FRONTEND_BUILD_DIR ?? defaultBuildRoot,
+      process.argv[2] ?? process.env.SENDFLOW_FRONTEND_BUILD_DIR ?? defaultBuildRoot,
     );
     console.log(
       `Frontend security check passed (${result.filesScanned} files scanned; no server-secret patterns or source maps found).`,

@@ -16,9 +16,9 @@ test("public landing data includes only explicitly visible rows and valid visibl
     countries: [{ id: 1, isVisible: true }, { id: 2, isVisible: false }],
     operators: [{ id: 1, isVisible: true }, { id: 2, isVisible: false }],
     countryOperators: [
-      { countryId: 1, operatorId: 1 },
-      { countryId: 2, operatorId: 1 },
-      { countryId: 1, operatorId: 2 },
+      { countryId: 1, operatorId: 1, orderIndex: 2, internalNote: "private" },
+      { countryId: 2, operatorId: 1, orderIndex: 1 },
+      { countryId: 1, operatorId: 2, orderIndex: 3 },
     ],
     globeBadges: [
       { id: 1, operatorId: 1, isVisible: true },
@@ -26,9 +26,9 @@ test("public landing data includes only explicitly visible rows and valid visibl
       { id: 3, operatorId: 1, isVisible: false },
     ],
     legalPages: [{ id: 1, isVisible: true }, { id: 2, isVisible: false }],
-    legalSections: [{ pageId: 1 }, { pageId: 2 }],
+    legalSections: [{ id: 1, pageId: 1, sectionNumber: 1, internalNote: "private" }, { id: 2, pageId: 2 }],
     founder: { id: 1, isVisible: false, passwordHash: "private" },
-    settings: { companyName: "SendFlow", sessionSecret: "private", updatedAt: new Date() },
+    settings: { id: 1, companyName: "SendFlow", sessionSecret: "private", updatedAt: new Date() },
   };
 
   const publicBundle = filterPublicLandingBundle(bundle);
@@ -40,13 +40,13 @@ test("public landing data includes only explicitly visible rows and valid visibl
   assert.deepEqual(publicBundle.faqs.map((row) => row.id), [1]);
   assert.deepEqual(publicBundle.countries.map((row) => row.id), [1]);
   assert.deepEqual(publicBundle.operators.map((row) => row.id), [1]);
-  assert.deepEqual(publicBundle.countryOperators, [{ countryId: 1, operatorId: 1 }]);
+  assert.deepEqual(publicBundle.countryOperators, [{ countryId: 1, operatorId: 1, orderIndex: 2 }]);
   assert.deepEqual(publicBundle.globeBadges.map((row) => row.id), [1]);
   assert.deepEqual(publicBundle.legalPages.map((row) => row.id), [1]);
-  assert.deepEqual(publicBundle.legalSections, [{ pageId: 1 }]);
+  assert.deepEqual(publicBundle.legalSections, [{ id: 1, pageId: 1, sectionNumber: 1 }]);
   assert.equal(publicBundle.founder, null);
   assert.deepEqual(publicBundle.media, [{ id: 1, slug: "public", isVisible: true }]);
-  assert.deepEqual(publicBundle.settings, { companyName: "SendFlow" });
+  assert.deepEqual(publicBundle.settings, { id: 1, companyName: "SendFlow" });
   assert.equal("sessionSecret" in publicBundle.settings!, false);
   assert.equal("updatedAt" in publicBundle.settings!, false);
   assert.equal("passwordHash" in (publicBundle.founder ?? {}), false);
@@ -72,6 +72,7 @@ test("public projections return only allowlisted fields from visible founder and
     legalPages: [], legalSections: [],
     founder: {
       name: "Founder",
+      id: 1,
       email: "public@example.org",
       isVisible: true,
       passwordHash: "must-not-leak",
@@ -79,6 +80,7 @@ test("public projections return only allowlisted fields from visible founder and
     },
     settings: {
       supportEmail: "support@example.org",
+      id: 1,
       whatsappUrl: "https://wa.me/000",
       apiCredential: "must-not-leak",
       updatedAt: new Date(),
@@ -88,11 +90,13 @@ test("public projections return only allowlisted fields from visible founder and
   const publicBundle = filterPublicLandingBundle(bundle);
 
   assert.deepEqual(publicBundle.founder, {
+    id: 1,
     name: "Founder",
     email: "public@example.org",
     isVisible: true,
   });
   assert.deepEqual(publicBundle.settings, {
+    id: 1,
     supportEmail: "support@example.org",
     whatsappUrl: "https://wa.me/000",
   });

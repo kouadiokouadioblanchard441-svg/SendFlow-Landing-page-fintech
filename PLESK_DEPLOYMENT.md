@@ -17,7 +17,7 @@ La capture Plesk la plus récente montre **Application Root** et **Document Root
 - **URL de l’application** : `https://sendflow.africa` lorsque ce champ sert d’URL publique ; le build refuse une origine HTTP.
 - **Écoute réseau** : sous Plesk, le serveur détecte `PhusionPassenger` et utilise son socket avec `listen("passenger")`. Aucun `PORT` numérique n’est exigé sous Passenger. En exécution Node directe seulement, `PORT` reste obligatoire et le serveur écoute sur `0.0.0.0`.
 
-Le build génère aussi `dist/public/.htaccess` : chaque route SEO pré-rendue est réécrite vers son propre `index.html`, avec ou sans barre oblique finale. Cela évite qu’Apache traite une URL comme `/securite` comme un dossier et renvoie une erreur au lieu de sa page. Les autres routes web inconnues vont vers `index.html` pour que React les traite. Une règle laisse explicitement `/api` et `/api/*` à Passenger ; le serveur répond en JSON pour les routes API inconnues et ne leur renvoie jamais le HTML de la SPA.
+Le build génère aussi `dist/public/.htaccess` : chaque route SEO pré-rendue est réécrite vers son propre `index.html`, avec ou sans barre oblique finale. Cela évite qu’Apache traite une URL comme `/securite` comme un dossier et renvoie une erreur au lieu de sa page. Les autres routes web inconnues vont vers `index.html` pour que React les traite. Une règle laisse explicitement `/api` et `/api/*` à Passenger ; le serveur répond en JSON pour les routes API inconnues et ne leur renvoie jamais le HTML de la SPA. Les anciens liens admin de forme `/panel/<code>/<email>` sont redirigés vers `/panel` sans cache ni référent afin de ne plus conserver ces valeurs dans l’adresse du navigateur.
 
 Si une page publique renvoie encore le 500 générique Plesk après le pull, compare la route avec et sans `/` final et vérifie que le `.htaccess` livré contient une règle directe pour cette route. Un 500 HTML sur `/api/healthz` n’est pas une réponse de santé de l’API : vérifie dans **Plesk → Websites & Domains → sendflow.africa → Logs** l’erreur Apache/Passenger au même horaire et le journal de l’application Node. Ce journal est nécessaire pour distinguer un démarrage Passenger invalide d’un problème de proxy ou de permissions; les captures et les journaux d’accès seuls ne donnent pas l’exception. Les erreurs qui atteignent Express sont journalisées en JSON avec l’identifiant, la méthode et la route (jetons `/panel` masqués), le type et la trace; les corps de requête et les en-têtes sensibles ne sont pas journalisés, et les valeurs de credentials courantes sont expurgées. Une erreur de démarrage Node est aussi journalisée avant l’arrêt du processus. Si aucun événement Node n’apparaît pour une requête, le problème survient avant l’application.
 
@@ -242,6 +242,8 @@ Environment variables**, jamais dans Git :
 
 L’API accepte `APP_URL`, `PUBLIC_URL` et `VITE_PUBLIC_SITE_URL` comme solutions de repli à `PUBLIC_SITE_URL`. Pour le build CI/Plesk, définis `APP_URL=https://sendflow.africa` ; le script de build accepte aussi `PUBLIC_URL`, `PUBLIC_SITE_URL` ou `VITE_PUBLIC_SITE_URL`. `VITE_PUBLIC_SITE_URL` est une valeur publique de build, jamais un secret.
 
+Toute variable `VITE_*` peut être intégrée au JavaScript livré au navigateur : n’y place jamais de clé privée, mot de passe, jeton, URL de base avec identifiants, ou secret de session. SendFlow n’utilise actuellement côté client que la base publique du site pour les métadonnées SEO. Les clés serveur comme `NEON_DATABASE_URL`, `RESEND_API_KEY`, `SESSION_SECRET` et `RECAPTCHA_SECRET_KEY` doivent rester dans l’environnement Node de Plesk et ne sont pas envoyées dans le bundle. La clé `RECAPTCHA_SITE_KEY` est publique par conception.
+
 `BASE_PATH` doit rester `/` (ou être absent, car `/` est la valeur par défaut) pour servir le site à la racine du domaine.
 
 `PUBLIC_OBJECT_SEARCH_PATHS` est uniquement le repli du stockage objet hors Plesk lorsque `PLESK_MEDIA_DIR` n’est pas défini. Sur Plesk, configure `PLESK_MEDIA_DIR` et n’utilise pas ce repli.
@@ -249,6 +251,19 @@ L’API accepte `APP_URL`, `PUBLIC_URL` et `VITE_PUBLIC_SITE_URL` comme solution
 Les variables `PLESK_DIST_DIR`, `PLESK_DEPLOYMENT_ROOT` et `PLESK_REQUIRE_DEPLOYMENT_ROOT` servent à la génération du paquet et au choix/à la validation de sa destination ; `PLESK_KEEP_PREVIOUS_DIST` contrôle la conservation d’une sauvegarde. Elles ne sont pas nécessaires dans l’environnement du processus Node.js lorsque le build est livré par CI.
 
 `API_ORIGIN`, `API_PORT` et `WEB_PORT` servent au développement local, pas au lancement de production. `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`, `ADMIN_PANEL_TOKEN` et `REFRESH_LEGAL_CONTENT` concernent des scripts explicites de seed/maintenance ; ne les configure pas pour le démarrage normal et n’exécute pas de seed ou migration lors du déploiement.
+
+### Connexion au panel administrateur
+
+Ouvre `/panel` sans identifiants dans l’URL, puis saisis le code privé, l’email
+associé à ce code, l’email du compte admin et son mot de passe dans le formulaire.
+Le navigateur les envoie uniquement dans le corps JSON du POST same-origin ; le
+serveur vérifie les quatre valeurs, applique la limitation de débit et crée une
+session par cookie `HttpOnly`, `SameSite=Lax` et `Secure` en production. Le
+frontend ne met pas ces valeurs dans l’URL, le fragment, le stockage navigateur
+ou les journaux. Les anciennes URL `/panel/<code>/<email>` redirigent vers
+`/panel` et sont marquées sans cache ni référent. Si une ancienne URL a été
+partagée ou enregistrée, remplace le code privé car l’URL a pu apparaître dans
+l’historique ou les journaux d’accès antérieurs.
 
 Les réglages d’environnement du build GitHub et ceux de l’application Node Plesk
 sont séparés. `APP_URL` et `PLESK_MEDIA_DIR` ont des valeurs de validation CI
@@ -307,7 +322,8 @@ formulaire navigateur.
 
 Lors de l’envoi de la newsletter, le navigateur obtient un jeton pour
 `newsletter_subscribe`. L’API le vérifie auprès de Google avant d’accepter
-l’inscription, en contrôlant le résultat, l’action, l’hôte de la requête et un
+l’inscription, en contrôlant le résultat, l’action, l’hôte défini par
+`PUBLIC_SITE_URL` (pas un en-tête `Host` fourni par le client) et un
 score minimal de 0,5. La limite de débit existante reste active. Si les deux
 clés sont absentes, le badge reste désactivé et le formulaire garde son
 fonctionnement actuel. Si une seule clé est configurée, l’API refuse

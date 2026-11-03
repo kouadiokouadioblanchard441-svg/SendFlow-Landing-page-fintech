@@ -18,7 +18,7 @@ test("reCAPTCHA verification hostname comes from configured public site URL, not
   assert.equal(getConfiguredRecaptchaHostname("https://SendFlow.example/"), "sendflow.example");
   assert.equal(getConfiguredRecaptchaHostname("https://user:pass@sendflow.example"), null);
   assert.equal(getConfiguredRecaptchaHostname("javascript:alert(1)"), null);
-  assert.equal(getConfiguredRecaptchaHostname(undefined), null);
+  assert.equal(getConfiguredRecaptchaHostname(""), null);
 });
 
 test("reCAPTCHA verification requires a successful score, expected action, and request hostname", async () => {

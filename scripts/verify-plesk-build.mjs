@@ -271,6 +271,11 @@ async function verifyApacheFallback() {
       `${distLabel}/public/.htaccess must explicitly leave /api requests for Passenger.`,
     );
   }
+  if (!rules.has("RewriteRule ^panel/[^/]+/[^/]+/?$ /panel [R=302,L,NC]")) {
+    errors.push(
+      `${distLabel}/public/.htaccess must redirect retired credential-bearing admin paths to /panel.`,
+    );
+  }
   if (!/^RewriteRule \^ index\.html \[L\]$/m.test(htaccess)) {
     errors.push(
       `${distLabel}/public/.htaccess must route unknown public pages to index.html.`,

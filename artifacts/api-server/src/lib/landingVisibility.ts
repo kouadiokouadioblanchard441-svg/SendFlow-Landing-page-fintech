@@ -9,7 +9,7 @@ export type LandingVisibilityBundle = {
   faqs: Array<VisibleRow>;
   countries: Array<VisibleRow & { id: number }>;
   operators: Array<VisibleRow & { id: number }>;
-  countryOperators: Array<{ countryId: number; operatorId: number }>;
+  countryOperators: Array<{ countryId: number; operatorId: number; orderIndex: number }>;
   globeBadges: Array<VisibleRow & { operatorId: number }>;
   legalPages: Array<VisibleRow & { id: number }>;
   legalSections: Array<{ pageId: number }>;
@@ -25,7 +25,7 @@ export type PublicLandingBundle = {
   faqs: PublicRow[];
   countries: PublicRow[];
   operators: PublicRow[];
-  countryOperators: Array<{ countryId: number; operatorId: number }>;
+  countryOperators: Array<{ countryId: number; operatorId: number; orderIndex: number }>;
   globeBadges: PublicRow[];
   legalPages: PublicRow[];
   legalSections: PublicRow[];
@@ -43,14 +43,14 @@ const publicFields = {
   operators: ["id", "slug", "name", "logoKey", "background", "foreground", "isVisible"],
   globeBadges: ["id", "operatorId", "positionX", "positionY", "orderIndex", "isVisible"],
   legalPages: ["id", "slug", "titleFr", "titleEn", "introFr", "introEn", "isVisible"],
-  legalSections: ["pageId", "sectionNumber", "titleFr", "titleEn", "bodyFr", "bodyEn", "orderIndex"],
+  legalSections: ["id", "pageId", "sectionNumber", "titleFr", "titleEn", "bodyFr", "bodyEn", "orderIndex"],
   founder: [
-    "name", "roleFr", "roleEn", "shortBioFr", "shortBioEn", "storyFr", "storyEn",
+    "id", "name", "roleFr", "roleEn", "shortBioFr", "shortBioEn", "storyFr", "storyEn",
     "visionFr", "visionEn", "educationFr", "educationEn", "missionFr", "missionEn",
     "photoKey", "linkedinUrl", "websiteUrl", "instagramUrl", "xUrl", "email", "isVisible",
   ],
   settings: [
-    "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl",
+    "id", "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl",
     "whatsappUrl", "homeContactEmail", "homeContactPhone", "homeContactWhatsapp",
     "featuresContactEmail", "featuresContactPhone", "featuresContactWhatsapp",
     "securityContactEmail", "securityContactPhone", "securityContactWhatsapp",
@@ -100,7 +100,7 @@ export function filterPublicLandingBundle(bundle: LandingVisibilityBundle): Publ
       .filter(
       (relation) => countryIds.has(relation.countryId) && operatorIds.has(relation.operatorId),
       )
-      .map(({ countryId, operatorId }) => ({ countryId, operatorId })),
+      .map(({ countryId, operatorId, orderIndex }) => ({ countryId, operatorId, orderIndex })),
     globeBadges: visibleRows(bundle.globeBadges, publicFields.globeBadges)
       .filter((badge) => operatorIds.has(badge.operatorId)),
     legalPages,

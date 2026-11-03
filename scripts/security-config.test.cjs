@@ -37,7 +37,11 @@ test("runtime environment files and common private-key files are ignored by the 
 
 test("environment example templates remain eligible for Git", () => {
   for (const filePath of [".env.example", "artifacts/api-server/.env.example"]) {
-    const result = ignoreRuleFor(filePath);
+    const result = spawnSync(
+      "git",
+      ["check-ignore", "--no-index", "--quiet", filePath],
+      { cwd: repoRoot, encoding: "utf8" },
+    );
     assert.equal(result.status, 1, `${filePath} should not be ignored`);
   }
 });

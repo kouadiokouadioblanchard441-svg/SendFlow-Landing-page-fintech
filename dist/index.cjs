@@ -61797,23 +61797,102 @@ async function openPleskPublicObject({
 }
 
 // src/lib/landingVisibility.ts
-function visibleRows(rows) {
-  return rows.filter((row) => row.isVisible === true);
+var publicFields = {
+  media: ["id", "slug", "kind", "sourcePath", "storagePath", "publicUrl", "mimeType", "altFr", "altEn", "width", "height", "isVisible"],
+  content: ["id", "contentKey", "locale", "group", "contentType", "value", "orderIndex", "isVisible"],
+  sections: ["id", "slug", "kind", "orderIndex", "eyebrowFr", "eyebrowEn", "titleFr", "titleEn", "bodyFr", "bodyEn", "imageKey", "isVisible"],
+  features: ["id", "slug", "group", "orderIndex", "titleFr", "titleEn", "bodyFr", "bodyEn", "iconKey", "imageKey", "isVisible"],
+  faqs: ["id", "orderIndex", "questionFr", "questionEn", "answerFr", "answerEn", "isVisible"],
+  countries: ["id", "code", "nameFr", "nameEn", "flag", "tone", "orderIndex", "heroPositionX", "heroPositionY", "isVisible"],
+  operators: ["id", "slug", "name", "logoKey", "background", "foreground", "isVisible"],
+  globeBadges: ["id", "operatorId", "positionX", "positionY", "orderIndex", "isVisible"],
+  legalPages: ["id", "slug", "titleFr", "titleEn", "introFr", "introEn", "isVisible"],
+  legalSections: ["id", "pageId", "sectionNumber", "titleFr", "titleEn", "bodyFr", "bodyEn", "orderIndex"],
+  founder: [
+    "id",
+    "name",
+    "roleFr",
+    "roleEn",
+    "shortBioFr",
+    "shortBioEn",
+    "storyFr",
+    "storyEn",
+    "visionFr",
+    "visionEn",
+    "educationFr",
+    "educationEn",
+    "missionFr",
+    "missionEn",
+    "photoKey",
+    "linkedinUrl",
+    "websiteUrl",
+    "instagramUrl",
+    "xUrl",
+    "email",
+    "isVisible"
+  ],
+  settings: [
+    "id",
+    "supportEmail",
+    "supportPhone",
+    "websiteUrl",
+    "linkedinUrl",
+    "instagramUrl",
+    "facebookUrl",
+    "whatsappUrl",
+    "homeContactEmail",
+    "homeContactPhone",
+    "homeContactWhatsapp",
+    "featuresContactEmail",
+    "featuresContactPhone",
+    "featuresContactWhatsapp",
+    "securityContactEmail",
+    "securityContactPhone",
+    "securityContactWhatsapp",
+    "downloadContactEmail",
+    "downloadContactPhone",
+    "downloadContactWhatsapp",
+    "aboutContactEmail",
+    "aboutContactPhone",
+    "aboutContactWhatsapp",
+    "legalContactEmail",
+    "legalContactPhone",
+    "legalContactWhatsapp",
+    "companyName",
+    "legalForm",
+    "legalAddress",
+    "legalEmail",
+    "footerAddressFlag",
+    "footerAddressCountry",
+    "footerAddress",
+    "regulatorNameFr",
+    "regulatorNameEn",
+    "regulatorLogoKey",
+    "googlePlayUrl",
+    "appStoreUrl",
+    "apkUrl"
+  ]
+};
+function projectPublicFields(row, fields) {
+  const source = row;
+  return Object.fromEntries(fields.filter((field) => Object.prototype.hasOwnProperty.call(source, field)).map((field) => [field, source[field]]));
+}
+function visibleRows(rows, fields) {
+  return rows.filter((row) => row.isVisible === true).map((row) => projectPublicFields(row, fields));
 }
 function filterPublicLandingBundle(bundle) {
-  const media = visibleRows(bundle.media);
-  const content = visibleRows(bundle.content);
-  const sections = visibleRows(bundle.sections);
-  const features = visibleRows(bundle.features);
-  const faqs = visibleRows(bundle.faqs);
-  const countries = visibleRows(bundle.countries);
-  const operators = visibleRows(bundle.operators);
-  const legalPages2 = visibleRows(bundle.legalPages);
+  const media = visibleRows(bundle.media, publicFields.media);
+  const content = visibleRows(bundle.content, publicFields.content);
+  const sections = visibleRows(bundle.sections, publicFields.sections);
+  const features = visibleRows(bundle.features, publicFields.features);
+  const faqs = visibleRows(bundle.faqs, publicFields.faqs);
+  const countries = visibleRows(bundle.countries, publicFields.countries);
+  const operators = visibleRows(bundle.operators, publicFields.operators);
+  const legalPages2 = visibleRows(bundle.legalPages, publicFields.legalPages);
   const countryIds = new Set(countries.map((country) => country.id));
   const operatorIds = new Set(operators.map((operator) => operator.id));
   const legalPageIds = new Set(legalPages2.map((page) => page.id));
   return {
-    ...bundle,
     media,
     content,
     sections,
@@ -61823,11 +61902,12 @@ function filterPublicLandingBundle(bundle) {
     operators,
     countryOperators: bundle.countryOperators.filter(
       (relation) => countryIds.has(relation.countryId) && operatorIds.has(relation.operatorId)
-    ),
-    globeBadges: visibleRows(bundle.globeBadges).filter((badge) => operatorIds.has(badge.operatorId)),
+    ).map(({ countryId, operatorId, orderIndex: orderIndex2 }) => ({ countryId, operatorId, orderIndex: orderIndex2 })),
+    globeBadges: visibleRows(bundle.globeBadges, publicFields.globeBadges).filter((badge) => operatorIds.has(badge.operatorId)),
     legalPages: legalPages2,
-    legalSections: bundle.legalSections.filter((section) => legalPageIds.has(section.pageId)),
-    founder: bundle.founder?.isVisible === true ? bundle.founder : null
+    legalSections: bundle.legalSections.filter((section) => legalPageIds.has(section.pageId)).map((section) => projectPublicFields(section, publicFields.legalSections)),
+    founder: bundle.founder?.isVisible === true ? projectPublicFields(bundle.founder, publicFields.founder) : null,
+    settings: bundle.settings ? projectPublicFields(bundle.settings, publicFields.settings) : null
   };
 }
 
@@ -61840,6 +61920,18 @@ function parseNewsletterToken(value) {
 // src/lib/recaptcha.ts
 var MINIMUM_SCORE = 0.5;
 var VERIFY_TIMEOUT_MS = 5e3;
+function getConfiguredRecaptchaHostname(siteUrl = getPublicSiteUrl()) {
+  if (!siteUrl) return null;
+  try {
+    const parsed = new URL(siteUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:" || parsed.username || parsed.password) {
+      return null;
+    }
+    return parsed.hostname.toLowerCase().replace(/\.$/, "") || null;
+  } catch {
+    return null;
+  }
+}
 function readRecaptchaSettings(env = process.env) {
   const siteKey = env.RECAPTCHA_SITE_KEY?.trim() ?? "";
   const secretKey = env.RECAPTCHA_SECRET_KEY?.trim() ?? "";
@@ -61943,10 +62035,6 @@ var adminLoginSchema = external_exports.object({
   password: external_exports.string().min(1).max(1024),
   panelToken: external_exports.string().trim().min(1).max(256).refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
   panelEmail: external_exports.string().trim().toLowerCase().email().max(320)
-}).strict();
-var panelLookupSchema = external_exports.object({
-  token: external_exports.string().trim().min(1).max(256).refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
-  email: external_exports.string().trim().toLowerCase().email().max(320)
 }).strict();
 var countryOperatorAssignmentSchema = external_exports.object({
   operatorIds: external_exports.array(positiveId).max(100).refine((ids) => new Set(ids).size === ids.length)
@@ -62576,11 +62664,16 @@ router2.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, 
       res.status(400).json({ error: "La v\xE9rification anti-robot est requise." });
       return;
     }
+    const expectedHostname = getConfiguredRecaptchaHostname();
+    if (!expectedHostname) {
+      res.status(503).json({ error: "La v\xE9rification anti-robot est temporairement indisponible." });
+      return;
+    }
     const verification = await verifyRecaptchaToken({
       token: captchaToken,
       secretKey: recaptchaSettings.secretKey,
       expectedAction: "newsletter_subscribe",
-      expectedHostname: req.hostname
+      expectedHostname
     });
     if (!verification.valid) {
       const status = verification.reason === "unavailable" ? 503 : 403;
@@ -62945,17 +63038,20 @@ router2.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, r
     }).where(eq(newsletterCampaigns.id, id)).returning();
     res.json(sent);
   } catch (error62) {
-    const message = error62 instanceof Error ? error62.message : "Resend n\u2019a pas pu envoyer la campagne.";
-    req.log.error({ err: error62, campaignId: id }, "Newsletter campaign send failed");
+    req.log.error({
+      errorType: error62 instanceof Error ? error62.name : "UnknownError",
+      campaignId: id
+    }, "Newsletter campaign send failed");
+    const safeFailureMessage = "\xC9chec du fournisseur d\u2019envoi. Consultez les journaux serveur et v\xE9rifiez les envois avant toute relance.";
     const [failed] = await db.update(newsletterCampaigns).set({
       status: "failed",
       sentCount,
       failedCount: Math.max(subscribers.length - sentCount, 0),
-      lastError: message.slice(0, 1e3),
+      lastError: safeFailureMessage,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(newsletterCampaigns.id, id)).returning();
     res.status(502).json({
-      error: `L\u2019envoi a \xE9chou\xE9. Certains messages ont peut-\xEAtre d\xE9j\xE0 \xE9t\xE9 distribu\xE9s. Ne relancez pas cette campagne; v\xE9rifiez les envois dans Resend avant d\u2019en cr\xE9er une nouvelle. (${message})`,
+      error: `L\u2019envoi a \xE9chou\xE9. Certains messages ont peut-\xEAtre d\xE9j\xE0 \xE9t\xE9 distribu\xE9s. ${safeFailureMessage}`,
       campaign: failed
     });
   }
@@ -63404,11 +63500,6 @@ var loginRateLimit = createSharedRateLimiter({
   max: 8,
   message: "Trop de tentatives de connexion. R\xE9essaie dans quelques minutes."
 });
-var panelLookupRateLimit = createSharedRateLimiter({
-  scope: "admin-panel-lookup",
-  windowMs: 10 * 60 * 1e3,
-  max: 30
-});
 function rejectUntrustedOrigin(req, res) {
   const origin = req.get("origin");
   if (!isAllowedMutationOrigin(origin)) {
@@ -63442,24 +63533,6 @@ router3.post("/admin/auth/login", requireTrustedOrigin, loginRateLimit, async (r
   await db.update(adminUsers).set({ lastLoginAt: /* @__PURE__ */ new Date(), updatedAt: /* @__PURE__ */ new Date() }).where(eq(adminUsers.id, user.id));
   setAdminSessionCookie(res, token);
   res.json({ user: { id: user.id, email: user.email } });
-});
-router3.post("/admin/auth/panel/verify", requireTrustedOrigin, panelLookupRateLimit, async (req, res) => {
-  const parsed = panelLookupSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(404).json({ error: "Panel not found" });
-    return;
-  }
-  const { token, email: panelEmail } = parsed.data;
-  const [user] = await db.select({ id: adminUsers.id, email: adminUsers.email }).from(adminUsers).where(and(
-    eq(adminUsers.panelTokenHash, hashAdminPanelToken(token)),
-    eq(adminUsers.panelEmailHash, hashAdminPanelToken(panelEmail.toLowerCase())),
-    eq(adminUsers.isActive, true)
-  )).limit(1);
-  if (!user) {
-    res.status(404).json({ error: "Panel not found" });
-    return;
-  }
-  res.json({ user });
 });
 router3.get("/admin/auth/me", async (req, res) => {
   const user = await getAdminUser(req);
@@ -63654,9 +63727,12 @@ app.use((req, res, next) => {
   const recaptchaStyleSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "";
   res.locals.cspNonce = nonce;
   res.setHeader("X-Content-Type-Options", "nosniff");
-  const isLegacyPrivatePanelUrl = /(^|\/)panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
-  res.setHeader("Referrer-Policy", isLegacyPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
-  if (isLegacyPrivatePanelUrl) res.setHeader("Cache-Control", "no-store");
+  const isPrivatePanelUrl = /(^|\/)panel(?:\/|$)/i.test(req.path);
+  res.setHeader("Referrer-Policy", isPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
+  if (isPrivatePanelUrl) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  }
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader(
     "Content-Security-Policy",
@@ -63687,6 +63763,20 @@ app.use((req, res, next) => {
   }
   next();
 });
+var configuredBasePath = process.env.BASE_PATH?.trim() ?? "";
+var safeBasePath = /^\/(?:[A-Za-z0-9._~-]+\/?)*$/.test(configuredBasePath) && !configuredBasePath.split("/").includes("..") ? configuredBasePath.replace(/\/+$/, "") : "";
+var canonicalPanelPath = `${safeBasePath}/panel`;
+app.use((req, res, next) => {
+  const isLegacyPanelPath = /^\/(?:[^/]+\/)*panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
+  if (!isLegacyPanelPath || !["GET", "HEAD"].includes(req.method)) {
+    next();
+    return;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.redirect(302, canonicalPanelPath);
+});
 app.use(
   (0, import_pino_http.default)({
     logger,
@@ -63715,6 +63805,11 @@ app.use((0, import_cors.default)({
 }));
 app.use(import_express6.default.json({ limit: "1mb" }));
 app.use(import_express6.default.urlencoded({ extended: true, limit: "100kb", parameterLimit: 100 }));
+app.use("/api/admin", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Pragma", "no-cache");
+  next();
+});
 app.use("/api", routes_default);
 app.use((req, res, next) => {
   if (req.path !== "/api" && !req.path.startsWith("/api/")) {
