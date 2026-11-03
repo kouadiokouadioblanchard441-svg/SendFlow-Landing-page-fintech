@@ -165,3 +165,4 @@ overrides:
   proxy-addr: "2.0.8"
   qs: "6.16.1"
   source-map-js: "1.2.2"
+  minimatch: "11.0.1"
