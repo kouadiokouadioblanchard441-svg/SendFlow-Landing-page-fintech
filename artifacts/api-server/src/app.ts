@@ -2,13 +2,14 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
-import express, { type ErrorRequestHandler, type Express } from "express";
+import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
-import { logger } from "./lib/logger";
+import { logger, sanitizeRequestUrl, serializeSafeError } from "./lib/logger";
 import { readRecaptchaSettings } from "./lib/recaptcha";
 import { isAllowedOrigin } from "./middlewares/security";
+import { requestErrorHandler } from "./middlewares/requestErrorHandler";
 
 const app: Express = express();
 app.set("trust proxy", false);
@@ -65,23 +66,12 @@ app.use(
   pinoHttp({
     logger,
     serializers: {
+      err: serializeSafeError,
       req(req) {
-        const path = req.url?.split("?")[0] ?? "";
-        const privatePagePath = path.replace(/(\/panel)\/[^/]+\/[^/]+\/?$/i, "$1/[redacted]");
-        const unsubscribePath = privatePagePath.replace(
-          /(\/api\/newsletter\/unsubscribe)\/[^/]+\/?$/i,
-          "$1/[redacted]",
-        );
-        const confirmationPath = unsubscribePath.replace(
-          /(\/api\/newsletter\/confirm)\/[^/]+\/?$/i,
-          "$1/[redacted]",
-        );
         return {
           id: req.id,
           method: req.method,
-          url: path.startsWith("/api/admin/auth/panel/")
-            ? "/api/admin/auth/panel/[redacted]"
-            : confirmationPath,
+          url: sanitizeRequestUrl(req.url),
         };
       },
       res(res) {
@@ -148,16 +138,6 @@ app.use((req, res, next) => {
     .catch(next);
 });
 
-const apiErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
-  const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
-  if (!isApiRequest || res.headersSent) {
-    next(error);
-    return;
-  }
-
-  req.log.error({ err: error }, "Unhandled API request error");
-  res.status(500).json({ error: "Internal server error" });
-};
-app.use(apiErrorHandler);
+app.use(requestErrorHandler);
 
 export default app;

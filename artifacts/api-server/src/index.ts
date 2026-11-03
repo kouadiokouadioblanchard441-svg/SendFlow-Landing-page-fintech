@@ -11,12 +11,17 @@ import { getPleskMediaDirectory } from "./lib/publicObjectStorage";
 const passenger = (
   globalThis as typeof globalThis & { PhusionPassenger?: PassengerRuntime }
 ).PhusionPassenger;
-assertApiRuntimeEnvironment(
-  passenger,
-  process.env.NODE_ENV,
-  Boolean(process.env.PLESK_MEDIA_DIR?.trim()),
-);
-if (passenger) getPleskMediaDirectory();
+try {
+  assertApiRuntimeEnvironment(
+    passenger,
+    process.env.NODE_ENV,
+    Boolean(process.env.PLESK_MEDIA_DIR?.trim()),
+  );
+  if (passenger) getPleskMediaDirectory();
+} catch (error) {
+  logger.fatal({ err: error }, "API runtime configuration failed");
+  process.exit(1);
+}
 
 const server = createServer(app);
 

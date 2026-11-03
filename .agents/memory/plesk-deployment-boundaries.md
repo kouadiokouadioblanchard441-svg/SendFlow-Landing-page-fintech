@@ -57,6 +57,12 @@ When diagnosing a Plesk 500, distinguish access-log entries from server error lo
 
 **How to apply:** Correlate all evidence already supplied before asking anything. Never ask for the same screenshots again. If the exact startup cause remains unknown, request one distinct missing error-log source; if it is unavailable, continue with code, build, and runtime-configuration checks and clearly separate confirmed facts from hypotheses. When the user replies « Il faut regarder les captures fournies, tout est dedans », do not repeat the log request; continue the independent checks without claiming the captures establish a specific crash cause.
 
+When checking a Plesk 500, compare the response body and trailing-slash variants. A generic Plesk HTML 500 from `/api/healthz` differs from the application's JSON health response and indicates the request did not receive the expected Express response; it does not by itself distinguish a Passenger startup failure from Apache/proxy routing. A slashless prerendered page failing while its trailing-slash version works points toward web-server directory/rewrite behavior.
+
+**Why:** SendFlow's compiled Express health route returns JSON, while Plesk can emit its own HTML error page before that handler runs; prerendered routes also exist as directory indexes.
+
+**How to apply:** Verify the deployed build's `.htaccess` and Plesk Application Root/Startup File, then correlate the affected request with Apache and Passenger/Node error logs before attributing an HTML error to database or route code.
+
 For SendFlow, treat Plesk as the production target and focus work on resolving the production behavior; do not stop at generic advice or present local checks as a production fix.
 
 **Why:** The user explicitly asked that work prioritize correcting the live Plesk deployment.

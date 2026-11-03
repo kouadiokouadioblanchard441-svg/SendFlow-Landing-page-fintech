@@ -63582,8 +63582,38 @@ var routes_default = router5;
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
 var isProduction = process.env.NODE_ENV === "production";
+var sensitiveAssignment = /\b(authorization|cookie|password|passwd|secret|token|private[-_]?key|api[-_]?key|database[-_]?url|connection(?:string|[-_]string)?|session[-_]?secret)\s*[:=]\s*(?:(?:bearer|basic)\s+)?("[^"]*"|'[^']*'|[^\s,;]+)/gi;
+function sanitizeLogText(value) {
+  return value.replace(
+    /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/gi,
+    "[REDACTED PRIVATE KEY]"
+  ).replace(
+    /\b(postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/[^\s"'`]+/gi,
+    "$1://[REDACTED]"
+  ).replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer [REDACTED]").replace(sensitiveAssignment, "$1=[REDACTED]").replace(
+    /([?&](?:token|secret|key|code|password|signature)=)[^&#\s]+/gi,
+    "$1[REDACTED]"
+  ).slice(0, 8e3);
+}
+function serializeSafeError(value) {
+  const error62 = value && typeof value === "object" ? value : void 0;
+  const type = typeof error62?.name === "string" && error62.name.trim() ? sanitizeLogText(error62.name) : "Error";
+  const message = typeof error62?.message === "string" ? sanitizeLogText(error62.message) : sanitizeLogText(String(value));
+  const stack = typeof error62?.stack === "string" ? sanitizeLogText(error62.stack.split(/\r?\n/).slice(1).join("\n")) : void 0;
+  return { type, message, ...stack ? { stack } : {} };
+}
+function sanitizeRequestUrl(rawUrl) {
+  const path5 = rawUrl?.split("?")[0] ?? "";
+  if (path5.startsWith("/api/admin/auth/panel/")) {
+    return "/api/admin/auth/panel/[redacted]";
+  }
+  return path5.replace(/(\/panel)(?:\/[^/]+)+\/?$/i, "$1/[redacted]").replace(/(\/api\/newsletter\/unsubscribe)\/[^/]+\/?$/i, "$1/[redacted]").replace(/(\/api\/newsletter\/confirm)\/[^/]+\/?$/i, "$1/[redacted]");
+}
 var logger = (0, import_pino.default)({
   level: process.env.LOG_LEVEL ?? "info",
+  serializers: {
+    err: serializeSafeError
+  },
   redact: [
     "req.headers.authorization",
     "req.headers.cookie",
@@ -63596,6 +63626,21 @@ var logger = (0, import_pino.default)({
     }
   }
 });
+
+// src/middlewares/requestErrorHandler.ts
+var requestErrorHandler = (error62, req, res, next) => {
+  req.log.error({ err: error62 }, "Unhandled request error");
+  if (res.headersSent) {
+    next(error62);
+    return;
+  }
+  const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
+  if (isApiRequest) {
+    res.status(500).json({ error: "Internal server error" });
+    return;
+  }
+  res.status(500).type("text/plain").send("Internal server error");
+};
 
 // src/app.ts
 var app = (0, import_express6.default)();
@@ -63646,21 +63691,12 @@ app.use(
   (0, import_pino_http.default)({
     logger,
     serializers: {
+      err: serializeSafeError,
       req(req) {
-        const path5 = req.url?.split("?")[0] ?? "";
-        const privatePagePath = path5.replace(/(\/panel)\/[^/]+\/[^/]+\/?$/i, "$1/[redacted]");
-        const unsubscribePath = privatePagePath.replace(
-          /(\/api\/newsletter\/unsubscribe)\/[^/]+\/?$/i,
-          "$1/[redacted]"
-        );
-        const confirmationPath = unsubscribePath.replace(
-          /(\/api\/newsletter\/confirm)\/[^/]+\/?$/i,
-          "$1/[redacted]"
-        );
         return {
           id: req.id,
           method: req.method,
-          url: path5.startsWith("/api/admin/auth/panel/") ? "/api/admin/auth/panel/[redacted]" : confirmationPath
+          url: sanitizeRequestUrl(req.url)
         };
       },
       res(res) {
@@ -63714,16 +63750,7 @@ app.use((req, res, next) => {
     res.type("html").send(noncedHtml);
   }).catch(next);
 });
-var apiErrorHandler = (error62, req, res, next) => {
-  const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
-  if (!isApiRequest || res.headersSent) {
-    next(error62);
-    return;
-  }
-  req.log.error({ err: error62 }, "Unhandled API request error");
-  res.status(500).json({ error: "Internal server error" });
-};
-app.use(apiErrorHandler);
+app.use(requestErrorHandler);
 var app_default = app;
 
 // src/lib/serverListener.ts
@@ -63762,12 +63789,17 @@ function listenForRequests(server2, rawPort, passenger2, onListening) {
 
 // src/index.ts
 var passenger = globalThis.PhusionPassenger;
-assertApiRuntimeEnvironment(
-  passenger,
-  process.env.NODE_ENV,
-  Boolean(process.env.PLESK_MEDIA_DIR?.trim())
-);
-if (passenger) getPleskMediaDirectory();
+try {
+  assertApiRuntimeEnvironment(
+    passenger,
+    process.env.NODE_ENV,
+    Boolean(process.env.PLESK_MEDIA_DIR?.trim())
+  );
+  if (passenger) getPleskMediaDirectory();
+} catch (error62) {
+  logger.fatal({ err: error62 }, "API runtime configuration failed");
+  process.exit(1);
+}
 var server = (0, import_node_http.createServer)(app_default);
 server.on("error", (err) => {
   logger.error({ err }, "Error starting HTTP listener");
