@@ -55,6 +55,32 @@ await writeFile(
   path.join(outputDist, "build-info.json"),
   `${JSON.stringify({ buildId }, null, 2)}\n`,
 );
+const seoRoutesPath = path.join(
+  repoRoot,
+  "artifacts",
+  "sendflow",
+  "src",
+  "lib",
+  "public-seo-routes.json",
+);
+const seoRouteGroups = Object.values(
+  JSON.parse(await readFile(seoRoutesPath, "utf8")),
+).filter((group) => group?.fr?.path && group?.en?.path);
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const apacheSeoRouteRules = [
+  ...new Set(
+    seoRouteGroups.flatMap((group) => [group.fr.path, group.en.path]),
+  ),
+]
+  .filter((routePath) => routePath !== "/")
+  .map((routePath) => {
+    const relativePath = routePath.replace(/^\/+|\/+$/g, "");
+    const rulePath = relativePath
+      .split("/")
+      .map((segment) => escapeRegex(segment))
+      .join("/");
+    return `RewriteRule ^${rulePath}/?$ ${relativePath}/index.html [L]`;
+  });
 await writeFile(
   path.join(outputDist, "public", ".htaccess"),
   [
@@ -62,14 +88,15 @@ await writeFile(
     "RewriteEngine On",
     "RewriteRule ^favicon\\.ico$ favicon.svg [L]",
     "# Keep API requests for the Passenger application; never rewrite them to the SPA.",
-    "RewriteRule ^api(?:/|$) - [L,NC]",
-    "RewriteCond %{REQUEST_URI} !^/api(/|$) [NC]",
+    "RewriteRule ^api(/|$) - [L,NC]",
+    "# Serve generated SEO route files without Apache's directory-slash redirect.",
+    ...apacheSeoRouteRules,
     "RewriteCond %{REQUEST_FILENAME} !-f",
     "RewriteCond %{REQUEST_FILENAME} !-d",
     "RewriteRule ^ index.html [L]",
     "</IfModule>",
     "<IfModule mod_setenvif.c>",
-    'SetEnvIf Request_URI "(?i)^/panel/[^/]+/[^/]+/?$" sendflow_legacy_panel',
+    'SetEnvIf Request_URI "^/panel/[^/]+/[^/]+/?$" sendflow_legacy_panel',
     "</IfModule>",
     "<IfModule mod_headers.c>",
     'Header always set X-Content-Type-Options "nosniff"',
@@ -87,17 +114,6 @@ await writeFile(
 
 const publicIndexPath = path.join(outputDist, "public", "index.html");
 const defaultRouteHtml = await readFile(publicIndexPath, "utf8");
-const seoRoutesPath = path.join(
-  repoRoot,
-  "artifacts",
-  "sendflow",
-  "src",
-  "lib",
-  "public-seo-routes.json",
-);
-const seoRouteGroups = Object.values(
-  JSON.parse(await readFile(seoRoutesPath, "utf8")),
-).filter((group) => group?.fr?.path && group?.en?.path);
 const sitemapPath = path.join(repoRoot, "artifacts", "sendflow", "public", "sitemap.xml");
 const sitemapSource = await readFile(sitemapPath, "utf8");
 const sitemapPaths = new Set(
@@ -138,7 +154,6 @@ const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const replaceMeta = (html, attribute, key, value) => {
   const pattern = new RegExp(
     `<meta(?=[^>]*\\b${attribute}="${escapeRegex(key)}")[^>]*>`,

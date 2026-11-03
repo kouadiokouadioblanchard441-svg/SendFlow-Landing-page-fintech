@@ -12,10 +12,20 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
   const rootHtml =
     '<html><style nonce="__SEND_FLOW_CSP_NONCE__">body{color:black}</style><script type="module" nonce="__SEND_FLOW_CSP_NONCE__">app</script></html>';
   await mkdir(path.join(publicRoot, "features"), { recursive: true });
+  await mkdir(path.join(publicRoot, "securite"), { recursive: true });
+  await mkdir(path.join(publicRoot, "en", "security"), { recursive: true });
   await writeFile(path.join(publicRoot, "index.html"), rootHtml);
   await writeFile(
     path.join(publicRoot, "features", "index.html"),
     '<html><script type="module" crossorigin src="/assets/features.js"></script></html>',
+  );
+  await writeFile(
+    path.join(publicRoot, "securite", "index.html"),
+    "<html><title>SendFlow sécurité</title></html>",
+  );
+  await writeFile(
+    path.join(publicRoot, "en", "security", "index.html"),
+    "<html><title>SendFlow security</title></html>",
   );
   process.env.WEB_DIST_DIR = publicRoot;
   process.env.NEON_DATABASE_URL =
@@ -54,6 +64,18 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
     );
     assert.ok(!featureHtml.includes("__SEND_FLOW_CSP_NONCE__"));
     assert.equal(featureResponse.headers.get("cache-control"), "no-store");
+
+    for (const [pathName, expectedTitle] of [
+      ["/securite", "SendFlow sécurité"],
+      ["/en/security", "SendFlow security"],
+      ["/panel/7fK9x", "body{color:black}"],
+      ["/panel/7fK9x/admin%40sendflow.africa", "body{color:black}"],
+    ]) {
+      const response = await fetch(`${origin}${pathName}`);
+      assert.equal(response.status, 200, pathName);
+      assert.match(response.headers.get("content-type") ?? "", /text\/html/, pathName);
+      assert.match(await response.text(), new RegExp(expectedTitle), pathName);
+    }
 
     const adminResponse = await fetch(`${origin}/panel`);
     assert.equal(adminResponse.status, 200);

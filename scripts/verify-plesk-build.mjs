@@ -265,17 +265,55 @@ async function verifyApacheFallback() {
   const htaccessPath = await requireFile("public/.htaccess");
   if (!htaccessPath) return;
   const htaccess = await readFile(htaccessPath, "utf8");
-  if (!/^RewriteRule \^api\(\?:\/\|\$\) - \[L,NC\]$/m.test(htaccess)) {
+  const rules = new Set(htaccess.split(/\r?\n/));
+  if (!/^RewriteRule \^api\(\/\|\$\) - \[L,NC\]$/m.test(htaccess)) {
     errors.push(
       `${distLabel}/public/.htaccess must explicitly leave /api requests for Passenger.`,
     );
   }
-  if (
-    !/^RewriteCond %\{REQUEST_URI\} !\^\/api\(\/\|\$\) \[NC\]$/m.test(htaccess)
-  ) {
+  if (!/^RewriteRule \^ index\.html \[L\]$/m.test(htaccess)) {
     errors.push(
-      `${distLabel}/public/.htaccess must exclude /api paths from the SPA HTML fallback.`,
+      `${distLabel}/public/.htaccess must route unknown public pages to index.html.`,
     );
+  }
+  if (/\(\?:|\(\?i\)/.test(htaccess)) {
+    errors.push(
+      `${distLabel}/public/.htaccess must use portable Apache rewrite and SetEnvIf patterns.`,
+    );
+  }
+  const seoRoutes = JSON.parse(
+    await readFile(
+      path.join(
+        repoRoot,
+        "artifacts",
+        "sendflow",
+        "src",
+        "lib",
+        "public-seo-routes.json",
+      ),
+      "utf8",
+    ),
+  );
+  for (const routePath of [
+    ...new Set(
+      Object.values(seoRoutes).flatMap((group) => [
+        group.fr.path,
+        group.en.path,
+      ]),
+    ),
+  ]) {
+    if (routePath === "/") continue;
+    const relativePath = routePath.replace(/^\/+|\/+$/g, "");
+    const rulePath = relativePath
+      .split("/")
+      .map((segment) => segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("/");
+    const expectedRule = `RewriteRule ^${rulePath}/?$ ${relativePath}/index.html [L]`;
+    if (!rules.has(expectedRule)) {
+      errors.push(
+        `${distLabel}/public/.htaccess is missing direct routing for ${routePath}.`,
+      );
+    }
   }
 }
 

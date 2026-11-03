@@ -2,14 +2,35 @@
 RewriteEngine On
 RewriteRule ^favicon\.ico$ favicon.svg [L]
 # Keep API requests for the Passenger application; never rewrite them to the SPA.
-RewriteRule ^api(?:/|$) - [L,NC]
-RewriteCond %{REQUEST_URI} !^/api(/|$) [NC]
+RewriteRule ^api(/|$) - [L,NC]
+# Serve generated SEO route files without Apache's directory-slash redirect.
+RewriteRule ^en/?$ en/index.html [L]
+RewriteRule ^fonctionnalites/?$ fonctionnalites/index.html [L]
+RewriteRule ^en/features/?$ en/features/index.html [L]
+RewriteRule ^api-developpeur/?$ api-developpeur/index.html [L]
+RewriteRule ^en/developer-api/?$ en/developer-api/index.html [L]
+RewriteRule ^securite/?$ securite/index.html [L]
+RewriteRule ^en/security/?$ en/security/index.html [L]
+RewriteRule ^download/?$ download/index.html [L]
+RewriteRule ^en/download/?$ en/download/index.html [L]
+RewriteRule ^a-propos/?$ a-propos/index.html [L]
+RewriteRule ^en/about/?$ en/about/index.html [L]
+RewriteRule ^conditions-utilisation/?$ conditions-utilisation/index.html [L]
+RewriteRule ^en/terms/?$ en/terms/index.html [L]
+RewriteRule ^confidentialite/?$ confidentialite/index.html [L]
+RewriteRule ^en/privacy/?$ en/privacy/index.html [L]
+RewriteRule ^mentions-legales/?$ mentions-legales/index.html [L]
+RewriteRule ^en/legal-notice/?$ en/legal-notice/index.html [L]
+RewriteRule ^france-senegal/?$ france-senegal/index.html [L]
+RewriteRule ^en/france-senegal/?$ en/france-senegal/index.html [L]
+RewriteRule ^tarifs/?$ tarifs/index.html [L]
+RewriteRule ^en/pricing/?$ en/pricing/index.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
 </IfModule>
 <IfModule mod_setenvif.c>
-SetEnvIf Request_URI "(?i)^/panel/[^/]+/[^/]+/?$" sendflow_legacy_panel
+SetEnvIf Request_URI "^/panel/[^/]+/[^/]+/?$" sendflow_legacy_panel
 </IfModule>
 <IfModule mod_headers.c>
 Header always set X-Content-Type-Options "nosniff"
