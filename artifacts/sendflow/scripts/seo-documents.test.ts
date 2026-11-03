@@ -6,7 +6,7 @@ import { absoluteSeoUrl, renderSeoDocuments } from './seo-documents.ts';
 import { getLocaleFromPath, getLocalizedAlternates, getLocalizedPath } from '../src/lib/localized-routes.ts';
 
 const root = new URL('../', import.meta.url);
-const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource] = await Promise.all(
+const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource, pricingPageSource, appSource, feeCardsSource, feeLogosSource] = await Promise.all(
   [
     'index.html',
     'public/sitemap.xml',
@@ -14,6 +14,10 @@ const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource] = await Promi
     'src/lib/public-seo-routes.json',
     'vite.config.ts',
     'src/lib/seo.ts',
+    'src/pages/pricing.tsx',
+    'src/App.tsx',
+    'src/components/OperatorFeesSection.tsx',
+    'src/lib/operator-fee-logos.ts',
   ].map((file) => fs.readFile(new URL(file, root), 'utf8')),
 );
 const publicSeoRoutes = JSON.parse(routeSeoJson);
@@ -25,7 +29,7 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(normalizeSiteOrigin(''), undefined);
   const rendered = renderSeoDocuments(origin, { html, sitemap, robots });
   const locations = [...rendered.sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  assert.equal(locations.length, 20);
+  assert.equal(locations.length, 22);
   assert.deepEqual(locations, [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)]
     .map(match => `${origin}${match[1]}`));
   assert.ok(rendered.robots.includes(`Sitemap: ${origin}/sitemap.xml`));
@@ -69,10 +73,35 @@ test('home and feature SEO target developer payments in both languages', () => {
   assert.equal(publicSeoRoutes.home.en.path, '/en/');
   assert.equal(publicSeoRoutes.developerApi.fr.path, '/api-developpeur');
   assert.equal(publicSeoRoutes.developerApi.en.path, '/en/developer-api');
-  assert.equal('pricing' in publicSeoRoutes, false);
+  assert.equal(publicSeoRoutes.pricing.fr.path, '/tarifs');
+  assert.equal(publicSeoRoutes.pricing.en.path, '/en/pricing');
+  assert.match(publicSeoRoutes.pricing.fr.description, /encaissement.*transfert/);
+  assert.match(publicSeoRoutes.pricing.en.description, /collection.*transfer/);
   assert.ok(sitemap.includes('<loc>/api-developpeur</loc>'));
   assert.ok(sitemap.includes('<loc>/en/developer-api</loc>'));
-  assert.doesNotMatch(sitemap, /<loc>\/(?:tarifs|en\/pricing)<\/loc>/);
+  assert.ok(sitemap.includes('<loc>/tarifs</loc>'));
+  assert.ok(sitemap.includes('<loc>/en/pricing</loc>'));
+});
+
+test('the pricing page reuses the home fee cards and published fee data', () => {
+  assert.match(pricingPageSource, /queryKey:\s*\['\/api\/landing'\]/);
+  assert.match(pricingPageSource, /OPERATOR_FEES_CONTENT_KEY/);
+  assert.match(pricingPageSource, /parseOperatorFeesConfig\(feeRecord\?\.value\)/);
+  assert.match(pricingPageSource, /code === 'CI'/);
+  assert.match(pricingPageSource, /hasMissingRates/);
+  assert.match(appSource, /import OperatorFeesSection from '@\/components\/OperatorFeesSection'/);
+  assert.match(pricingPageSource, /import OperatorFeesSection/);
+  assert.match(pricingPageSource, /<OperatorFeesSection language=\{language\} config=\{feeSectionConfig\} defaultOpen \/>/);
+  assert.match(feeCardsSource, /button-toggle-collection-fees/);
+  assert.match(feeCardsSource, /button-toggle-transfer-fees/);
+  assert.match(pricingPageSource, /feeOperatorLogoBySlug\[operator\.slug\]/);
+  assert.match(pricingPageSource, /operators\.sort\(\(a, b\) => a\.name\.localeCompare\(b\.name, language\)\)/);
+  assert.match(feeLogosSource, /orange:/);
+  assert.match(feeLogosSource, /mtn:/);
+  assert.match(feeLogosSource, /'moov-africa':/);
+  assert.match(feeLogosSource, /wave:/);
+  assert.match(pricingPageSource, /collection-3d\.webp/);
+  assert.match(pricingPageSource, /transfer-3d\.webp/);
 });
 
 test('every localized public page has its own browser title beginning with its page name', () => {
@@ -104,10 +133,9 @@ test('public routes have stable reciprocal French and English URLs', () => {
     fr: '/api-developpeur',
     en: '/en/developer-api',
   });
-  assert.equal(getLocalizedPath('/tarifs', 'en'), '/tarifs');
-  assert.equal(getLocalizedPath('/en/pricing', 'fr'), '/en/pricing');
-  assert.equal(getLocalizedAlternates('/tarifs'), null);
-  assert.equal(getLocalizedAlternates('/en/pricing'), null);
+  assert.equal(getLocalizedPath('/tarifs', 'en'), '/en/pricing');
+  assert.equal(getLocalizedPath('/en/pricing', 'fr'), '/tarifs');
+  assert.deepEqual(getLocalizedAlternates('/tarifs'), { fr: '/tarifs', en: '/en/pricing' });
 });
 
 test('the developer API page is not intercepted by the backend API proxy', () => {

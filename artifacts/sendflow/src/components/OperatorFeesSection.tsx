@@ -22,6 +22,7 @@ export type FeeSectionConfig = {
 export type OperatorFeesSectionProps = {
   language: 'fr' | 'en';
   config: FeeSectionConfig;
+  defaultOpen?: boolean;
 };
 
 function formatPercent(value: number) {
@@ -69,9 +70,9 @@ function OperatorMark({ operator }: { operator: FeeOperatorDisplay }) {
   );
 }
 
-export default function OperatorFeesSection({ language, config }: OperatorFeesSectionProps) {
-  const [collectionOpen, setCollectionOpen] = useState(false);
-  const [transferOpen, setTransferOpen] = useState(false);
+export default function OperatorFeesSection({ language, config, defaultOpen = false }: OperatorFeesSectionProps) {
+  const [collectionOpen, setCollectionOpen] = useState(defaultOpen);
+  const [transferOpen, setTransferOpen] = useState(defaultOpen);
   const collectionPanelId = 'operator-fees-collection-panel';
   const transferPanelId = 'operator-fees-transfer-panel';
 
@@ -84,7 +85,7 @@ export default function OperatorFeesSection({ language, config }: OperatorFeesSe
     >
       <div className="mx-auto max-w-[1040px]">
         <div className="grid gap-5">
-          <article className="overflow-hidden rounded-[18px] border-2 border-[#17202d] bg-white shadow-[0_5px_0_#17202d,0_12px_20px_rgba(23,32,45,.12)] transition-[border-color,box-shadow] duration-200 hover:shadow-[0_7px_0_#17202d,0_16px_24px_rgba(23,32,45,.16)] focus-within:border-[#6d35d8]">
+          <article className={`overflow-hidden rounded-[18px] border-2 ${collectionOpen ? 'border-[#6d35d8]' : 'border-[#17202d]'} bg-white shadow-[0_5px_0_#17202d,0_12px_20px_rgba(23,32,45,.12)] transition-[border-color,box-shadow] duration-200 hover:shadow-[0_7px_0_#17202d,0_16px_24px_rgba(23,32,45,.16)] focus-within:border-[#6d35d8]`}>
             <h2 className="m-0">
               <button
                 type="button"
@@ -134,7 +135,7 @@ export default function OperatorFeesSection({ language, config }: OperatorFeesSe
             </div>
           </article>
 
-          <article className="overflow-hidden rounded-[18px] border-2 border-[#17202d] bg-white shadow-[0_5px_0_#17202d,0_12px_20px_rgba(23,32,45,.12)] transition-[border-color,box-shadow] duration-200 hover:shadow-[0_7px_0_#17202d,0_16px_24px_rgba(23,32,45,.16)] focus-within:border-[#6d35d8]">
+          <article className={`overflow-hidden rounded-[18px] border-2 ${transferOpen ? 'border-[#6d35d8]' : 'border-[#17202d]'} bg-white shadow-[0_5px_0_#17202d,0_12px_20px_rgba(23,32,45,.12)] transition-[border-color,box-shadow] duration-200 hover:shadow-[0_7px_0_#17202d,0_16px_24px_rgba(23,32,45,.16)] focus-within:border-[#6d35d8]`}>
             <h2 className="m-0">
               <button
                 type="button"

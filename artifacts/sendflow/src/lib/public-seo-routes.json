@@ -168,5 +168,19 @@
       "title": "France–Senegal | Send money with SendFlow",
       "description": "France-to-Senegal transfer guide: fees, timing, available Mobile Money networks, and checks before confirmation."
     }
+  },
+  "pricing": {
+    "fr": {
+      "path": "/tarifs",
+      "name": "Tarifs",
+      "title": "Tarifs SendFlow | Frais d’encaissement et de transfert",
+      "description": "Consultez les frais d’encaissement et de transfert publiés par SendFlow pour les opérateurs associés en Côte d’Ivoire."
+    },
+    "en": {
+      "path": "/en/pricing",
+      "name": "Pricing",
+      "title": "Pricing SendFlow | Collection and transfer fees",
+      "description": "Review SendFlow’s published collection and transfer fees for associated operators in Côte d’Ivoire."
+    }
   }
 }

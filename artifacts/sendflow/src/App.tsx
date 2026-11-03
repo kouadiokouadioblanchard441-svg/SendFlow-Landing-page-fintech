@@ -21,6 +21,7 @@ import FeatureActionCards from '@/components/FeatureActionCards';
 import OperatorFeesSection from '@/components/OperatorFeesSection';
 import { developerApiExample } from '@/lib/developer-api-example';
 import { OPERATOR_FEES_CONTENT_KEY, parseOperatorFeesConfig } from '@/lib/operator-fees';
+import { feeOperatorLogoBySlug } from '@/lib/operator-fee-logos';
 import {
   getRegistrationUrl,
   REGISTRATION_CTA_DEFAULT_LABELS,
@@ -100,6 +101,7 @@ const EditableLegalPage = lazy(() =>
   import('@/pages/editable-legal').then((module) => ({ default: module.EditableLegalPage })),
 );
 const DownloadPage = lazy(() => import('@/pages/download'));
+const PricingPage = lazy(() => import('@/pages/pricing'));
 const FeaturesPage = lazy(() => import('@/pages/features'));
 const DeveloperApiPage = lazy(() => import('@/pages/developer-api'));
 const SecurityPage = lazy(() => import('@/pages/security'));
@@ -355,13 +357,6 @@ const operatorLogoMarks: Record<string, OperatorLogo> = {
   MoMo: { mark: 'MoMo', background: '#1b65a7', foreground: '#ffffff', image: momoMtnOperatorLogo },
   Free: { mark: 'Free', background: '#111827', foreground: '#ffffff', image: freeOperatorLogo },
   'M-Pesa': { mark: 'M-Pesa', background: '#f2f2f2', foreground: '#17131f', image: mpesaOperatorLogo },
-};
-
-const feeOperatorLogoBySlug: Partial<Record<string, OperatorLogo>> = {
-  orange: operatorLogoMarks.Orange,
-  mtn: operatorLogoMarks.MTN,
-  'moov-africa': operatorLogoMarks['Moov Africa'],
-  wave: operatorLogoMarks.Wave,
 };
 
 function PublicOperatorFees({
@@ -632,6 +627,7 @@ function AnimatedRoutes() {
               <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
               <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
               <Route path="/france-senegal" component={CorridorGuidePage} />
+              <Route path="/tarifs" component={PricingPage} />
               <Route path="/en/*?" component={EnglishPublicRoute} />
               <Route path="/admin" component={LegacyAdminRedirect} />
               <Route path="/admin/*" component={LegacyAdminRedirect} />
@@ -710,6 +706,7 @@ function EnglishPublicRoute() {
   if (path === '/en/privacy') return <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />;
   if (path === '/en/legal-notice') return <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />;
   if (path === '/en/france-senegal') return <CorridorGuidePage />;
+  if (path === '/en/pricing') return <PricingPage />;
   return <NotFoundRoute />;
 }
 

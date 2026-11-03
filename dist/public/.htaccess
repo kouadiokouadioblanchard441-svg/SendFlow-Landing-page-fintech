@@ -25,6 +25,8 @@ RewriteRule ^mentions-legales/?$ mentions-legales/index.html [L]
 RewriteRule ^en/legal-notice/?$ en/legal-notice/index.html [L]
 RewriteRule ^france-senegal/?$ france-senegal/index.html [L]
 RewriteRule ^en/france-senegal/?$ en/france-senegal/index.html [L]
+RewriteRule ^tarifs/?$ tarifs/index.html [L]
+RewriteRule ^en/pricing/?$ en/pricing/index.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
