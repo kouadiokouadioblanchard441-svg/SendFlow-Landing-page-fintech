@@ -1569,15 +1569,6 @@ function LandingPage() {
           codeLabel={t(contentCopy(landingBundle?.content, 'developer.api.codeLabel', { fr: 'Requête JSON · Paiement entrant', en: 'JSON request · Pay-in' }), language)}
           code={t(contentCopy(landingBundle?.content, 'developer.api.code', developerApiExample), language)}
         />
-        <div className="mx-auto -mt-6 mb-12 max-w-[1240px] px-5 text-right sm:px-8">
-          <Link
-            href={getLocalizedPath('/api-developpeur', language)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#6d35d8] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#5822c3]"
-          >
-            {isFrench ? 'Voir la page API développeur' : 'Explore the developer API page'}
-            <ArrowRight size={17} aria-hidden="true" />
-          </Link>
-        </div>
 
         <PublicOperatorFees bundle={landingBundle} language={language} />
 

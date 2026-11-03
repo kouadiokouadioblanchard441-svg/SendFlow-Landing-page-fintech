@@ -81,7 +81,6 @@ const copy = {
     step3Body: 'Liez votre compte Orange, MTN, Moov ou Wave en toute sécurité.',
     step4: 'Commencez à transférer',
     step4Body: 'Choisissez un réseau, vérifiez les détails, puis envoyez.',
-    supportKicker: 'Besoin d’aide ?',
     supportTitle: 'Une question avant de commencer ?',
     supportBody: 'Notre équipe est là pour vous accompagner dans vos premiers transferts.',
     contact: 'Contacter l’assistance',
@@ -133,7 +132,6 @@ const copy = {
     step3Body: 'Link your Orange, MTN, Moov or Wave account securely.',
     step4: 'Start transferring',
     step4Body: 'Choose a network, review the details, then send.',
-    supportKicker: 'Need a hand?',
     supportTitle: 'Questions before you start?',
     supportBody: 'Our team is here to guide you through your first transfers.',
     contact: 'Contact support',
@@ -188,7 +186,6 @@ const downloadContentKeys: Record<DownloadCopyKey, string> = {
   step3Body: 'download.steps.3.body',
   step4: 'download.steps.4.title',
   step4Body: 'download.steps.4.body',
-  supportKicker: 'download.support.kicker',
   supportTitle: 'download.support.title',
   supportBody: 'download.support.body',
   contact: 'download.support.cta',
@@ -438,7 +435,7 @@ export default function DownloadPage() {
         </section>
 
         <section className="sf-download-support">
-          <div><p className="sf-download-kicker">{t.supportKicker}</p><h2>{t.supportTitle}</h2><p>{t.supportBody}</p></div>
+          <div><h2>{t.supportTitle}</h2><p>{t.supportBody}</p></div>
           <div className="sf-download-support-actions">
             {supportEmail && <a href={`mailto:${supportEmail}`}><Headphones size={18} />{t.contact}<ArrowRight size={17} /></a>}
             {phoneHref && <a href={phoneHref} className="sf-download-support-secondary">{supportPhone}</a>}

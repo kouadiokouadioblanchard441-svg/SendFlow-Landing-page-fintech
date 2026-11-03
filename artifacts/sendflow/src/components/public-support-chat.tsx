@@ -208,7 +208,6 @@ export function PublicSupportChat({ locale, settings, page, onSend }: SupportCha
         data-testid="button-open-support"
       >
         {isOpen ? <X size={21} aria-hidden="true" /> : <MessageCircle size={22} strokeWidth={2.2} aria-hidden="true" />}
-        {!isOpen && <span className="sf-support-launcher-label">{locale === 'fr' ? 'Besoin d’aide ?' : 'Need a hand?'}</span>}
       </button>
     </div>
   );
