@@ -55,6 +55,8 @@ await writeFile(
   path.join(outputDist, "build-info.json"),
   `${JSON.stringify({ buildId }, null, 2)}\n`,
 );
+await mkdir(path.join(outputDist, "tmp"), { recursive: true });
+await writeFile(path.join(outputDist, "tmp", "restart.txt"), `${buildId}\n`);
 const seoRoutesPath = path.join(
   repoRoot,
   "artifacts",

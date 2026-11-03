@@ -111,6 +111,7 @@ required_outputs=(
   "$PLESK_DIST_DIR/.node-version"
   "$PLESK_DIST_DIR/pnpm-workspace.yaml"
   "$PLESK_DIST_DIR/build-info.json"
+  "$PLESK_DIST_DIR/tmp/restart.txt"
   "$PLESK_DIST_DIR/public/index.html"
   "$PLESK_DIST_DIR/public/.htaccess"
 )

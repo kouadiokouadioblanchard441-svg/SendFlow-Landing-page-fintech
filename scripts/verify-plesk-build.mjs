@@ -326,6 +326,7 @@ try {
   const requiredFiles = [
     PLESK_STARTUP_FILE,
     "build-info.json",
+    "tmp/restart.txt",
     "pino-worker.cjs",
     "pino-file.cjs",
     "pino-pretty.cjs",

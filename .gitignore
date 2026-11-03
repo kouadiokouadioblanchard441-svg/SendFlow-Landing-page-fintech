@@ -27,6 +27,9 @@ credentials.json
 .sendflow-dist-backup-*
 generated-artifacts/
 tmp
+!/dist/tmp/
+/dist/tmp/*
+!/dist/tmp/restart.txt
 out-tsc
 *.tsbuildinfo
 .expo

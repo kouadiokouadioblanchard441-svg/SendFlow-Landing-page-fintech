@@ -46,6 +46,7 @@ async function verifyArchive(archivePath, expectedBuildId) {
     "dist/index.cjs",
     "dist/package.json",
     "dist/build-info.json",
+    "dist/tmp/restart.txt",
     "dist/public/index.html",
     "dist/public/.htaccess",
   ];
@@ -92,6 +93,7 @@ for (const relativePath of [
   "index.cjs",
   "package.json",
   "build-info.json",
+  "tmp/restart.txt",
   "pino-worker.cjs",
   "pino-file.cjs",
   "pino-pretty.cjs",

@@ -62,6 +62,14 @@ test("Plesk build and packaging use the sole active deployment script", () => {
     "utf8",
   );
   const gitignore = readFileSync(path.join(repoRoot, ".gitignore"), "utf8");
+  const packageRelease = readFileSync(
+    path.join(repoRoot, "scripts/package-plesk-release.mjs"),
+    "utf8",
+  );
+  const buildVerifier = readFileSync(
+    path.join(repoRoot, "scripts/verify-plesk-build.mjs"),
+    "utf8",
+  );
   const remoteDeployment = readFileSync(
     path.join(__dirname, "plesk-remote-deploy.sh"),
     "utf8",
@@ -88,6 +96,28 @@ test("Plesk build and packaging use the sole active deployment script", () => {
   assert.match(deploymentWorkflow, /tar -xzf "\$archive"/);
   assert.match(deploymentWorkflow, /git add -A -- dist/);
   assert.match(deploymentWorkflow, /git push origin HEAD:main/);
+  const restartMarkerIgnoreCheck = spawnSync(
+    "git",
+    ["check-ignore", "--no-index", "-q", "dist/tmp/restart.txt"],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  assert.equal(
+    restartMarkerIgnoreCheck.status,
+    1,
+    "the Passenger restart marker must be trackable in the production dist",
+  );
+  const unrelatedTmpIgnoreCheck = spawnSync(
+    "git",
+    ["check-ignore", "--no-index", "-q", "dist/tmp/unrelated.log"],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  assert.equal(
+    unrelatedTmpIgnoreCheck.status,
+    0,
+    "other temporary files under dist/tmp must remain ignored",
+  );
+  assert.match(buildVerifier, /"tmp\/restart\.txt"/);
+  assert.match(packageRelease, /"dist\/tmp\/restart\.txt"/);
   assert.doesNotMatch(
     deploymentWorkflow,
     /PLESK_SSH|PLESK_DEPLOY_ROOT|scp |scripts\/plesk-remote-deploy\.sh/,
