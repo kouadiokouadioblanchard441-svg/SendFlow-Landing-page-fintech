@@ -50,6 +50,19 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
       assert.deepEqual(await response.json(), { error: "API route not found" });
     }
 
+    const confirmationResponse = await fetch(`${origin}/api/newsletter/confirm`);
+    assert.equal(confirmationResponse.status, 200);
+    assert.equal(confirmationResponse.headers.get("cache-control"), "no-store");
+    assert.equal(confirmationResponse.headers.get("referrer-policy"), "no-referrer");
+    const confirmationHtml = await confirmationResponse.text();
+    const confirmationNonce = confirmationHtml.match(/<script nonce="([^"]+)">/)?.[1];
+    assert.ok(confirmationNonce, "newsletter confirmation script should carry a CSP nonce");
+    assert.match(
+      confirmationResponse.headers.get("content-security-policy") ?? "",
+      new RegExp(`script-src[^;]*'nonce-${confirmationNonce}'`),
+      "newsletter confirmation script nonce should match the response CSP",
+    );
+
     const featureResponse = await fetch(`${origin}/features`);
     assert.equal(featureResponse.status, 200);
     assert.match(featureResponse.headers.get("content-type") ?? "", /text\/html/);

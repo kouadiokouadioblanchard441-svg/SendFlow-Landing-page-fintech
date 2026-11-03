@@ -479,6 +479,7 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
 });
 
 router.get("/newsletter/confirm", async (_req, res): Promise<void> => {
+  const cspNonce = res.locals.cspNonce as string;
   res
     .set({
       "Cache-Control": "no-store",
@@ -496,7 +497,7 @@ router.get("/newsletter/confirm", async (_req, res): Promise<void> => {
     <input type="hidden" name="token" value="">
     <button type="submit">Confirmer mon inscription</button>
   </form>
-  <script>
+  <script nonce="${cspNonce}">
     const token = location.hash.slice(1);
     history.replaceState(null, "", location.pathname);
     document.querySelector('input[name="token"]').value = token;
