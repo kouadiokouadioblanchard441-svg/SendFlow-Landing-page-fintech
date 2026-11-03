@@ -220,20 +220,33 @@ bien présent sur la branche `main` du dépôt source.
 
 ## Variables d’environnement Plesk
 
-Configurer les noms suivants dans l’environnement Node.js de Plesk, sans les placer dans Git :
+Configurer les variables de production suivantes dans **Plesk → Node.js →
+Environment variables**, jamais dans Git :
 
-- `NODE_ENV` — `production`.
-- `PORT` — non requis sous Passenger ; ne pas ajouter de port fixe dans Plesk. Obligatoire uniquement pour lancer le serveur directement avec Node hors Passenger.
-- `NEON_DATABASE_URL` — connexion PostgreSQL utilisée par l’application.
-- `PLESK_MEDIA_DIR` — chemin absolu inscriptible hors de `dist/public`, nécessaire au stockage durable des médias.
-- `RESEND_API_KEY` et `RESEND_FROM_EMAIL` — nécessaires aux fonctions d’envoi d’e-mails.
-- `PUBLIC_SITE_URL` — `https://sendflow.africa` pour les contrôles d’origine et les liens envoyés par le serveur. `APP_URL` ou `PUBLIC_URL` sont aussi acceptées comme alias; `VITE_PUBLIC_SITE_URL` est reconnue en dernier recours pour les configurations Plesk existantes.
-- `APP_URL` — `https://sendflow.africa`, utilisée au build. Le script Plesk accepte aussi `PUBLIC_URL`, `PUBLIC_SITE_URL` ou, en dernier recours, `VITE_PUBLIC_SITE_URL`.
-- `BASE_PATH` — `/` pour le domaine vitrine servi à la racine ; le script Plesk refuse une autre valeur afin que les assets et les pages générées gardent les bons chemins.
-- `LOG_LEVEL` — optionnel.
-- `CORS_ORIGINS` — optionnel, uniquement si des origines publiques supplémentaires sont nécessaires.
+| Variable | Obligatoire ? | Usage et valeur Plesk |
+| --- | --- | --- |
+| `NODE_ENV` | Oui | `production` : active notamment les cookies sécurisés et les en-têtes de production. |
+| `NEON_DATABASE_URL` | Oui | Connexion PostgreSQL utilisée par l’API. |
+| `SESSION_SECRET` | Oui | Secret serveur utilisé pour les clés du limiteur de requêtes partagé. Garder sa valeur privée ; sans lui, les routes protégées par ce contrôle peuvent répondre `503`. |
+| `PLESK_MEDIA_DIR` | Oui | Chemin absolu inscriptible et persistant, situé hors de `dist/public`, pour les fichiers médias. |
+| `RESEND_API_KEY` | Pour l’envoi d’e-mails | Clé Resend, côté serveur uniquement. |
+| `RESEND_FROM_EMAIL` | Pour l’envoi d’e-mails | Adresse d’expédition vérifiée chez Resend. |
+| `PUBLIC_SITE_URL` | Recommandée | `https://sendflow.africa` pour les contrôles d’origine et les liens générés par l’API. |
+| `RECAPTCHA_SITE_KEY` et `RECAPTCHA_SECRET_KEY` | Facultatives, ensemble | Active le badge reCAPTCHA v3 et la vérification des inscriptions à la newsletter. La clé secrète reste côté serveur. Voir la section reCAPTCHA ci-dessous. |
+| `PORT` | Non sous Passenger | Ne pas fixer de port dans Plesk Passenger. Nécessaire uniquement si le serveur est lancé directement par Node hors Passenger. |
+| `LOG_LEVEL` | Facultative | Niveau de journalisation ; `info` par défaut. |
+| `CORS_ORIGINS` | Facultative | Origines supplémentaires séparées par des virgules, seulement si l’API doit accepter d’autres sites. |
+| `WEB_DIST_DIR` | Facultative | Remplacement du chemin public par défaut. Ne pas la définir avec la structure Plesk documentée (`Application Root=/sendflow.africa/dist`). |
 
-`SESSION_SECRET` n’est pas lu par la version actuelle du serveur SendFlow ; ne l’ajouter que si une fonctionnalité qui l’utilise est introduite. Les variables `ADMIN_BOOTSTRAP_*`, `ADMIN_PANEL_TOKEN` et les scripts de seed ne sont pas requis au démarrage normal. N’exécute aucun script de seed ou de migration pendant le démarrage Plesk.
+L’API accepte `APP_URL`, `PUBLIC_URL` et `VITE_PUBLIC_SITE_URL` comme solutions de repli à `PUBLIC_SITE_URL`. Pour le build CI/Plesk, définis `APP_URL=https://sendflow.africa` ; le script de build accepte aussi `PUBLIC_URL`, `PUBLIC_SITE_URL` ou `VITE_PUBLIC_SITE_URL`. `VITE_PUBLIC_SITE_URL` est une valeur publique de build, jamais un secret.
+
+`BASE_PATH` doit rester `/` (ou être absent, car `/` est la valeur par défaut) pour servir le site à la racine du domaine.
+
+`PUBLIC_OBJECT_SEARCH_PATHS` est uniquement le repli du stockage objet hors Plesk lorsque `PLESK_MEDIA_DIR` n’est pas défini. Sur Plesk, configure `PLESK_MEDIA_DIR` et n’utilise pas ce repli.
+
+Les variables `PLESK_DIST_DIR`, `PLESK_DEPLOYMENT_ROOT` et `PLESK_REQUIRE_DEPLOYMENT_ROOT` servent à la génération du paquet et au choix/à la validation de sa destination ; `PLESK_KEEP_PREVIOUS_DIST` contrôle la conservation d’une sauvegarde. Elles ne sont pas nécessaires dans l’environnement du processus Node.js lorsque le build est livré par CI.
+
+`API_ORIGIN`, `API_PORT` et `WEB_PORT` servent au développement local, pas au lancement de production. `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`, `ADMIN_PANEL_TOKEN` et `REFRESH_LEGAL_CONTENT` concernent des scripts explicites de seed/maintenance ; ne les configure pas pour le démarrage normal et n’exécute pas de seed ou migration lors du déploiement.
 
 Les réglages d’environnement du build GitHub et ceux de l’application Node Plesk
 sont séparés. `APP_URL` et `PLESK_MEDIA_DIR` ont des valeurs de validation CI
@@ -274,10 +287,11 @@ Les pages protégées nécessitant une authentification ne sont pas vérifiables
 
 ## Badge Google reCAPTCHA sur les pages publiques
 
-SendFlow utilise reCAPTCHA v3 pour l’inscription à la newsletter. Le badge
-officiel Google est chargé sur les pages publiques lorsque les deux variables
-sont présentes dans les paramètres d’environnement Node.js de l’application
-Plesk :
+Le composant public charge le script et le badge officiel Google reCAPTCHA v3
+sur toutes les pages publiques (françaises et anglaises) quand les deux clés
+sont configurées. Il ne le charge pas dans `/admin` ni `/panel`. V3 n’affiche
+normalement pas de case à cocher ; Google peut afficher son petit badge en bas
+de page. Sans les clés, aucun badge n’est chargé.
 
 - `RECAPTCHA_SITE_KEY` — clé publique de site, renvoyée uniquement par
   `/api/recaptcha/config`.
@@ -289,11 +303,12 @@ deux variables ensemble dans **Plesk → Node.js → Environment variables**, pu
 redémarre l’application. Aucun secret ne doit être ajouté à Git, à Vite ou au
 formulaire navigateur.
 
-Le navigateur obtient un jeton pour l’action `newsletter_subscribe`. L’API le
-vérifie auprès de Google avant d’accepter l’inscription, en contrôlant le
-résultat, l’action, l’hôte de la requête et un score minimal de 0,5. La limite de
-débit existante reste active. Si les deux clés sont absentes, l’intégration reste
-désactivée et le formulaire garde son fonctionnement actuel. Si une seule clé
-est configurée, l’API refuse l’inscription plutôt que de contourner la
-vérification. Avant activation, mets à jour la politique de confidentialité pour
-informer les visiteurs du traitement reCAPTCHA par Google.
+Lors de l’envoi de la newsletter, le navigateur obtient un jeton pour
+`newsletter_subscribe`. L’API le vérifie auprès de Google avant d’accepter
+l’inscription, en contrôlant le résultat, l’action, l’hôte de la requête et un
+score minimal de 0,5. La limite de débit existante reste active. Si les deux
+clés sont absentes, le badge reste désactivé et le formulaire garde son
+fonctionnement actuel. Si une seule clé est configurée, l’API refuse
+l’inscription plutôt que de contourner la vérification. Avant activation, la
+politique de confidentialité doit informer les visiteurs du traitement
+reCAPTCHA par Google.
