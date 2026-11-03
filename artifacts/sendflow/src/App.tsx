@@ -100,7 +100,6 @@ const EditableLegalPage = lazy(() =>
   import('@/pages/editable-legal').then((module) => ({ default: module.EditableLegalPage })),
 );
 const DownloadPage = lazy(() => import('@/pages/download'));
-const PricingPage = lazy(() => import('@/pages/pricing'));
 const FeaturesPage = lazy(() => import('@/pages/features'));
 const DeveloperApiPage = lazy(() => import('@/pages/developer-api'));
 const SecurityPage = lazy(() => import('@/pages/security'));
@@ -633,7 +632,6 @@ function AnimatedRoutes() {
               <Route path="/confidentialite" component={() => <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />} />
               <Route path="/mentions-legales" component={() => <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />} />
               <Route path="/france-senegal" component={CorridorGuidePage} />
-              <Route path="/tarifs" component={PricingPage} />
               <Route path="/en/*?" component={EnglishPublicRoute} />
               <Route path="/admin" component={LegacyAdminRedirect} />
               <Route path="/admin/*" component={LegacyAdminRedirect} />
@@ -712,7 +710,6 @@ function EnglishPublicRoute() {
   if (path === '/en/privacy') return <PublicLegalRoute page={PrivacyPage} slug="confidentialite" />;
   if (path === '/en/legal-notice') return <PublicLegalRoute page={LegalMentionsPage} slug="mentions-legales" />;
   if (path === '/en/france-senegal') return <CorridorGuidePage />;
-  if (path === '/en/pricing') return <PricingPage />;
   return <NotFoundRoute />;
 }
 

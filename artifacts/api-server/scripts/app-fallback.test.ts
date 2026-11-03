@@ -57,9 +57,10 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
     const confirmationHtml = await confirmationResponse.text();
     const confirmationNonce = confirmationHtml.match(/<script nonce="([^"]+)">/)?.[1];
     assert.ok(confirmationNonce, "newsletter confirmation script should carry a CSP nonce");
-    assert.match(
-      confirmationResponse.headers.get("content-security-policy") ?? "",
-      new RegExp(`script-src[^;]*'nonce-${confirmationNonce}'`),
+    const confirmationCsp = confirmationResponse.headers.get("content-security-policy") ?? "";
+    assert.ok(
+      (confirmationCsp.match(/(?:^|;)\s*script-src(?:-elem)?\s[^;]*/g) ?? [])
+        .some((directive) => directive.includes(`'nonce-${confirmationNonce}'`)),
       "newsletter confirmation script nonce should match the response CSP",
     );
 

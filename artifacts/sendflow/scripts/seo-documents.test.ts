@@ -25,7 +25,7 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.equal(normalizeSiteOrigin(''), undefined);
   const rendered = renderSeoDocuments(origin, { html, sitemap, robots });
   const locations = [...rendered.sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
-  assert.equal(locations.length, 22);
+  assert.equal(locations.length, 20);
   assert.deepEqual(locations, [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)]
     .map(match => `${origin}${match[1]}`));
   assert.ok(rendered.robots.includes(`Sitemap: ${origin}/sitemap.xml`));
@@ -69,14 +69,10 @@ test('home and feature SEO target developer payments in both languages', () => {
   assert.equal(publicSeoRoutes.home.en.path, '/en/');
   assert.equal(publicSeoRoutes.developerApi.fr.path, '/api-developpeur');
   assert.equal(publicSeoRoutes.developerApi.en.path, '/en/developer-api');
-  assert.equal(publicSeoRoutes.pricing.fr.path, '/tarifs');
-  assert.equal(publicSeoRoutes.pricing.en.path, '/en/pricing');
-  assert.match(publicSeoRoutes.pricing.fr.description, /Côte d’Ivoire.*XOF/);
-  assert.match(publicSeoRoutes.pricing.en.description, /Côte d’Ivoire.*XOF/);
+  assert.equal('pricing' in publicSeoRoutes, false);
   assert.ok(sitemap.includes('<loc>/api-developpeur</loc>'));
   assert.ok(sitemap.includes('<loc>/en/developer-api</loc>'));
-  assert.ok(sitemap.includes('<loc>/tarifs</loc>'));
-  assert.ok(sitemap.includes('<loc>/en/pricing</loc>'));
+  assert.doesNotMatch(sitemap, /<loc>\/(?:tarifs|en\/pricing)<\/loc>/);
 });
 
 test('every localized public page has its own browser title beginning with its page name', () => {
@@ -108,9 +104,10 @@ test('public routes have stable reciprocal French and English URLs', () => {
     fr: '/api-developpeur',
     en: '/en/developer-api',
   });
-  assert.equal(getLocalizedPath('/tarifs', 'en'), '/en/pricing');
-  assert.equal(getLocalizedPath('/en/pricing', 'fr'), '/tarifs');
-  assert.deepEqual(getLocalizedAlternates('/tarifs'), { fr: '/tarifs', en: '/en/pricing' });
+  assert.equal(getLocalizedPath('/tarifs', 'en'), '/tarifs');
+  assert.equal(getLocalizedPath('/en/pricing', 'fr'), '/en/pricing');
+  assert.equal(getLocalizedAlternates('/tarifs'), null);
+  assert.equal(getLocalizedAlternates('/en/pricing'), null);
 });
 
 test('the developer API page is not intercepted by the backend API proxy', () => {

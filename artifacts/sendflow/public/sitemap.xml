@@ -21,6 +21,4 @@
   <url><loc>/en/legal-notice</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>/france-senegal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>/en/france-senegal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>/tarifs</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>/en/pricing</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>
