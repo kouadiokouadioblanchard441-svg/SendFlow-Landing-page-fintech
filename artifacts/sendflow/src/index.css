@@ -3424,7 +3424,7 @@ section#faq .reveal.space-y-2 > div {
   height: 18px;
   border-radius: 999px;
   background: #5428ad;
-  animation: sf-navigation-dot-pulse .76s cubic-bezier(.4, 0, .2, 1) infinite;
+  animation: sf-navigation-dot-pulse .48s cubic-bezier(.4, 0, .2, 1) infinite;
 }
 
 .sf-loading-dots > span:nth-child(2) { animation-delay: .12s; }

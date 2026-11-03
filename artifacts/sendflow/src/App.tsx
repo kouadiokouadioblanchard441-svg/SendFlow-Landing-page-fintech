@@ -600,7 +600,7 @@ function AnimatedRoutes() {
     navigationTimeout.current = window.setTimeout(() => {
       navigationTimeout.current = null;
       setIsNavigating(false);
-    }, 420);
+    }, 850);
   }, [location]);
 
   return (
