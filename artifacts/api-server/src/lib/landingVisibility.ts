@@ -1,4 +1,5 @@
-type VisibleRow = { isVisible?: unknown };
+type VisibleRow = { isVisible?: unknown; [key: string]: unknown };
+type PublicRow = Record<string, unknown>;
 
 export type LandingVisibilityBundle = {
   media: Array<VisibleRow>;
@@ -13,28 +14,81 @@ export type LandingVisibilityBundle = {
   legalPages: Array<VisibleRow & { id: number }>;
   legalSections: Array<{ pageId: number }>;
   founder: (VisibleRow & Record<string, unknown>) | null;
-  settings: unknown;
+  settings: Record<string, unknown> | null;
 };
 
-function visibleRows<T extends VisibleRow>(rows: T[]): T[] {
-  return rows.filter((row) => row.isVisible === true);
+export type PublicLandingBundle = {
+  media: PublicRow[];
+  content: PublicRow[];
+  sections: PublicRow[];
+  features: PublicRow[];
+  faqs: PublicRow[];
+  countries: PublicRow[];
+  operators: PublicRow[];
+  countryOperators: Array<{ countryId: number; operatorId: number }>;
+  globeBadges: PublicRow[];
+  legalPages: PublicRow[];
+  legalSections: PublicRow[];
+  founder: PublicRow | null;
+  settings: PublicRow | null;
+};
+
+const publicFields = {
+  media: ["id", "slug", "kind", "sourcePath", "storagePath", "publicUrl", "mimeType", "altFr", "altEn", "width", "height", "isVisible"],
+  content: ["id", "contentKey", "locale", "group", "contentType", "value", "orderIndex", "isVisible"],
+  sections: ["id", "slug", "kind", "orderIndex", "eyebrowFr", "eyebrowEn", "titleFr", "titleEn", "bodyFr", "bodyEn", "imageKey", "isVisible"],
+  features: ["id", "slug", "group", "orderIndex", "titleFr", "titleEn", "bodyFr", "bodyEn", "iconKey", "imageKey", "isVisible"],
+  faqs: ["id", "orderIndex", "questionFr", "questionEn", "answerFr", "answerEn", "isVisible"],
+  countries: ["id", "code", "nameFr", "nameEn", "flag", "tone", "orderIndex", "heroPositionX", "heroPositionY", "isVisible"],
+  operators: ["id", "slug", "name", "logoKey", "background", "foreground", "isVisible"],
+  globeBadges: ["id", "operatorId", "positionX", "positionY", "orderIndex", "isVisible"],
+  legalPages: ["id", "slug", "titleFr", "titleEn", "introFr", "introEn", "isVisible"],
+  legalSections: ["pageId", "sectionNumber", "titleFr", "titleEn", "bodyFr", "bodyEn", "orderIndex"],
+  founder: [
+    "name", "roleFr", "roleEn", "shortBioFr", "shortBioEn", "storyFr", "storyEn",
+    "visionFr", "visionEn", "educationFr", "educationEn", "missionFr", "missionEn",
+    "photoKey", "linkedinUrl", "websiteUrl", "instagramUrl", "xUrl", "email", "isVisible",
+  ],
+  settings: [
+    "supportEmail", "supportPhone", "websiteUrl", "linkedinUrl", "instagramUrl", "facebookUrl",
+    "whatsappUrl", "homeContactEmail", "homeContactPhone", "homeContactWhatsapp",
+    "featuresContactEmail", "featuresContactPhone", "featuresContactWhatsapp",
+    "securityContactEmail", "securityContactPhone", "securityContactWhatsapp",
+    "downloadContactEmail", "downloadContactPhone", "downloadContactWhatsapp",
+    "aboutContactEmail", "aboutContactPhone", "aboutContactWhatsapp",
+    "legalContactEmail", "legalContactPhone", "legalContactWhatsapp", "companyName", "legalForm",
+    "legalAddress", "legalEmail", "footerAddressFlag", "footerAddressCountry", "footerAddress",
+    "regulatorNameFr", "regulatorNameEn", "regulatorLogoKey", "googlePlayUrl", "appStoreUrl", "apkUrl",
+  ],
+} as const;
+
+function projectPublicFields(row: object, fields: readonly string[]): PublicRow {
+  const source = row as PublicRow;
+  return Object.fromEntries(fields
+    .filter((field) => Object.prototype.hasOwnProperty.call(source, field))
+    .map((field) => [field, source[field]]));
 }
 
-export function filterPublicLandingBundle<T extends LandingVisibilityBundle>(bundle: T): T {
-  const media = visibleRows(bundle.media);
-  const content = visibleRows(bundle.content);
-  const sections = visibleRows(bundle.sections);
-  const features = visibleRows(bundle.features);
-  const faqs = visibleRows(bundle.faqs);
-  const countries = visibleRows(bundle.countries);
-  const operators = visibleRows(bundle.operators);
-  const legalPages = visibleRows(bundle.legalPages);
+function visibleRows(rows: VisibleRow[], fields: readonly string[]): PublicRow[] {
+  return rows
+    .filter((row) => row.isVisible === true)
+    .map((row) => projectPublicFields(row, fields));
+}
+
+export function filterPublicLandingBundle(bundle: LandingVisibilityBundle): PublicLandingBundle {
+  const media = visibleRows(bundle.media, publicFields.media);
+  const content = visibleRows(bundle.content, publicFields.content);
+  const sections = visibleRows(bundle.sections, publicFields.sections);
+  const features = visibleRows(bundle.features, publicFields.features);
+  const faqs = visibleRows(bundle.faqs, publicFields.faqs);
+  const countries = visibleRows(bundle.countries, publicFields.countries);
+  const operators = visibleRows(bundle.operators, publicFields.operators);
+  const legalPages = visibleRows(bundle.legalPages, publicFields.legalPages);
   const countryIds = new Set(countries.map((country) => country.id));
   const operatorIds = new Set(operators.map((operator) => operator.id));
   const legalPageIds = new Set(legalPages.map((page) => page.id));
 
   return {
-    ...bundle,
     media,
     content,
     sections,
@@ -42,12 +96,22 @@ export function filterPublicLandingBundle<T extends LandingVisibilityBundle>(bun
     faqs,
     countries,
     operators,
-    countryOperators: bundle.countryOperators.filter(
+    countryOperators: bundle.countryOperators
+      .filter(
       (relation) => countryIds.has(relation.countryId) && operatorIds.has(relation.operatorId),
-    ),
-    globeBadges: visibleRows(bundle.globeBadges).filter((badge) => operatorIds.has(badge.operatorId)),
+      )
+      .map(({ countryId, operatorId }) => ({ countryId, operatorId })),
+    globeBadges: visibleRows(bundle.globeBadges, publicFields.globeBadges)
+      .filter((badge) => operatorIds.has(badge.operatorId)),
     legalPages,
-    legalSections: bundle.legalSections.filter((section) => legalPageIds.has(section.pageId)),
-    founder: bundle.founder?.isVisible === true ? bundle.founder : null,
+    legalSections: bundle.legalSections
+      .filter((section) => legalPageIds.has(section.pageId))
+      .map((section) => projectPublicFields(section, publicFields.legalSections)),
+    founder: bundle.founder?.isVisible === true
+      ? projectPublicFields(bundle.founder, publicFields.founder)
+      : null,
+    settings: bundle.settings
+      ? projectPublicFields(bundle.settings, publicFields.settings)
+      : null,
   };
 }

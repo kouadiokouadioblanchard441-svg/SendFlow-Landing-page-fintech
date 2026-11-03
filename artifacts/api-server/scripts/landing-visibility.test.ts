@@ -4,7 +4,11 @@ import { filterPublicLandingBundle } from "../src/lib/landingVisibility.ts";
 
 test("public landing data includes only explicitly visible rows and valid visible relations", () => {
   const bundle = {
-    media: [{ id: 1, isVisible: true }, { id: 2, isVisible: false }, { id: 3 }],
+    media: [
+      { id: 1, slug: "public", isVisible: true, internalNotes: "private" },
+      { id: 2, isVisible: false },
+      { id: 3 },
+    ],
     content: [{ contentKey: "public", isVisible: true }, { contentKey: "draft", isVisible: false }],
     sections: [{ id: 1, isVisible: true }, { id: 2, isVisible: false }],
     features: [{ id: 1, isVisible: true }, { id: 2, isVisible: false }],
@@ -23,8 +27,8 @@ test("public landing data includes only explicitly visible rows and valid visibl
     ],
     legalPages: [{ id: 1, isVisible: true }, { id: 2, isVisible: false }],
     legalSections: [{ pageId: 1 }, { pageId: 2 }],
-    founder: { id: 1, isVisible: false },
-    settings: { companyName: "SendFlow" },
+    founder: { id: 1, isVisible: false, passwordHash: "private" },
+    settings: { companyName: "SendFlow", sessionSecret: "private", updatedAt: new Date() },
   };
 
   const publicBundle = filterPublicLandingBundle(bundle);
@@ -41,7 +45,12 @@ test("public landing data includes only explicitly visible rows and valid visibl
   assert.deepEqual(publicBundle.legalPages.map((row) => row.id), [1]);
   assert.deepEqual(publicBundle.legalSections, [{ pageId: 1 }]);
   assert.equal(publicBundle.founder, null);
-  assert.deepEqual(publicBundle.settings, bundle.settings);
+  assert.deepEqual(publicBundle.media, [{ id: 1, slug: "public", isVisible: true }]);
+  assert.deepEqual(publicBundle.settings, { companyName: "SendFlow" });
+  assert.equal("sessionSecret" in publicBundle.settings!, false);
+  assert.equal("updatedAt" in publicBundle.settings!, false);
+  assert.equal("passwordHash" in (publicBundle.founder ?? {}), false);
+  assert.equal("unexpectedFutureField" in publicBundle, false);
 });
 
 test("a founder profile without an explicit visible flag is private", () => {
@@ -54,4 +63,37 @@ test("a founder profile without an explicit visible flag is private", () => {
   };
 
   assert.equal(filterPublicLandingBundle(bundle).founder, null);
+});
+
+test("public projections return only allowlisted fields from visible founder and settings rows", () => {
+  const bundle = {
+    media: [], content: [], sections: [], features: [], faqs: [],
+    countries: [], operators: [], countryOperators: [], globeBadges: [],
+    legalPages: [], legalSections: [],
+    founder: {
+      name: "Founder",
+      email: "public@example.org",
+      isVisible: true,
+      passwordHash: "must-not-leak",
+      lastLoginAt: new Date(),
+    },
+    settings: {
+      supportEmail: "support@example.org",
+      whatsappUrl: "https://wa.me/000",
+      apiCredential: "must-not-leak",
+      updatedAt: new Date(),
+    },
+  };
+
+  const publicBundle = filterPublicLandingBundle(bundle);
+
+  assert.deepEqual(publicBundle.founder, {
+    name: "Founder",
+    email: "public@example.org",
+    isVisible: true,
+  });
+  assert.deepEqual(publicBundle.settings, {
+    supportEmail: "support@example.org",
+    whatsappUrl: "https://wa.me/000",
+  });
 });

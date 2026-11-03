@@ -12,7 +12,7 @@
     "test:localized-routes": "tsx --test scripts/localized-routes.test.ts",
     "test:browser-smoke": "node scripts/browser-smoke.mjs",
     "test:seo": "tsx --test scripts/seo-documents.test.ts",
-    "test:panel-access": "tsx --test scripts/panel-access.test.ts",
+    "test:client-security": "tsx --test scripts/client-security.test.ts",
     "seo:verify": "node scripts/verify-public-seo.ts"
   },
   "devDependencies": {

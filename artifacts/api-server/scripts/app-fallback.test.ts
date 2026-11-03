@@ -68,14 +68,30 @@ test("API misses stay JSON while page routes use the public HTML fallback", asyn
     for (const [pathName, expectedTitle] of [
       ["/securite", "SendFlow sécurité"],
       ["/en/security", "SendFlow security"],
-      ["/panel/7fK9x", "body{color:black}"],
-      ["/panel/7fK9x/admin%40sendflow.africa", "body{color:black}"],
     ]) {
       const response = await fetch(`${origin}${pathName}`);
       assert.equal(response.status, 200, pathName);
       assert.match(response.headers.get("content-type") ?? "", /text\/html/, pathName);
       assert.match(await response.text(), new RegExp(expectedTitle), pathName);
     }
+
+    for (const legacyPanelUrl of [
+      "/panel/old-private-token/admin%40sendflow.africa",
+      "/panel/old-private-token/admin%40sendflow.africa?tracking=old-token",
+    ]) {
+      const response = await fetch(`${origin}${legacyPanelUrl}`, { redirect: "manual" });
+      assert.equal(response.status, 302);
+      assert.equal(response.headers.get("location"), "/panel");
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+      assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
+      assert.doesNotMatch(await response.text(), /old-private-token|admin%40sendflow/);
+    }
+
+    const unauthenticatedAdminResponse = await fetch(`${origin}/api/admin/landing`);
+    assert.equal(unauthenticatedAdminResponse.status, 401);
+    assert.equal(unauthenticatedAdminResponse.headers.get("cache-control"), "no-store");
+    assert.equal(unauthenticatedAdminResponse.headers.get("pragma"), "no-cache");
 
     const adminResponse = await fetch(`${origin}/panel`);
     assert.equal(adminResponse.status, 200);

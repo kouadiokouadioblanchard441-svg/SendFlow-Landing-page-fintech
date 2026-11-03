@@ -1,3 +1,5 @@
+import { getPublicSiteUrl } from "./publicSiteUrl";
+
 export type RecaptchaSettings =
   | { status: "disabled" }
   | { status: "misconfigured" }
@@ -9,6 +11,23 @@ export type RecaptchaVerification =
 
 const MINIMUM_SCORE = 0.5;
 const VERIFY_TIMEOUT_MS = 5_000;
+
+export function getConfiguredRecaptchaHostname(siteUrl = getPublicSiteUrl()): string | null {
+  if (!siteUrl) return null;
+  try {
+    const parsed = new URL(siteUrl);
+    if (
+      (parsed.protocol !== "http:" && parsed.protocol !== "https:") ||
+      parsed.username ||
+      parsed.password
+    ) {
+      return null;
+    }
+    return parsed.hostname.toLowerCase().replace(/\.$/, "") || null;
+  } catch {
+    return null;
+  }
+}
 
 export function readRecaptchaSettings(
   env: NodeJS.ProcessEnv = process.env,

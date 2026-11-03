@@ -68,11 +68,6 @@ export const adminLoginSchema = z.object({
   panelEmail: z.string().trim().toLowerCase().email().max(320),
 }).strict();
 
-export const panelLookupSchema = z.object({
-  token: z.string().trim().min(1).max(256).refine((value) => !/[\u0000-\u001f\u007f]/.test(value)),
-  email: z.string().trim().toLowerCase().email().max(320),
-}).strict();
-
 export const countryOperatorAssignmentSchema = z.object({
   operatorIds: z.array(positiveId).max(100).refine((ids) => new Set(ids).size === ids.length),
 }).strict();

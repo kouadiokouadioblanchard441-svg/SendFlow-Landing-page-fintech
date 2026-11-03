@@ -8,7 +8,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
 import publicSeoRoutes from '@/lib/public-seo-routes.json';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
-import { takePanelCredentialsFromUrl, type PanelCredentials } from '@/lib/panelAccess';
 import { getActiveLandingCountries, type LandingCountryView } from '@/lib/landingCountries';
 import { usePublicMobileMenu } from '@/hooks/use-public-mobile-menu';
 import { executeRecaptchaToken, loadRecaptchaScript, removeRecaptchaScript, useRecaptchaConfig } from '@/hooks/use-recaptcha';
@@ -109,14 +108,6 @@ const CorridorGuidePage = lazy(() => import('@/pages/corridor-guide'));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-function consumePanelCredentials(): PanelCredentials | null {
-  const result = takePanelCredentialsFromUrl(new URL(window.location.href));
-  if (result.sanitizedUrl !== window.location.href) {
-    window.history.replaceState(window.history.state, '', result.sanitizedUrl);
-  }
-  return result.credentials;
-}
-let initialPanelCredentials = consumePanelCredentials();
 
 type Language = 'fr' | 'en';
 type Copy = { fr: string; en: string };
@@ -879,22 +870,6 @@ function NotFoundRoute() {
   return <NotFound />;
 }
 
-function PanelUrlRequired() {
-  return (
-    <div className="sendflow-admin-auth">
-      <div className="sendflow-admin-auth-card">
-        <div className="mb-4 flex items-center gap-2 px-1 text-sm font-bold text-[#6d35d8]">
-          <LockKeyhole className="text-[#1769ff]" size={19} />
-          Accès privé requis
-        </div>
-        <p className="text-sm leading-6 text-[#667386]">
-          Ouvrez le lien d’administration sécurisé qui vous a été remis.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function PanelRoute() {
   useSeo({
     path: '/panel',
@@ -903,32 +878,10 @@ function PanelRoute() {
     description: 'Espace privé SendFlow.',
     robots: 'noindex,nofollow',
   });
-  const token = initialPanelCredentials?.token ?? '';
-  const email = initialPanelCredentials?.email ?? '';
-  const panelAccess = useQuery<{ user: { id: number; email: string } }>({
-    queryKey: ['admin-panel-access'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/auth/panel/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, email }),
-      });
-      if (!response.ok) throw new Error('Panel not found');
-      return response.json();
-    },
-    enabled: Boolean(token && email),
-    retry: false,
-  });
-
-  if (!token || !email) return <AdminRoute panelToken="" adminEmail="" panelEmail="" />;
-  if (panelAccess.isPending) {
-    return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f6f8fb] text-sm text-[#667386]">Vérification de l’URL privée…</div>;
-  }
-  if (panelAccess.isError) return <PanelUrlRequired />;
-  return <AdminRoute panelToken={token} adminEmail={panelAccess.data.user.email} panelEmail={email} />;
+  return <AdminRoute />;
 }
 
-function AdminRoute({ panelToken, adminEmail, panelEmail }: { panelToken: string; adminEmail: string; panelEmail: string }) {
+function AdminRoute() {
   const adminSession = useQuery<{ user: { id: number; email: string } }>({
     queryKey: ['admin-session'],
     queryFn: async () => {
@@ -940,7 +893,6 @@ function AdminRoute({ panelToken, adminEmail, panelEmail }: { panelToken: string
   });
   if (adminSession.isPending) return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f6f8fb] text-sm text-[#667386]">Chargement de la session…</div>;
   if (adminSession.isError) {
-    if (!panelToken || !panelEmail) return <PanelUrlRequired />;
     return (
       <div className="sendflow-admin-auth">
         <div className="sendflow-admin-auth-card">
@@ -948,7 +900,7 @@ function AdminRoute({ panelToken, adminEmail, panelEmail }: { panelToken: string
             <LockKeyhole className="text-[#1769ff]" size={19} />
             Connexion au panel administrateur
           </div>
-          <AdminLoginForm panelToken={panelToken} adminEmail={adminEmail} panelEmail={panelEmail} />
+          <AdminLoginForm />
         </div>
       </div>
     );
@@ -956,8 +908,10 @@ function AdminRoute({ panelToken, adminEmail, panelEmail }: { panelToken: string
   return <AdminPage />;
 }
 
-function AdminLoginForm({ panelToken, adminEmail, panelEmail }: { panelToken: string; adminEmail: string; panelEmail: string }) {
-  const [email, setEmail] = useState(adminEmail);
+function AdminLoginForm() {
+  const [panelToken, setPanelToken] = useState('');
+  const [panelEmail, setPanelEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -971,14 +925,15 @@ function AdminLoginForm({ panelToken, adminEmail, panelEmail }: { panelToken: st
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ email, password, panelToken, panelEmail }),
+        body: JSON.stringify({ email, password, panelToken, panelEmail }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? 'Email ou mot de passe incorrect.');
       }
-      initialPanelCredentials = null;
-      queryClient.removeQueries({ queryKey: ['admin-panel-access'] });
+      setPanelToken('');
+      setPanelEmail('');
+      setPassword('');
       await queryClient.invalidateQueries({ queryKey: ['admin-session'] });
       window.location.assign(`${basePath}/panel`);
     } catch (caught) {
@@ -990,10 +945,36 @@ function AdminLoginForm({ panelToken, adminEmail, panelEmail }: { panelToken: st
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <p className="text-sm leading-6 text-[#667386]">Utilisez le compte administrateur autorisé pour gérer le contenu de SendFlow.</p>
+      <p className="text-sm leading-6 text-[#667386]">Saisissez les accès qui vous ont été remis séparément. Aucun identifiant ne doit figurer dans l’adresse de cette page.</p>
+      <label className="block">
+        <span className="mb-2 block text-sm font-semibold text-[#192231]">Code d’accès privé</span>
+        <input
+          type="password"
+          value={panelToken}
+          onChange={(event) => setPanelToken(event.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={256}
+          required
+          placeholder="Code d’accès"
+          className="sendflow-admin-auth-input"
+        />
+      </label>
+      <label className="block">
+        <span className="mb-2 block text-sm font-semibold text-[#192231]">Email associé à l’accès privé</span>
+        <input
+          type="email"
+          value={panelEmail}
+          onChange={(event) => setPanelEmail(event.target.value)}
+          autoComplete="off"
+          required
+          placeholder="admin@exemple.com"
+          className="sendflow-admin-auth-input"
+        />
+      </label>
       <label className="block">
         <span className="mb-2 block text-sm font-semibold text-[#192231]">Email administrateur</span>
-          <input
+        <input
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}

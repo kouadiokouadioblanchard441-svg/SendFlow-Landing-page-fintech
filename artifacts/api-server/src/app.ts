@@ -28,9 +28,12 @@ app.use((req, res, next) => {
     : "";
   res.locals.cspNonce = nonce;
   res.setHeader("X-Content-Type-Options", "nosniff");
-  const isLegacyPrivatePanelUrl = /(^|\/)panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
-  res.setHeader("Referrer-Policy", isLegacyPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
-  if (isLegacyPrivatePanelUrl) res.setHeader("Cache-Control", "no-store");
+  const isPrivatePanelUrl = /(^|\/)panel(?:\/|$)/i.test(req.path);
+  res.setHeader("Referrer-Policy", isPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
+  if (isPrivatePanelUrl) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  }
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader(
     "Content-Security-Policy",
@@ -62,6 +65,24 @@ app.use((req, res, next) => {
   next();
 });
 
+const configuredBasePath = process.env.BASE_PATH?.trim() ?? "";
+const safeBasePath = /^\/(?:[A-Za-z0-9._~-]+\/?)*$/.test(configuredBasePath) &&
+  !configuredBasePath.split("/").includes("..")
+  ? configuredBasePath.replace(/\/+$/, "")
+  : "";
+const canonicalPanelPath = `${safeBasePath}/panel`;
+app.use((req, res, next) => {
+  const isLegacyPanelPath = /^\/(?:[^/]+\/)*panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
+  if (!isLegacyPanelPath || !["GET", "HEAD"].includes(req.method)) {
+    next();
+    return;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.redirect(302, canonicalPanelPath);
+});
+
 app.use(
   pinoHttp({
     logger,
@@ -90,6 +111,11 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb", parameterLimit: 100 }));
+app.use("/api/admin", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Pragma", "no-cache");
+  next();
+});
 app.use("/api", router);
 app.use((req, res, next) => {
   if (req.path !== "/api" && !req.path.startsWith("/api/")) {

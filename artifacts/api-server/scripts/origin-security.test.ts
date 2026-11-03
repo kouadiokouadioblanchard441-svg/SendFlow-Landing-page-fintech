@@ -102,6 +102,12 @@ test("every protected admin route rejects requests without a session", async () 
     ["POST", "/admin/landing/sections"],
     ["DELETE", "/admin/landing/sections/1"],
     ["PUT", "/admin/landing/countries/1/operators"],
+    ["PATCH", "/admin/landing/content/1"],
+    ["POST", "/admin/landing/content"],
+    ["DELETE", "/admin/landing/faqs/1"],
+    ["PATCH", "/admin/landing/media/1"],
+    ["POST", "/admin/landing/sections"],
+    ["DELETE", "/admin/landing/legalPages/1"],
   ] as const;
   const app = express()
     .use(adminAuthRouter)
@@ -138,7 +144,6 @@ test("every protected admin route rejects requests without a session", async () 
 
     for (const path of [
       "/admin/auth/login",
-      "/admin/auth/panel/verify",
       "/admin/auth/logout",
     ]) {
       const response = await fetch(`${origin}${path}`, {
@@ -160,6 +165,16 @@ test("every protected admin route rejects requests without a session", async () 
         server.close((error) => (error ? reject(error) : resolve()));
       });
     }
+
+    const retiredPanelLookup = await fetch(`${origin}/admin/auth/panel/verify`, {
+      method: "POST",
+      headers: {
+        Origin: "https://sendflow.example",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token: "not-in-url", email: "admin@sendflow.example" }),
+    });
+    assert.equal(retiredPanelLookup.status, 404);
   }
 });
 

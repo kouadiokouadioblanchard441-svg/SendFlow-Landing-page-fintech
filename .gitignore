@@ -7,6 +7,18 @@
 **/.env
 **/.env.*
 !**/.env.example
+.envrc
+**/.envrc
+.netrc
+**/.netrc
+.npmrc.local
+**/.npmrc.local
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
 
 # Ignore generated package builds everywhere except the production release at repo root.
 **/dist/

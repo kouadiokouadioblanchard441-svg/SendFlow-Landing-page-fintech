@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import test from "node:test";
 import app from "../src/app.ts";
-import { readRecaptchaSettings, verifyRecaptchaToken } from "../src/lib/recaptcha.ts";
+import { getConfiguredRecaptchaHostname, readRecaptchaSettings, verifyRecaptchaToken } from "../src/lib/recaptcha.ts";
 
 test("reCAPTCHA stays disabled unless both keys are configured", () => {
   assert.deepEqual(readRecaptchaSettings({}), { status: "disabled" });
@@ -12,6 +12,13 @@ test("reCAPTCHA stays disabled unless both keys are configured", () => {
     RECAPTCHA_SITE_KEY: " site ",
     RECAPTCHA_SECRET_KEY: " secret ",
   }), { status: "enabled", siteKey: "site", secretKey: "secret" });
+});
+
+test("reCAPTCHA verification hostname comes from configured public site URL, not request Host", () => {
+  assert.equal(getConfiguredRecaptchaHostname("https://SendFlow.example/"), "sendflow.example");
+  assert.equal(getConfiguredRecaptchaHostname("https://user:pass@sendflow.example"), null);
+  assert.equal(getConfiguredRecaptchaHostname("javascript:alert(1)"), null);
+  assert.equal(getConfiguredRecaptchaHostname(undefined), null);
 });
 
 test("reCAPTCHA verification requires a successful score, expected action, and request hostname", async () => {
@@ -120,10 +127,12 @@ test("public config exposes only the site key and fails closed on partial keys",
     process.env.RECAPTCHA_SECRET_KEY = "test-secret";
     const enabledResponse = await fetch(`${origin}/api/recaptcha/config`);
     assert.equal(enabledResponse.status, 200);
-    assert.deepEqual(await enabledResponse.json(), {
+    const publicConfig = await enabledResponse.json();
+    assert.deepEqual(publicConfig, {
       enabled: true,
       siteKey: "public-test-site-key",
     });
+    assert.doesNotMatch(JSON.stringify(publicConfig), /test-secret/);
     const enabledPolicy = enabledResponse.headers.get("content-security-policy") ?? "";
     assert.match(enabledPolicy, /www\.google\.com\/recaptcha/);
     assert.match(enabledPolicy, /www\.gstatic\.com\/recaptcha/);

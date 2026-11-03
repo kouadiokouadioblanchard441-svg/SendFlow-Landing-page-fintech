@@ -32,7 +32,7 @@ import { filterPublicLandingBundle } from "../lib/landingVisibility";
 import { createRateLimiter } from "../middlewares/security";
 import { getPublicSiteUrl } from "../lib/publicSiteUrl";
 import { parseNewsletterToken } from "../lib/newsletterToken";
-import { readRecaptchaSettings, verifyRecaptchaToken } from "../lib/recaptcha";
+import { getConfiguredRecaptchaHostname, readRecaptchaSettings, verifyRecaptchaToken } from "../lib/recaptcha";
 import {
   getNewsletterConfirmationExpiry,
   getNewsletterConfirmationUrl,
@@ -396,11 +396,16 @@ router.post("/newsletter/subscribe", newsletterSubscribeRateLimit, async (req, r
       res.status(400).json({ error: "La vérification anti-robot est requise." });
       return;
     }
+    const expectedHostname = getConfiguredRecaptchaHostname();
+    if (!expectedHostname) {
+      res.status(503).json({ error: "La vérification anti-robot est temporairement indisponible." });
+      return;
+    }
     const verification = await verifyRecaptchaToken({
       token: captchaToken,
       secretKey: recaptchaSettings.secretKey,
       expectedAction: "newsletter_subscribe",
-      expectedHostname: req.hostname,
+      expectedHostname,
     });
     if (!verification.valid) {
       const status = verification.reason === "unavailable" ? 503 : 403;
@@ -808,17 +813,20 @@ router.post("/admin/newsletter/campaigns/:id/send", requireAdmin, async (req, re
     }).where(eq(newsletterCampaigns.id, id)).returning();
     res.json(sent);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Resend n’a pas pu envoyer la campagne.";
-    req.log.error({ err: error, campaignId: id }, "Newsletter campaign send failed");
+    req.log.error({
+      errorType: error instanceof Error ? error.name : "UnknownError",
+      campaignId: id,
+    }, "Newsletter campaign send failed");
+    const safeFailureMessage = "Échec du fournisseur d’envoi. Consultez les journaux serveur et vérifiez les envois avant toute relance.";
     const [failed] = await db.update(newsletterCampaigns).set({
       status: "failed",
       sentCount,
       failedCount: Math.max(subscribers.length - sentCount, 0),
-      lastError: message.slice(0, 1000),
+      lastError: safeFailureMessage,
       updatedAt: new Date(),
     }).where(eq(newsletterCampaigns.id, id)).returning();
     res.status(502).json({
-      error: `L’envoi a échoué. Certains messages ont peut-être déjà été distribués. Ne relancez pas cette campagne; vérifiez les envois dans Resend avant d’en créer une nouvelle. (${message})`,
+      error: `L’envoi a échoué. Certains messages ont peut-être déjà été distribués. ${safeFailureMessage}`,
       campaign: failed,
     });
   }

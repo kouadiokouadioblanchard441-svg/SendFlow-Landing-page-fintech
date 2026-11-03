@@ -13,7 +13,7 @@ import {
   verifyAdminPassword,
 } from "../middlewares/adminAuth";
 import { createSharedRateLimiter, isAllowedMutationOrigin } from "../middlewares/security";
-import { adminLoginSchema, panelLookupSchema } from "../lib/requestValidation";
+import { adminLoginSchema } from "../lib/requestValidation";
 
 const router: IRouter = Router();
 const SESSION_DAYS = 7;
@@ -23,12 +23,6 @@ const loginRateLimit = createSharedRateLimiter({
   max: 8,
   message: "Trop de tentatives de connexion. Réessaie dans quelques minutes.",
 });
-const panelLookupRateLimit = createSharedRateLimiter({
-  scope: "admin-panel-lookup",
-  windowMs: 10 * 60 * 1000,
-  max: 30,
-});
-
 function rejectUntrustedOrigin(req: Request, res: Response): boolean {
   const origin = req.get("origin");
   if (!isAllowedMutationOrigin(origin)) {
@@ -73,31 +67,6 @@ router.post("/admin/auth/login", requireTrustedOrigin, loginRateLimit, async (re
   await db.update(adminUsers).set({ lastLoginAt: new Date(), updatedAt: new Date() }).where(eq(adminUsers.id, user.id));
   setAdminSessionCookie(res, token);
   res.json({ user: { id: user.id, email: user.email } });
-});
-
-router.post("/admin/auth/panel/verify", requireTrustedOrigin, panelLookupRateLimit, async (req, res): Promise<void> => {
-  const parsed = panelLookupSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(404).json({ error: "Panel not found" });
-    return;
-  }
-  const { token, email: panelEmail } = parsed.data;
-
-  const [user] = await db
-    .select({ id: adminUsers.id, email: adminUsers.email })
-    .from(adminUsers)
-    .where(and(
-      eq(adminUsers.panelTokenHash, hashAdminPanelToken(token)),
-      eq(adminUsers.panelEmailHash, hashAdminPanelToken(panelEmail.toLowerCase())),
-      eq(adminUsers.isActive, true),
-    ))
-    .limit(1);
-
-  if (!user) {
-    res.status(404).json({ error: "Panel not found" });
-    return;
-  }
-  res.json({ user });
 });
 
 router.get("/admin/auth/me", async (req, res): Promise<void> => {
