@@ -478,12 +478,41 @@ a[data-testid="button-hero-discover"]:hover {
   align-items: center;
   margin-top: 22px;
 }
-.about-document-founder-photo {
+.about-document-founder-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
   width: 150px;
   height: 180px;
   overflow: hidden;
   border-radius: 8px;
-  background: #ffffff;
+  padding: 18px;
+  background: linear-gradient(145deg, #ffffff, #f4f0ff);
+}
+.about-document-founder-brand {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.about-document-founder-brand-mark {
+  display: block;
+  width: 52%;
+  max-width: 175px;
+  height: auto;
+  object-fit: contain;
+}
+.about-document-founder-brand-wordmark {
+  display: block;
+  width: 92%;
+  max-width: 240px;
+  height: auto;
+  object-fit: contain;
 }
 .about-document-founder-copy {
   width: 100%;
@@ -2595,10 +2624,11 @@ section#faq .reveal.space-y-2 > div {
   gap: clamp(24px, 5vw, 54px);
   margin-top: 25px;
 }
-.about-page .about-document-founder-photo {
+.about-page .about-document-founder-logo {
   width: 100%;
   max-width: 285px;
   height: 340px;
+  padding: 28px;
   border: 1px solid var(--about-line);
   border-radius: 20px;
   background: var(--about-wash);
@@ -2676,7 +2706,7 @@ section#faq .reveal.space-y-2 > div {
     justify-items: center;
     gap: 21px;
   }
-  .about-page .about-document-founder-photo { max-width: 235px; height: 285px; }
+  .about-page .about-document-founder-logo { max-width: 235px; height: 285px; }
   .about-page .about-document-founder-copy { width: 100%; }
   .about-page .about-document-founder-copy > div:first-child { text-align: left; }
   .about-page .about-document-founder-copy > div:last-child { justify-content: flex-start; }
@@ -2690,7 +2720,7 @@ section#faq .reveal.space-y-2 > div {
    user's reference, without introducing another brand color or decorative bars. */
 .about-page .about-document-section,
 .about-page .about-document-carousel,
-.about-page .about-document-founder-photo {
+.about-page .about-document-founder-logo {
   border: 2px solid #cbb9e6;
   box-shadow:
     0 5px 0 rgba(35, 27, 48, .16),

@@ -1,5 +1,13 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
+# Keep runtime secrets out of Git while retaining the documented template.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
 # Ignore generated package builds everywhere except the production release at repo root.
 **/dist/
 !/dist/

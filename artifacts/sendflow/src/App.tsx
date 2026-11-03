@@ -796,14 +796,10 @@ function AboutRoute() {
     const fallback = fallbackFounder[language];
     const founder = landingBundle?.founder;
     if (!founder || founder.isVisible === false) return fallback;
-    const photoUrl = founder.photoKey
-      ? landingBundle.media.find((media) => media.slug === founder.photoKey && media.isVisible)?.publicUrl ?? null
-      : null;
     return language === 'fr'
       ? {
         name: founder.name,
         role: founder.roleFr,
-        photoUrl,
         shortBio: founder.shortBioFr,
         story: founder.storyFr,
         vision: founder.visionFr,
@@ -818,7 +814,6 @@ function AboutRoute() {
       : {
         name: founder.name,
         role: founder.roleEn,
-        photoUrl,
         shortBio: founder.shortBioEn,
         story: founder.storyEn,
         vision: founder.visionEn,

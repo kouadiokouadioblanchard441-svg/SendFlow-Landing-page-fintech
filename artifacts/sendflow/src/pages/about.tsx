@@ -13,11 +13,10 @@ import {
   Quote,
   RefreshCw,
   Sparkles,
-  UserRound,
 } from 'lucide-react';
 import { SiGmail } from 'react-icons/si';
 import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
-import founderPortrait from '@assets/file_00000000d41881f4b07497287b39201e_1789085205545.png';
+import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import aboutHeroHandshake from '@assets/file_00000000f8e081f489c8c5b8c185ca4e_1789621548418.png';
 import { ABOUT_HERO_ASSETS, ABOUT_HERO_ASSET_BY_KEY } from '@/lib/aboutCarouselAssets';
 import crossNetworkIcon from '../assets/sendflow-icon-cross-network.svg';
@@ -32,7 +31,6 @@ export type AboutLocale = 'fr' | 'en';
 export type FounderProfile = {
   name: string;
   role: string;
-  photoUrl?: string | null;
   shortBio: string;
   story: string;
   vision: string;
@@ -138,38 +136,12 @@ function LocaleFlag({ locale }: { locale: AboutLocale }) {
   );
 }
 
-function FounderPhoto({ profile }: { profile: FounderProfile }) {
-  const [hasImageError, setHasImageError] = useState(false);
-  const imageUrl = profile.photoUrl || founderPortrait;
-  const initials = profile.name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
-
-  if (hasImageError) {
-    return (
-      <div
-        className="flex h-full w-full items-center justify-center bg-[#6d35d8] p-8"
-        aria-label={profile.name}
-      >
-        <div className="flex h-36 w-36 items-center justify-center rounded-full border-[10px] border-[#e6d8ff] bg-[#f4f0ff] text-5xl font-bold tracking-[-0.08em] text-[#17243e] shadow-[0_18px_0_rgba(23,36,62,.12)] sm:h-48 sm:w-48 sm:text-6xl">
-          {initials || <UserRound size={62} strokeWidth={1.5} />}
-        </div>
-      </div>
-    );
-  }
-
+function FounderBrand() {
   return (
-    <ProtectedImage
-      src={imageUrl}
-      alt={profile.name}
-      className="h-full w-full object-cover"
-      style={{ objectPosition: '50% 24%' }}
-      onError={() => setHasImageError(true)}
-    />
+    <div className="about-document-founder-brand" role="img" aria-label="Logo SendFlow">
+      <ProtectedImage src={sendflowMark} alt="" className="about-document-founder-brand-mark" />
+      <ProtectedImage src={sendflowWordmark} alt="" className="about-document-founder-brand-wordmark" />
+    </div>
   );
 }
 
@@ -652,8 +624,8 @@ export function AboutPage({ locale, profile, content = [], heroSlides, media = [
         <p className="about-document-copy about-document-lead">{profile.shortBio}</p>
 
         <div className="about-document-founder">
-          <div className="about-document-founder-photo">
-            <FounderPhoto profile={profile} />
+          <div className="about-document-founder-logo">
+            <FounderBrand />
           </div>
           <div className="about-document-founder-copy">
             <div>
