@@ -157,10 +157,12 @@ export function FloatingWhatsAppButton({ href, isFrench }: FloatingWhatsAppButto
         <a
           href={href}
           className="sf-floating-whatsapp"
+          draggable={false}
           aria-label={label}
           title={contactLabel}
           target="_blank"
           rel="noopener noreferrer"
+          onDragStart={(event) => event.preventDefault()}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}

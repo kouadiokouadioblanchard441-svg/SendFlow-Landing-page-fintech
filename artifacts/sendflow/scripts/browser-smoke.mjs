@@ -93,6 +93,11 @@ try {
       const initialBox = await whatsappButton.boundingBox();
       assert.ok(initialBox, 'The floating WhatsApp control should be visible');
       assert.equal(
+        await whatsappButton.evaluate((element) => element.draggable),
+        false,
+        'The WhatsApp control should not start a native browser drag',
+      );
+      assert.equal(
         await whatsappButton.evaluate((element) => getComputedStyle(element.parentElement).position),
         'fixed',
         'The WhatsApp control should float over the page',
