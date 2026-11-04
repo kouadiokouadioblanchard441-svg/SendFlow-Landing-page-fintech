@@ -794,6 +794,7 @@ function FounderEditor({
 }
 
 const DEFAULT_HOME_CONTACT_WHATSAPP = '+2250758427823';
+const DEFAULT_WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbDYGGEHwXb3jv0Oyg2T';
 
 const siteSettingsDefaults: Record<string, Primitive> = {
   supportEmail: '',
@@ -802,7 +803,7 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   linkedinUrl: '',
   instagramUrl: '',
   facebookUrl: '',
-  whatsappUrl: '',
+  whatsappUrl: DEFAULT_WHATSAPP_CHANNEL_URL,
   homeContactEmail: '',
   homeContactPhone: '',
   homeContactWhatsapp: DEFAULT_HOME_CONTACT_WHATSAPP,
@@ -875,6 +876,7 @@ function SiteSettingsEditor({
 }) {
   const getSettingsValues = () => {
     const configuredWhatsapp = bundle.settings?.homeContactWhatsapp;
+    const configuredWhatsappChannel = bundle.settings?.whatsappUrl;
     return {
       ...siteSettingsDefaults,
       ...(bundle.settings ?? {}),
@@ -882,6 +884,9 @@ function SiteSettingsEditor({
       homeContactWhatsapp: typeof configuredWhatsapp === 'string'
         ? configuredWhatsapp
         : DEFAULT_HOME_CONTACT_WHATSAPP,
+      whatsappUrl: typeof configuredWhatsappChannel === 'string'
+        ? configuredWhatsappChannel
+        : DEFAULT_WHATSAPP_CHANNEL_URL,
     };
   };
   const [values, setValues] = useState<Record<string, Primitive>>(getSettingsValues);
@@ -943,7 +948,7 @@ function SiteSettingsEditor({
         {field('linkedinUrl', 'LinkedIn SendFlow', 'url', 'https://www.linkedin.com/company/...')}
         {field('instagramUrl', 'Instagram SendFlow', 'url', 'https://www.instagram.com/...')}
         {field('facebookUrl', 'Facebook SendFlow', 'url', 'https://www.facebook.com/...')}
-        {field('whatsappUrl', 'WhatsApp SendFlow', 'url', 'https://wa.me/225...')}
+        {field('whatsappUrl', 'WhatsApp SendFlow', 'url', 'https://whatsapp.com/channel/...')}
         {field('companyName', 'Dénomination légale')}
         {field('legalForm', 'Forme juridique')}
         {field('legalAddress', 'Adresse légale', 'text')}

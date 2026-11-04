@@ -50,6 +50,7 @@ test("public landing data includes only explicitly visible rows and valid visibl
     id: 1,
     companyName: "SendFlow",
     homeContactWhatsapp: "+2250758427823",
+    whatsappUrl: "https://whatsapp.com/channel/0029VbDYGGEHwXb3jv0Oyg2T",
   });
   assert.equal("sessionSecret" in publicBundle.settings!, false);
   assert.equal("updatedAt" in publicBundle.settings!, false);
@@ -107,20 +108,29 @@ test("public projections return only allowlisted fields from visible founder and
   });
 });
 
-test("an explicit WhatsApp contact overrides the default and an empty value disables it", () => {
+test("explicit WhatsApp links override their defaults and empty values disable them", () => {
   const emptyBundle = {
     media: [], content: [], sections: [], features: [], faqs: [],
     countries: [], operators: [], countryOperators: [], globeBadges: [],
     legalPages: [], legalSections: [], founder: null,
   };
 
-  for (const value of ["+225 07 58 42 78 23", ""]) {
-    const publicBundle = filterPublicLandingBundle({
-      ...emptyBundle,
-      settings: { homeContactWhatsapp: value },
-    });
-    assert.equal(publicBundle.settings?.homeContactWhatsapp, value);
-  }
+  const customLinks = filterPublicLandingBundle({
+    ...emptyBundle,
+    settings: {
+      homeContactWhatsapp: "+225 07 58 42 78 23",
+      whatsappUrl: "https://whatsapp.com/channel/custom",
+    },
+  });
+  assert.equal(customLinks.settings?.homeContactWhatsapp, "+225 07 58 42 78 23");
+  assert.equal(customLinks.settings?.whatsappUrl, "https://whatsapp.com/channel/custom");
+
+  const disabledLinks = filterPublicLandingBundle({
+    ...emptyBundle,
+    settings: { homeContactWhatsapp: "", whatsappUrl: "" },
+  });
+  assert.equal(disabledLinks.settings?.homeContactWhatsapp, "");
+  assert.equal(disabledLinks.settings?.whatsappUrl, "");
 });
 
 test("the public WhatsApp default is present even before site settings exist", () => {
@@ -131,4 +141,8 @@ test("the public WhatsApp default is present even before site settings exist", (
   });
 
   assert.equal(publicBundle.settings?.homeContactWhatsapp, "+2250758427823");
+  assert.equal(
+    publicBundle.settings?.whatsappUrl,
+    "https://whatsapp.com/channel/0029VbDYGGEHwXb3jv0Oyg2T",
+  );
 });

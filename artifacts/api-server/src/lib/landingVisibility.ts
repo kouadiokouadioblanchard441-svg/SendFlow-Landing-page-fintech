@@ -2,6 +2,8 @@ type VisibleRow = { isVisible?: unknown; [key: string]: unknown };
 type PublicRow = Record<string, unknown>;
 
 const DEFAULT_HOME_CONTACT_WHATSAPP = "+2250758427823";
+const DEFAULT_WHATSAPP_CHANNEL_URL =
+  "https://whatsapp.com/channel/0029VbDYGGEHwXb3jv0Oyg2T";
 
 export type LandingVisibilityBundle = {
   media: Array<VisibleRow>;
@@ -82,11 +84,15 @@ function publicSettingsRow(settings: Record<string, unknown> | null): PublicRow 
     ? projectPublicFields(settings, publicFields.settings)
     : {};
 
-  // The WhatsApp contact is public configuration; keep it available when the
-  // existing database row has a null value, while allowing an explicit blank
-  // value from the admin panel to disable the channel.
+  // WhatsApp contact details are public configuration. Keep the configured
+  // support number and channel URL available when existing database fields are
+  // null, while allowing explicit blank values from the admin panel to disable
+  // either link.
   if (typeof publicSettings.homeContactWhatsapp !== "string") {
     publicSettings.homeContactWhatsapp = DEFAULT_HOME_CONTACT_WHATSAPP;
+  }
+  if (typeof publicSettings.whatsappUrl !== "string") {
+    publicSettings.whatsappUrl = DEFAULT_WHATSAPP_CHANNEL_URL;
   }
 
   return publicSettings;

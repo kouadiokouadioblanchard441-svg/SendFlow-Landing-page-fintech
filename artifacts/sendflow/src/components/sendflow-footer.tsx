@@ -7,7 +7,12 @@ import bceaoLogo from '@assets/image_search/bceao-logo-official.png';
 import facebookLogo from '@assets/facebook-logo-clean-icon-png_1789582951886.png';
 import whatsappLogo from '@assets/logo-whatsapp-fond-blanc-vecteur_980129-12073_1789582951976.jpg';
 import { ProtectedImage } from '@/components/protected-image';
-import { getTelHref, getWhatsAppHref, type ContactDetails } from '@/lib/contact';
+import {
+  getTelHref,
+  getWhatsAppChannelHref,
+  getWhatsAppSupportHref,
+  type ContactDetails,
+} from '@/lib/contact';
 import { getLocalizedPath } from '@/lib/localized-routes';
 
 type Copy = { fr: string; en: string };
@@ -113,9 +118,8 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
   const locale = isFrench ? 'fr' : 'en';
   const supportEmail = contact?.email?.trim() || settings?.supportEmail?.trim() || '';
   const supportPhone = contact?.phone?.trim() || settings?.supportPhone?.trim() || '';
-  const whatsappHref = contact?.whatsapp?.trim()
-    ? getWhatsAppHref(contact.whatsapp)
-    : settings?.whatsappUrl?.trim() || null;
+  const supportWhatsappHref = getWhatsAppSupportHref(contact?.whatsapp, settings?.whatsappUrl);
+  const whatsappSocialHref = getWhatsAppChannelHref(settings?.whatsappUrl);
   const phoneHref = getTelHref(supportPhone);
   const legalCompany = settings?.companyName?.trim() || 'Flow Digital SARL';
   const legalForm = settings?.legalForm?.trim();
@@ -140,7 +144,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
     <footer id="footer" className="sendflow-reference-footer">
       <div className="sendflow-footer-inner">
         <div className="sendflow-footer-socials" aria-label={isFrench ? 'Réseaux sociaux' : 'Social networks'}>
-          {socialLink('WhatsApp', whatsappHref, <ProtectedImage src={whatsappLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-whatsapp')}
+          {socialLink('WhatsApp', whatsappSocialHref, <ProtectedImage src={whatsappLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-whatsapp')}
           {socialLink('Facebook', settings?.facebookUrl, <ProtectedImage src={facebookLogo} alt="" className="sendflow-footer-social-logo" />, 'link-footer-facebook')}
           {settings?.linkedinUrl && <a href={settings.linkedinUrl} aria-label="LinkedIn" target="_blank" rel="noreferrer" data-testid="link-footer-linkedin"><Linkedin size={20} strokeWidth={2.5} /></a>}
           {settings?.instagramUrl && <a href={settings.instagramUrl} aria-label="Instagram" target="_blank" rel="noreferrer" data-testid="link-footer-instagram"><Instagram size={20} strokeWidth={2.5} /></a>}
@@ -163,7 +167,7 @@ export function SendFlowFooter({ isFrench, onNavigate, settings, content, contac
             <h3>{isFrench ? 'Assistance' : 'Support'}</h3>
             {supportEmail && <a href={`mailto:${supportEmail}`} data-testid="link-footer-support-email">{supportEmail}</a>}
             {phoneHref && <a href={phoneHref} data-testid="link-footer-support-phone">{supportPhone}</a>}
-            {whatsappHref && <a href={whatsappHref} target="_blank" rel="noreferrer" data-testid="link-footer-support-whatsapp">WhatsApp</a>}
+            {supportWhatsappHref && <a href={supportWhatsappHref} target="_blank" rel="noreferrer" data-testid="link-footer-support-whatsapp">WhatsApp</a>}
           </section>
           <section>
             <h3>{isFrench ? 'Réglementation' : 'Regulation'}</h3>
