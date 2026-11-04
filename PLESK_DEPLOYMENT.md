@@ -249,6 +249,13 @@ Environment variables**, jamais dans Git :
 | `RESEND_FROM_EMAIL` | Pour l’envoi d’e-mails | Adresse d’expédition vérifiée chez Resend. |
 | `PUBLIC_SITE_URL` | Recommandée | `https://sendflow.africa` pour les contrôles d’origine et les liens générés par l’API. |
 | `RECAPTCHA_SITE_KEY` et `RECAPTCHA_SECRET_KEY` | Facultatives, ensemble | Active le badge reCAPTCHA v3 et la vérification des inscriptions à la newsletter. La clé secrète reste côté serveur. Voir la section reCAPTCHA ci-dessous. |
+| `TELEGRAM_AUDIT_ENABLED` | Facultative | Valeur `true` pour activer les notifications Telegram. Laisser désactivée jusqu’à la mise à jour de la politique de confidentialité et à la vérification du groupe, des identifiants admin et du proxy. |
+| `TELEGRAM_BOT_TOKEN` | Si Telegram est activé | Jeton BotFather, uniquement dans l’environnement Node Plesk. Ne jamais l’ajouter à Git, à `VITE_*`, au frontend ou à une URL. |
+| `TELEGRAM_CHAT_ID` | Si Telegram est activé | Identifiant numérique du groupe privé qui reçoit les alertes. Limiter l’accès du groupe aux personnes autorisées. |
+| `TELEGRAM_WEBHOOK_SECRET` | Si Telegram est activé | Secret aléatoire transmis par Telegram dans l’en-tête du webhook ; utiliser uniquement des lettres, chiffres, `_` et `-`. |
+| `TELEGRAM_ADMIN_USER_IDS` | Si Telegram est activé | Identifiants Telegram numériques, séparés par des virgules. Seuls ces comptes peuvent bloquer/débloquer une IP avec les boutons du groupe. |
+| `TELEGRAM_AUTO_CONFIGURE_WEBHOOK` | Facultative | Valeur `true` pour que le démarrage Node enregistre `/api/security/telegram/webhook` auprès du bot. Cette opération remplace le webhook déjà configuré pour ce bot : réserver un bot dédié à SendFlow et activer explicitement après vérification. |
+| `TRUSTED_PROXY_IPS` | Selon le proxy Plesk | Adresses IP exactes des proxys de confiance, séparées par des virgules. Ne pas y mettre `*`, un nombre de sauts ou des plages larges. Sans cette valeur, `X-Forwarded-For` n’est pas cru ; si Node ne voit que l’IP privée de Passenger, Telegram indiquera que l’IP visiteur est indisponible et n’affichera pas de bouton de blocage. |
 | `PORT` | Non sous Passenger | Ne pas fixer de port dans Plesk Passenger. Nécessaire uniquement si le serveur est lancé directement par Node hors Passenger. |
 | `LOG_LEVEL` | Facultative | Niveau de journalisation ; `info` par défaut. |
 | `CORS_ORIGINS` | Facultative | Origines supplémentaires séparées par des virgules, seulement si l’API doit accepter d’autres sites. |
@@ -261,6 +268,50 @@ Toute variable `VITE_*` peut être intégrée au JavaScript livré au navigateur
 `BASE_PATH` doit rester `/` (ou être absent, car `/` est la valeur par défaut) pour servir le site à la racine du domaine.
 
 `PUBLIC_OBJECT_SEARCH_PATHS` est uniquement le repli du stockage objet hors Plesk lorsque `PLESK_MEDIA_DIR` n’est pas défini. Sur Plesk, configure `PLESK_MEDIA_DIR` et n’utilise pas ce repli.
+
+### Supervision Telegram et blocage d’IP au niveau Node
+
+La fonctionnalité est désactivée par défaut. Une fois activée, elle envoie au
+groupe configuré les vues de pages publiques, clics, soumissions de formulaires
+(sans leurs champs), et alertes HTTP 401/403/429/5xx. Elle transmet une IP
+uniquement si l’application peut l’identifier comme une adresse publique.
+Elle ne collecte ni numéro de téléphone, ni GPS, ni opérateur réseau ou
+géolocalisation ; aucune base GeoIP tierce n’est appelée. Les contenus de
+formulaires, textes des boutons et valeurs saisies ne sont jamais envoyés.
+Les événements sont regroupés en mémoire avant envoi, sans archive analytique
+dans PostgreSQL. En cas de redémarrage, les événements encore en attente sont
+perdus ; une panne Telegram déclenche des tentatives ultérieures, mais la file
+est limitée et signale les excès. Ce canal n’est donc pas un journal d’audit
+garanti. Les adresses bloquées sont, elles, conservées dans la table
+`security_ip_blocks` jusqu’au déblocage.
+
+Renseigne les variables Telegram dans **Plesk → Node.js → Environment variables**,
+puis active `TELEGRAM_AUDIT_ENABLED=true`. Le démarrage crée de façon idempotente
+la seule table `security_ip_blocks`; le compte PostgreSQL doit donc avoir le
+droit `CREATE`. Les boutons IP ne sont affichés qu’après l’enregistrement du
+webhook. Active aussi `TELEGRAM_AUTO_CONFIGURE_WEBHOOK=true` puis redémarre
+l’application pour configurer le webhook automatiquement.
+Le bot doit être ajouté au groupe privé et disposer du droit d’envoyer des
+messages. Les identifiants Telegram autorisés sont contrôlés côté serveur ;
+l’appui d’un autre membre sur un bouton ne modifie pas la liste.
+
+Avant l’activation, mets à jour la politique de confidentialité publiée depuis
+le panel pour signaler les événements/IP transmis au groupe Telegram, le rôle
+de ce prestataire, les destinataires et la durée de conservation des blocages.
+La page de confidentialité étant éditable en base par le panel, le dépôt ne peut
+pas confirmer que le texte actuellement publié en production a été mis à jour.
+
+Le blocage s’applique aux requêtes qui arrivent à Express/Node, avant les routes
+API et les fichiers statiques servis par Node. Il ne bloque pas les fichiers
+que Plesk/Apache/CDN sert directement. Plesk peut masquer l’adresse visiteur
+derrière Passenger : tant que les IP exactes des proxys ne sont pas vérifiées
+dans les journaux serveur, ne configure pas `TRUSTED_PROXY_IPS`. Ne fais jamais
+confiance à un `X-Forwarded-For` fourni directement par le navigateur. Si Node
+voit une adresse privée de proxy, aucun IP n’est montrée et aucun bouton de
+blocage n’est proposé, afin d’éviter de bannir tous les visiteurs via le proxy.
+Le pays, le type de réseau et l’opérateur ne sont pas déterminés par cette
+fonctionnalité. Les alertes de même IP, route et statut sont regroupées pendant
+une minute pour éviter les répétitions d’un même scan.
 
 Les variables `PLESK_DIST_DIR`, `PLESK_DEPLOYMENT_ROOT` et `PLESK_REQUIRE_DEPLOYMENT_ROOT` servent à la génération du paquet et au choix/à la validation de sa destination ; `PLESK_KEEP_PREVIOUS_DIST` contrôle la conservation d’une sauvegarde. Elles ne sont pas nécessaires dans l’environnement du processus Node.js lorsque le build est livré par CI.
 

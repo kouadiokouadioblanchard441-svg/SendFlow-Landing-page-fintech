@@ -6,22 +6,29 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   ErrorEnvelope,
-  HealthStatus
+  HealthStatus,
+  PublicActivityInput,
+  SecurityTelemetryConfig,
+  TelegramWebhookUpdateInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType } from '../custom-fetch';
+import type { ErrorType , BodyType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -201,4 +208,224 @@ export function useGetPublicObject<TData = Awaited<ReturnType<typeof getPublicOb
 
 
 
+
+export const getGetSecurityTelemetryConfigUrl = () => {
+
+
+
+
+  return `/api/security/telemetry/config`
+}
+
+/**
+ * @summary Read public activity tracking status
+ */
+export const getSecurityTelemetryConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<SecurityTelemetryConfig> => {
+
+  return customFetch<SecurityTelemetryConfig>(getGetSecurityTelemetryConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSecurityTelemetryConfigQueryKey = () => {
+    return [
+    `/api/security/telemetry/config`
+    ] as const;
+    }
+
+
+export const getGetSecurityTelemetryConfigQueryOptions = <TData = Awaited<ReturnType<typeof getSecurityTelemetryConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSecurityTelemetryConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSecurityTelemetryConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSecurityTelemetryConfig>>> = ({ signal }) => getSecurityTelemetryConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSecurityTelemetryConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSecurityTelemetryConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getSecurityTelemetryConfig>>>
+export type GetSecurityTelemetryConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Read public activity tracking status
+ */
+
+export function useGetSecurityTelemetryConfig<TData = Awaited<ReturnType<typeof getSecurityTelemetryConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSecurityTelemetryConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSecurityTelemetryConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordSecurityTelemetryEventUrl = () => {
+
+
+
+
+  return `/api/security/telemetry/events`
+}
+
+/**
+ * @summary Record a privacy-minimized public activity event
+ */
+export const recordSecurityTelemetryEvent = async (publicActivityInput: PublicActivityInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getRecordSecurityTelemetryEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(publicActivityInput)
+  }
+);}
+
+
+
+
+
+export const getRecordSecurityTelemetryEventMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordSecurityTelemetryEvent>>, TError,{data: BodyType<PublicActivityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordSecurityTelemetryEvent>>, TError,{data: BodyType<PublicActivityInput>}, TContext> => {
+
+const mutationKey = ['recordSecurityTelemetryEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordSecurityTelemetryEvent>>, {data: BodyType<PublicActivityInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordSecurityTelemetryEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordSecurityTelemetryEventMutationResult = NonNullable<Awaited<ReturnType<typeof recordSecurityTelemetryEvent>>>
+    export type RecordSecurityTelemetryEventMutationBody = BodyType<PublicActivityInput>
+    export type RecordSecurityTelemetryEventMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Record a privacy-minimized public activity event
+ */
+export const useRecordSecurityTelemetryEvent = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordSecurityTelemetryEvent>>, TError,{data: BodyType<PublicActivityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordSecurityTelemetryEvent>>,
+        TError,
+        {data: BodyType<PublicActivityInput>},
+        TContext
+      > => {
+      return useMutation(getRecordSecurityTelemetryEventMutationOptions(options));
+    }
+
+export const getReceiveTelegramSecurityUpdateUrl = () => {
+
+
+
+
+  return `/api/security/telegram/webhook`
+}
+
+/**
+ * Requires the Telegram webhook secret header. Only configured Telegram user IDs in the configured group may block or unblock IP addresses.
+ * @summary Receive authenticated Telegram button callbacks
+ */
+export const receiveTelegramSecurityUpdate = async (telegramWebhookUpdateInput: TelegramWebhookUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getReceiveTelegramSecurityUpdateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(telegramWebhookUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getReceiveTelegramSecurityUpdateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveTelegramSecurityUpdate>>, TError,{data: BodyType<TelegramWebhookUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveTelegramSecurityUpdate>>, TError,{data: BodyType<TelegramWebhookUpdateInput>}, TContext> => {
+
+const mutationKey = ['receiveTelegramSecurityUpdate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveTelegramSecurityUpdate>>, {data: BodyType<TelegramWebhookUpdateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveTelegramSecurityUpdate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveTelegramSecurityUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof receiveTelegramSecurityUpdate>>>
+    export type ReceiveTelegramSecurityUpdateMutationBody = BodyType<TelegramWebhookUpdateInput>
+    export type ReceiveTelegramSecurityUpdateMutationError = ErrorType<void>
+
+    /**
+ * @summary Receive authenticated Telegram button callbacks
+ */
+export const useReceiveTelegramSecurityUpdate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveTelegramSecurityUpdate>>, TError,{data: BodyType<TelegramWebhookUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveTelegramSecurityUpdate>>,
+        TError,
+        {data: BodyType<TelegramWebhookUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getReceiveTelegramSecurityUpdateMutationOptions(options));
+    }
 

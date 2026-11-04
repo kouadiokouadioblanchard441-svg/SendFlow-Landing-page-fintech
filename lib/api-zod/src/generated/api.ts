@@ -28,3 +28,42 @@ export const GetPublicObjectParams = zod.object({
 export const GetPublicObjectResponse = zod.unknown()
 
 
+/**
+ * @summary Read public activity tracking status
+ */
+export const GetSecurityTelemetryConfigResponse = zod.object({
+  "enabled": zod.boolean()
+})
+
+
+/**
+ * @summary Record a privacy-minimized public activity event
+ */
+export const recordSecurityTelemetryEventBodyPageMax = 200;
+
+export const recordSecurityTelemetryEventBodyTargetMax = 80;
+
+
+
+export const RecordSecurityTelemetryEventBody = zod.object({
+  "kind": zod.enum(['page_view', 'click', 'form_submit']),
+  "page": zod.string().max(recordSecurityTelemetryEventBodyPageMax),
+  "target": zod.string().max(recordSecurityTelemetryEventBodyTargetMax).optional()
+})
+
+export const RecordSecurityTelemetryEventResponse = zod.void()
+
+
+/**
+ * Requires the Telegram webhook secret header. Only configured Telegram user IDs in the configured group may block or unblock IP addresses.
+ * @summary Receive authenticated Telegram button callbacks
+ */
+export const ReceiveTelegramSecurityUpdateHeader = zod.object({
+  "X-Telegram-Bot-Api-Secret-Token": zod.string().describe('Secret token configured with Telegram setWebhook; never expose it in a URL or log.')
+})
+
+export const ReceiveTelegramSecurityUpdateBody = zod.record(zod.string(), zod.unknown())
+
+export const ReceiveTelegramSecurityUpdateResponse = zod.unknown()
+
+

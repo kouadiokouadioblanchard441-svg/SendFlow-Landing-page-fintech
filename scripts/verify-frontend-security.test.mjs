@@ -30,15 +30,17 @@ test("frontend scanner permits public site configuration and public reCAPTCHA si
 });
 
 test("frontend scanner rejects server-only environment names without printing values", async () => {
-  await withBuild({
-    "assets/app.js": 'const name="SESSION_SECRET"; const value="do-not-print";',
-  }, async (directory) => {
-    await assert.rejects(scanFrontendBuild(directory), (error) => {
-      assert.match(error.message, /server-only environment variable/);
-      assert.doesNotMatch(error.message, /do-not-print/);
-      return true;
+  for (const name of ["SESSION_SECRET", "TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET"]) {
+    await withBuild({
+      "assets/app.js": `const name="${name}"; const value="do-not-print";`,
+    }, async (directory) => {
+      await assert.rejects(scanFrontendBuild(directory), (error) => {
+        assert.match(error.message, /server-only environment variable/);
+        assert.doesNotMatch(error.message, /do-not-print/);
+        return true;
+      });
     });
-  });
+  }
 });
 
 test("frontend scanner rejects credential formats and private key material", async () => {

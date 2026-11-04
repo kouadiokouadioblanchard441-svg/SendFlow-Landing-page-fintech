@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: Storage
     description: Public landing asset serving.
+  - name: Security
+    description: Public activity signals and Telegram security controls.
 paths:
   /healthz:
     get:
@@ -58,6 +60,74 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /security/telemetry/config:
+    get:
+      operationId: getSecurityTelemetryConfig
+      tags: [Security]
+      summary: Read public activity tracking status
+      responses:
+        "200":
+          description: Whether public activity tracking is enabled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityTelemetryConfig"
+  /security/telemetry/events:
+    post:
+      operationId: recordSecurityTelemetryEvent
+      tags: [Security]
+      summary: Record a privacy-minimized public activity event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicActivityInput"
+      responses:
+        "202":
+          description: Event accepted for asynchronous notification.
+        "204":
+          description: Tracking is disabled.
+        "400":
+          description: Invalid event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: Origin is not allowed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /security/telegram/webhook:
+    post:
+      operationId: receiveTelegramSecurityUpdate
+      tags: [Security]
+      summary: Receive authenticated Telegram button callbacks
+      description: Requires the Telegram webhook secret header. Only configured Telegram user IDs in the configured group may block or unblock IP addresses.
+      parameters:
+        - name: X-Telegram-Bot-Api-Secret-Token
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Secret token configured with Telegram setWebhook; never expose it in a URL or log.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramWebhookUpdateInput"
+      responses:
+        "200":
+          description: Update acknowledged.
+        "401":
+          description: Invalid webhook secret.
+        "404":
+          description: Telegram monitoring is disabled.
+        "503":
+          description: The requested security action could not be completed.
 components:
   schemas:
     HealthStatus:
@@ -78,4 +148,27 @@ components:
           type: string
       required:
         - error
+    SecurityTelemetryConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+      required: [enabled]
+    PublicActivityInput:
+      type: object
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+          enum: [page_view, click, form_submit]
+        page:
+          type: string
+          maxLength: 200
+        target:
+          type: string
+          maxLength: 80
+      required: [kind, page]
+    TelegramWebhookUpdateInput:
+      type: object
+      additionalProperties: true
 

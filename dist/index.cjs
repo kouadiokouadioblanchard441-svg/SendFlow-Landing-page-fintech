@@ -5599,10 +5599,10 @@ var require_on_finished = __commonJS({
       function listener(err) {
         if (msg.__onFinished === listener) msg.__onFinished = null;
         if (!listener.queue) return;
-        var queue = listener.queue;
+        var queue2 = listener.queue;
         listener.queue = null;
-        for (var i = 0; i < queue.length; i++) {
-          queue[i](err, msg);
+        for (var i = 0; i < queue2.length; i++) {
+          queue2[i](err, msg);
         }
       }
       listener.queue = [];
@@ -17615,9 +17615,9 @@ var require_utils2 = __commonJS({
       }
       return array2;
     })();
-    var compactQueue = function compactQueue2(queue) {
-      while (queue.length > 1) {
-        var item = queue.pop();
+    var compactQueue = function compactQueue2(queue2) {
+      while (queue2.length > 1) {
+        var item = queue2.pop();
         var obj = item.obj[item.prop];
         if (isArray(obj)) {
           var compacted = [];
@@ -17901,22 +17901,22 @@ var require_utils2 = __commonJS({
       return out;
     };
     var compact = function compact2(value) {
-      var queue = [{ obj: { o: value }, prop: "o" }];
+      var queue2 = [{ obj: { o: value }, prop: "o" }];
       var refs = getSideChannel();
-      for (var i = 0; i < queue.length; ++i) {
-        var item = queue[i];
+      for (var i = 0; i < queue2.length; ++i) {
+        var item = queue2[i];
         var obj = item.obj[item.prop];
         var keys = Object.keys(obj);
         for (var j = 0; j < keys.length; ++j) {
           var key = keys[j];
           var val = obj[key];
           if (typeof val === "object" && val !== null && !refs.has(val)) {
-            queue[queue.length] = { obj, prop: key };
+            queue2[queue2.length] = { obj, prop: key };
             refs.set(val, true);
           }
         }
       }
-      compactQueue(queue);
+      compactQueue(queue2);
       return value;
     };
     var isRegExp = function isRegExp2(obj) {
@@ -18306,10 +18306,10 @@ var require_parse = __commonJS({
     var copyInput = function copyInput2(input2) {
       var copies = getSideChannel();
       var result = {};
-      var queue = [{ source: input2, target: result }];
-      for (var i = 0; i < queue.length; ++i) {
-        var source = queue[i].source;
-        var target = queue[i].target;
+      var queue2 = [{ source: input2, target: result }];
+      for (var i = 0; i < queue2.length; ++i) {
+        var source = queue2[i].source;
+        var target = queue2[i].target;
         var keys = Object.keys(source);
         for (var j = 0; j < keys.length; ++j) {
           var value = source[keys[j]];
@@ -18317,7 +18317,7 @@ var require_parse = __commonJS({
             if (!copies.has(value)) {
               var copy = emptyCopyOf(value);
               copies.set(value, copy);
-              queue[queue.length] = { source: value, target: copy };
+              queue2[queue2.length] = { source: value, target: copy };
             }
             target[keys[j]] = copies.get(value);
           } else {
@@ -21037,27 +21037,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module2.exports = Router6;
+    module2.exports = Router7;
     module2.exports.Route = Route;
-    function Router6(options) {
-      if (!(this instanceof Router6)) {
-        return new Router6(options);
+    function Router7(options) {
+      if (!(this instanceof Router7)) {
+        return new Router7(options);
       }
       const opts = options || {};
-      function router6(req, res, next) {
-        router6.handle(req, res, next);
+      function router7(req, res, next) {
+        router7.handle(req, res, next);
       }
-      Object.setPrototypeOf(router6, this);
-      router6.caseSensitive = opts.caseSensitive;
-      router6.mergeParams = opts.mergeParams;
-      router6.params = {};
-      router6.strict = opts.strict;
-      router6.stack = [];
-      return router6;
+      Object.setPrototypeOf(router7, this);
+      router7.caseSensitive = opts.caseSensitive;
+      router7.mergeParams = opts.mergeParams;
+      router7.params = {};
+      router7.strict = opts.strict;
+      router7.stack = [];
+      return router7;
     }
-    Router6.prototype = function() {
+    Router7.prototype = function() {
     };
-    Router6.prototype.param = function param(name, fn) {
+    Router7.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -21077,7 +21077,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router6.prototype.handle = function handle(req, res, callback) {
+    Router7.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -21204,7 +21204,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router6.prototype.use = function use(handler) {
+    Router7.prototype.use = function use(handler) {
       let offset = 0;
       let path5 = "/";
       if (typeof handler !== "function") {
@@ -21237,7 +21237,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router6.prototype.route = function route(path5) {
+    Router7.prototype.route = function route(path5) {
       const route2 = new Route(path5);
       const layer = new Layer(path5, {
         sensitive: this.caseSensitive,
@@ -21252,7 +21252,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router6.prototype[method] = function(path5) {
+      Router7.prototype[method] = function(path5) {
         const route = this.route(path5);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21435,13 +21435,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = require("node:path").resolve;
     var once = require_once();
-    var Router6 = require_router();
+    var Router7 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports2 = module2.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router6 = null;
+      var router7 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21450,13 +21450,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router6 === null) {
-            router6 = new Router6({
+          if (router7 === null) {
+            router7 = new Router7({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router6;
+          return router7;
         }
       });
     };
@@ -21527,15 +21527,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router6 = this.router;
+      var router7 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router6.use(path5, fn2);
+          return router7.use(path5, fn2);
         }
         debug(".use app under %s", path5);
         fn2.mountpath = path5;
         fn2.parent = this;
-        router6.use(path5, function mounted_app(req, res, next) {
+        router7.use(path5, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -22446,7 +22446,7 @@ var require_request = __commonJS({
   "../../node_modules/.pnpm/express@5.2.1/node_modules/express/lib/request.js"(exports2, module2) {
     "use strict";
     var accepts = require_accepts();
-    var isIP = require("node:net").isIP;
+    var isIP2 = require("node:net").isIP;
     var typeis = require_type_is();
     var http = require("node:http");
     var fresh = require_fresh();
@@ -22536,7 +22536,7 @@ var require_request = __commonJS({
       var hostname3 = this.hostname;
       if (!hostname3) return [];
       var offset = this.app.get("subdomain offset");
-      var subdomains2 = !isIP(hostname3) ? hostname3.split(".").reverse() : [hostname3];
+      var subdomains2 = !isIP2(hostname3) ? hostname3.split(".").reverse() : [hostname3];
       return subdomains2.slice(offset);
     });
     defineGetter(req, "path", function path5() {
@@ -24120,7 +24120,7 @@ var require_express = __commonJS({
     var EventEmitter = require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router6 = require_router();
+    var Router7 = require_router();
     var req = require_request();
     var res = require_response();
     exports2 = module2.exports = createApplication;
@@ -24142,8 +24142,8 @@ var require_express = __commonJS({
     exports2.application = proto;
     exports2.request = req;
     exports2.response = res;
-    exports2.Route = Router6.Route;
-    exports2.Router = Router6;
+    exports2.Route = Router7.Route;
+    exports2.Router = Router7;
     exports2.json = bodyParser.json;
     exports2.raw = bodyParser.raw;
     exports2.static = require_serve_static();
@@ -34158,13 +34158,13 @@ var import_node_http = require("node:http");
 var import_node_path4 = __toESM(require("node:path"), 1);
 var import_node_fs2 = require("node:fs");
 var import_promises3 = require("node:fs/promises");
-var import_node_crypto5 = require("node:crypto");
-var import_express6 = __toESM(require_express2(), 1);
+var import_node_crypto6 = require("node:crypto");
+var import_express7 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
 // src/routes/index.ts
-var import_express5 = __toESM(require_express2(), 1);
+var import_express6 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_promises = require("node:fs/promises");
@@ -53897,6 +53897,22 @@ var GetPublicObjectParams = object({
   "filePath": coerce_exports.string().describe("Relative path within the configured public object search paths.")
 });
 var GetPublicObjectResponse = unknown();
+var GetSecurityTelemetryConfigResponse = object({
+  "enabled": boolean2()
+});
+var recordSecurityTelemetryEventBodyPageMax = 200;
+var recordSecurityTelemetryEventBodyTargetMax = 80;
+var RecordSecurityTelemetryEventBody = object({
+  "kind": _enum2(["page_view", "click", "form_submit"]),
+  "page": string2().max(recordSecurityTelemetryEventBodyPageMax),
+  "target": string2().max(recordSecurityTelemetryEventBodyTargetMax).optional()
+});
+var RecordSecurityTelemetryEventResponse = _void2();
+var ReceiveTelegramSecurityUpdateHeader = object({
+  "X-Telegram-Bot-Api-Secret-Token": string2().describe("Secret token configured with Telegram setWebhook; never expose it in a URL or log.")
+});
+var ReceiveTelegramSecurityUpdateBody = record(string2(), unknown());
+var ReceiveTelegramSecurityUpdateResponse = unknown();
 
 // src/routes/health.ts
 var router = (0, import_express.Router)();
@@ -61025,7 +61041,8 @@ __export(schema_exports, {
   legalSections: () => legalSections,
   newsletterCampaigns: () => newsletterCampaigns,
   newsletterSubscribers: () => newsletterSubscribers,
-  rateLimitBuckets: () => rateLimitBuckets
+  rateLimitBuckets: () => rateLimitBuckets,
+  securityIpBlocks: () => securityIpBlocks
 });
 
 // ../../lib/db/src/schema/landing.ts
@@ -61369,6 +61386,13 @@ var newsletterCampaigns = pgTable(
     ...timestamps
   }
 );
+
+// ../../lib/db/src/schema/security.ts
+var securityIpBlocks = pgTable("security_ip_blocks", {
+  ipAddress: varchar("ip_address", { length: 45 }).primaryKey(),
+  blockedByTelegramUserId: varchar("blocked_by_telegram_user_id", { length: 32 }).notNull(),
+  blockedAt: timestamp("blocked_at", { withTimezone: true }).notNull().defaultNow()
+});
 
 // ../../lib/db/src/index.ts
 var { Pool: Pool3 } = esm_default;
@@ -63657,13 +63681,12 @@ router4.get(
 );
 var storage_default = router4;
 
-// src/routes/index.ts
-var router5 = (0, import_express5.Router)();
-router5.use(health_default);
-router5.use(landing_default);
-router5.use(adminAuth_default);
-router5.use(storage_default);
-var routes_default = router5;
+// src/routes/security.ts
+var import_express5 = __toESM(require_express2(), 1);
+
+// src/lib/telegramAudit.ts
+var import_node_net = require("node:net");
+var import_node_crypto5 = require("node:crypto");
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -63713,6 +63736,419 @@ var logger = (0, import_pino.default)({
   }
 });
 
+// src/lib/telegramAudit.ts
+var IP_BLOCKS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS security_ip_blocks (
+  ip_address varchar(45) PRIMARY KEY,
+  blocked_by_telegram_user_id varchar(32) NOT NULL,
+  blocked_at timestamptz NOT NULL DEFAULT now()
+)`;
+var MAX_QUEUED_EVENTS = 240;
+var MAX_BATCH_EVENTS = 12;
+var MAX_TELEGRAM_MESSAGE_LENGTH = 3500;
+var BATCH_DELAY_MS = 5e3;
+var queue = [];
+var recentlyReported = /* @__PURE__ */ new Map();
+var droppedEvents = 0;
+var flushTimer;
+var ipBlockStoreReady = false;
+var telegramWebhookReady = false;
+function normalizeIpAddress(value) {
+  const trimmed = value.trim().replace(/^\[|\]$/g, "");
+  const mappedIpv4 = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(trimmed)?.[1];
+  const ip = mappedIpv4 ?? trimmed;
+  return (0, import_node_net.isIP)(ip) ? ip.toLowerCase() : null;
+}
+function isPublicClientIp(value) {
+  if (!value) return false;
+  const ip = normalizeIpAddress(value);
+  if (!ip) return false;
+  if ((0, import_node_net.isIP)(ip) === 4) {
+    const octets = ip.split(".").map(Number);
+    const [first, second] = octets;
+    if (first === 0 || first === 10 || first === 127 || first === 169 && second === 254 || first === 172 && second >= 16 && second <= 31 || first === 192 && second === 168 || first === 100 && second >= 64 && second <= 127 || first === 192 && second === 0 && octets[2] === 0 || first === 192 && second === 0 && octets[2] === 2 || first === 192 && second === 88 && octets[2] === 99 || first === 198 && (second === 18 || second === 19) || first === 198 && second === 51 && octets[2] === 100 || first === 203 && second === 0 && octets[2] === 113 || first >= 224) {
+      return false;
+    }
+    return true;
+  }
+  if (ip.startsWith("::ffff:")) {
+    return isPublicClientIp(ip.slice("::ffff:".length));
+  }
+  return ip !== "::" && ip !== "::1" && !/^2001:db8:/i.test(ip) && !/^f[cd]/i.test(ip) && !/^fe[89ab]/i.test(ip) && !/^ff/i.test(ip);
+}
+function normalizePublicIp(value) {
+  const normalized = normalizeIpAddress(value);
+  return normalized && isPublicClientIp(normalized) ? normalized : null;
+}
+function readTelegramConfig(env = process.env) {
+  if (env.TELEGRAM_AUDIT_ENABLED?.trim().toLowerCase() !== "true") return null;
+  const missing = [
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_CHAT_ID",
+    "TELEGRAM_WEBHOOK_SECRET",
+    "TELEGRAM_ADMIN_USER_IDS"
+  ].filter((name) => !env[name]?.trim());
+  if (missing.length > 0) {
+    throw new Error(`Telegram audit is enabled but required settings are missing: ${missing.join(", ")}`);
+  }
+  const botToken = env.TELEGRAM_BOT_TOKEN.trim();
+  const chatId = env.TELEGRAM_CHAT_ID.trim();
+  const webhookSecret = env.TELEGRAM_WEBHOOK_SECRET.trim();
+  const adminUserIds = new Set(
+    env.TELEGRAM_ADMIN_USER_IDS.split(",").map((id) => id.trim()).filter(Boolean)
+  );
+  if (!/^\d+:[A-Za-z0-9_-]{20,}$/.test(botToken)) {
+    throw new Error("TELEGRAM_BOT_TOKEN has an invalid format.");
+  }
+  if (!/^-?\d+$/.test(chatId)) {
+    throw new Error("TELEGRAM_CHAT_ID must be a numeric Telegram chat ID.");
+  }
+  if (!/^[A-Za-z0-9_-]{1,256}$/.test(webhookSecret)) {
+    throw new Error("TELEGRAM_WEBHOOK_SECRET must contain only letters, numbers, underscores, or hyphens.");
+  }
+  if (adminUserIds.size === 0 || [...adminUserIds].some((id) => !/^\d{1,20}$/.test(id))) {
+    throw new Error("TELEGRAM_ADMIN_USER_IDS must contain comma-separated numeric Telegram user IDs.");
+  }
+  return { botToken, chatId, webhookSecret, adminUserIds };
+}
+function isTelegramWebhookAuthorized(suppliedSecret, expectedSecret) {
+  if (!suppliedSecret || suppliedSecret.length !== expectedSecret.length) return false;
+  return (0, import_node_crypto5.timingSafeEqual)(Buffer.from(suppliedSecret), Buffer.from(expectedSecret));
+}
+function isAuthorizedTelegramAdmin(userId, chatId, config2) {
+  return config2.chatId === chatId && config2.adminUserIds.has(userId);
+}
+function safePublicPagePath(value) {
+  if (typeof value !== "string" || value.length > 200) return null;
+  if (!value.startsWith("/") || value.startsWith("//") || /[\u0000-\u001f\\]/.test(value)) return null;
+  const path5 = value.split(/[?#]/, 1)[0] || "/";
+  if (path5 === "/api" || path5.startsWith("/api/") || /(^|\/)(?:panel|admin)(?:\/|$)/i.test(path5)) {
+    return null;
+  }
+  return path5.replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,36}(?=\/|$)/gi, "/[id]").replace(/\/[^/]*@[^/]*(?=\/|$)/g, "/[redacted]").replace(/\/\+?\d[\d(). -]{6,}(?=\/|$)/g, "/[redacted]").replace(/\/[a-zA-Z0-9._~-]{24,}(?=\/|$)/g, "/[redacted]").replace(/\/\d{4,}(?=\/|$)/g, "/[id]");
+}
+function safeSecurityRequestPath(value) {
+  if (typeof value !== "string" || value.length > 300) return null;
+  if (!value.startsWith("/") || value.startsWith("//") || /[\u0000-\u001f\\]/.test(value)) return null;
+  const path5 = value.split(/[?#]/, 1)[0] || "/";
+  if (/^\/api\/admin(?:\/|$)/i.test(path5)) return "/api/admin/[redacted]";
+  if (/(^|\/)panel(?:\/|$)/i.test(path5)) return "/panel/[redacted]";
+  return path5.replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,36}(?=\/|$)/gi, "/[id]").replace(/\/[^/]*@[^/]*(?=\/|$)/g, "/[redacted]").replace(/\/\+?\d[\d(). -]{6,}(?=\/|$)/g, "/[redacted]").replace(/\/[a-zA-Z0-9._~-]{24,}(?=\/|$)/g, "/[redacted]").replace(/\/\d{4,}(?=\/|$)/g, "/[id]");
+}
+function safeActivityTarget(value) {
+  if (typeof value !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(value)) return void 0;
+  return value;
+}
+async function initializeIpBlockStore() {
+  try {
+    await pool.query(IP_BLOCKS_TABLE_SQL);
+    ipBlockStoreReady = true;
+  } catch (error62) {
+    ipBlockStoreReady = false;
+    throw error62;
+  }
+}
+function isIpBlockStoreReady() {
+  return ipBlockStoreReady;
+}
+function isTelegramWebhookReady() {
+  return telegramWebhookReady;
+}
+async function isIpBlocked(ipAddress) {
+  const result = await pool.query(
+    "SELECT 1 FROM security_ip_blocks WHERE ip_address = $1 LIMIT 1",
+    [ipAddress]
+  );
+  return result.rowCount === 1;
+}
+async function setIpBlocked(ipAddress, telegramUserId, blocked) {
+  if (blocked) {
+    await pool.query(
+      `INSERT INTO security_ip_blocks (ip_address, blocked_by_telegram_user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (ip_address) DO NOTHING`,
+      [ipAddress, telegramUserId]
+    );
+    return;
+  }
+  await pool.query("DELETE FROM security_ip_blocks WHERE ip_address = $1", [ipAddress]);
+}
+async function callTelegramApi(method, payload, config2, request = fetch) {
+  try {
+    const response = await request(
+      `https://api.telegram.org/bot${config2.botToken}/${method}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(5e3)
+      }
+    );
+    if (!response.ok) {
+      logger.warn({ statusCode: response.status, method }, "Telegram API request failed");
+      return false;
+    }
+    const result = await response.json();
+    if (result.ok !== true) {
+      logger.warn({ method }, "Telegram API rejected a request");
+      return false;
+    }
+    return true;
+  } catch {
+    logger.warn({ method }, "Telegram API request could not be completed");
+    return false;
+  }
+}
+function scheduleFlush() {
+  if (flushTimer) return;
+  flushTimer = setTimeout(() => {
+    flushTimer = void 0;
+    void flushAuditQueue();
+  }, BATCH_DELAY_MS);
+  flushTimer.unref();
+}
+function enqueueAuditEvent(event) {
+  try {
+    if (!readTelegramConfig()) return;
+  } catch (error62) {
+    logger.error({ err: error62 }, "Telegram audit configuration is invalid");
+    return;
+  }
+  if (queue.length >= MAX_QUEUED_EVENTS) {
+    if (droppedEvents === 0) {
+      logger.warn("Telegram activity queue is full; excess events will be omitted.");
+    }
+    droppedEvents += 1;
+    return;
+  }
+  queue.push(event);
+  scheduleFlush();
+}
+function eventLine(event) {
+  const parts = [
+    event.kind === "security" ? "Alerte s\xE9curit\xE9" : event.kind,
+    event.page,
+    event.target ? `action=${event.target}` : "",
+    event.status ? `HTTP ${event.status}` : "",
+    event.ip ? `IP ${event.ip}` : "IP indisponible via le proxy"
+  ].filter(Boolean);
+  return parts.join(" \xB7 ").slice(0, 220);
+}
+async function flushAuditQueue() {
+  let config2;
+  try {
+    config2 = readTelegramConfig();
+  } catch (error62) {
+    logger.error({ err: error62 }, "Telegram audit configuration is invalid");
+    return;
+  }
+  if (!config2 || queue.length === 0) return;
+  const batch = queue.splice(0, MAX_BATCH_EVENTS);
+  const droppedAtFlush = droppedEvents;
+  const lines = [];
+  let messageLength = 0;
+  for (const event of batch) {
+    const line2 = eventLine(event);
+    if (messageLength + line2.length + 1 > MAX_TELEGRAM_MESSAGE_LENGTH) break;
+    lines.push(line2);
+    messageLength += line2.length + 1;
+  }
+  const omitted = batch.length - lines.length + droppedAtFlush;
+  if (omitted > 0) lines.push(`\xC9v\xE9nements non affich\xE9s dans ce lot : ${omitted}`);
+  const ips = isIpBlockStoreReady() && isTelegramWebhookReady() ? [...new Set(batch.map((event) => event.ip).filter((ip) => Boolean(ip)))].slice(0, 12) : [];
+  const replyMarkup = {
+    inline_keyboard: ips.map((ip) => [
+      { text: `Bloquer ${ip}`.slice(0, 64), callback_data: `block:${ip}` }
+    ])
+  };
+  const sent = await callTelegramApi(
+    "sendMessage",
+    {
+      chat_id: config2.chatId,
+      text: `SendFlow \xB7 activit\xE9 r\xE9cente
+${lines.join("\n")}`.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
+      ...ips.length > 0 ? { reply_markup: replyMarkup } : {},
+      disable_web_page_preview: true
+    },
+    config2
+  );
+  if (sent) {
+    droppedEvents = Math.max(0, droppedEvents - droppedAtFlush);
+  } else {
+    for (const event of batch.reverse()) {
+      if (queue.length < MAX_QUEUED_EVENTS) queue.unshift(event);
+      else droppedEvents += 1;
+    }
+  }
+  if (queue.length > 0) scheduleFlush();
+}
+function notifySecurityEvent(event) {
+  const key = `${event.status ?? 0}:${event.ip ?? "unknown"}:${event.page}`;
+  const now = Date.now();
+  const lastReported = recentlyReported.get(key);
+  if (lastReported && now - lastReported < 6e4) return;
+  recentlyReported.set(key, now);
+  if (recentlyReported.size > 2e3) {
+    for (const [entryKey, reportedAt] of recentlyReported) {
+      if (now - reportedAt >= 6e4) recentlyReported.delete(entryKey);
+    }
+    while (recentlyReported.size > 2e3) {
+      const oldestKey = recentlyReported.keys().next().value;
+      if (oldestKey === void 0) break;
+      recentlyReported.delete(oldestKey);
+    }
+  }
+  enqueueAuditEvent({ ...event, kind: "security" });
+}
+function parseCallback(data) {
+  if (typeof data !== "string") return null;
+  const match = /^(block|unblock):(.{1,45})$/.exec(data);
+  if (!match) return null;
+  const ipAddress = normalizePublicIp(match[2]);
+  if (!ipAddress) return null;
+  return { blocked: match[1] === "block", ipAddress };
+}
+async function handleTelegramUpdate(update) {
+  const config2 = readTelegramConfig();
+  if (!config2 || typeof update !== "object" || update === null) return "ignored";
+  const callback = update.callback_query;
+  if (typeof callback !== "object" || callback === null) return "ignored";
+  const query = callback;
+  const callbackId = typeof query.id === "string" ? query.id : "";
+  const userId = typeof query.from?.id === "number" ? String(query.from.id) : "";
+  const callbackChatId = typeof query.message?.chat?.id === "number" || typeof query.message?.chat?.id === "string" ? String(query.message.chat.id) : "";
+  const action = parseCallback(query.data);
+  if (!callbackId || !action || !isAuthorizedTelegramAdmin(userId, callbackChatId, config2)) {
+    if (callbackId) {
+      await callTelegramApi("answerCallbackQuery", {
+        callback_query_id: callbackId,
+        text: "Action non autoris\xE9e.",
+        show_alert: true
+      }, config2);
+    }
+    return "ignored";
+  }
+  await setIpBlocked(action.ipAddress, userId, action.blocked);
+  const actionLabel = action.blocked ? "bloqu\xE9e" : "d\xE9bloqu\xE9e";
+  await callTelegramApi("answerCallbackQuery", {
+    callback_query_id: callbackId,
+    text: `Adresse IP ${actionLabel}.`
+  }, config2);
+  await callTelegramApi("sendMessage", {
+    chat_id: config2.chatId,
+    text: `SendFlow \xB7 IP ${action.ipAddress} ${actionLabel} par un administrateur autoris\xE9. Le blocage s\u2019applique aux requ\xEAtes re\xE7ues par Node.`,
+    reply_markup: {
+      inline_keyboard: [[{
+        text: action.blocked ? `D\xE9bloquer ${action.ipAddress}` : `Bloquer ${action.ipAddress}`,
+        callback_data: `${action.blocked ? "unblock" : "block"}:${action.ipAddress}`
+      }]]
+    }
+  }, config2);
+  return "handled";
+}
+async function configureTelegramWebhook() {
+  const config2 = readTelegramConfig();
+  if (!config2) return false;
+  const baseUrl = process.env.PUBLIC_SITE_URL?.trim();
+  if (!baseUrl) throw new Error("PUBLIC_SITE_URL is required to configure the Telegram webhook.");
+  const parsed = new URL(baseUrl);
+  if (parsed.protocol !== "https:") {
+    throw new Error("PUBLIC_SITE_URL must use HTTPS to configure the Telegram webhook.");
+  }
+  const webhookUrl = new URL("/api/security/telegram/webhook", parsed.origin).toString();
+  const registered = await callTelegramApi("setWebhook", {
+    url: webhookUrl,
+    secret_token: config2.webhookSecret,
+    allowed_updates: ["callback_query"]
+  }, config2);
+  telegramWebhookReady = registered;
+  return registered;
+}
+
+// src/routes/security.ts
+var router5 = (0, import_express5.Router)();
+var eventLimiter = createRateLimiter({
+  windowMs: 6e4,
+  max: 120,
+  message: "Trop d\u2019\xE9v\xE9nements envoy\xE9s. R\xE9essaie plus tard."
+});
+var activitySchema = RecordSecurityTelemetryEventBody.strict();
+router5.get("/security/telemetry/config", (_req, res) => {
+  try {
+    res.json({ enabled: readTelegramConfig() !== null });
+  } catch {
+    res.json({ enabled: false });
+  }
+});
+router5.post("/security/telemetry/events", eventLimiter, (req, res) => {
+  let config2;
+  try {
+    config2 = readTelegramConfig();
+  } catch {
+    res.status(503).json({ error: "La supervision n\u2019est pas configur\xE9e." });
+    return;
+  }
+  if (!config2) {
+    res.sendStatus(204);
+    return;
+  }
+  const origin = req.get("origin");
+  if (!origin || !isAllowedMutationOrigin(origin)) {
+    res.status(403).json({ error: "Origine non autoris\xE9e." });
+    return;
+  }
+  const parsed = activitySchema.safeParse(req.body);
+  const page = parsed.success ? safePublicPagePath(parsed.data.page) : null;
+  if (!parsed.success || !page) {
+    res.status(400).json({ error: "\xC9v\xE9nement invalide." });
+    return;
+  }
+  const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
+  enqueueAuditEvent({
+    kind: parsed.data.kind,
+    page,
+    ip: ipAddress,
+    ...safeActivityTarget(parsed.data.target) ? { target: safeActivityTarget(parsed.data.target) } : {}
+  });
+  res.sendStatus(202);
+});
+router5.post("/security/telegram/webhook", async (req, res) => {
+  let config2;
+  try {
+    config2 = readTelegramConfig();
+  } catch {
+    res.sendStatus(404);
+    return;
+  }
+  if (!config2) {
+    res.sendStatus(404);
+    return;
+  }
+  if (!isTelegramWebhookAuthorized(
+    req.get("x-telegram-bot-api-secret-token"),
+    config2.webhookSecret
+  )) {
+    res.sendStatus(401);
+    return;
+  }
+  try {
+    await handleTelegramUpdate(req.body);
+    res.status(200).json({ ok: true });
+  } catch (error62) {
+    req.log.error({ err: error62 }, "Telegram webhook action failed");
+    res.status(503).json({ ok: false });
+  }
+});
+var security_default = router5;
+
+// src/routes/index.ts
+var router6 = (0, import_express6.Router)();
+router6.use(health_default);
+router6.use(landing_default);
+router6.use(adminAuth_default);
+router6.use(storage_default);
+router6.use(security_default);
+var routes_default = router6;
+
 // src/middlewares/requestErrorHandler.ts
 var requestErrorHandler = (error62, req, res, next) => {
   req.log.error({ err: error62 }, "Unhandled request error");
@@ -63728,12 +64164,56 @@ var requestErrorHandler = (error62, req, res, next) => {
   res.status(500).type("text/plain").send("Internal server error");
 };
 
+// src/middlewares/ipBlock.ts
+function createIpBlockMiddleware(checkBlocked = isIpBlocked, isReady = isIpBlockStoreReady) {
+  return async (req, res, next) => {
+    let enabled = false;
+    try {
+      enabled = readTelegramConfig() !== null;
+    } catch {
+      res.status(503).json({ error: "Le contr\xF4le de s\xE9curit\xE9 est mal configur\xE9." });
+      return;
+    }
+    if (!enabled) {
+      next();
+      return;
+    }
+    if (!isReady()) {
+      next();
+      return;
+    }
+    const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
+    if (!ipAddress) {
+      next();
+      return;
+    }
+    try {
+      if (await checkBlocked(ipAddress)) {
+        res.status(403).json({ error: "Acc\xE8s refus\xE9." });
+        return;
+      }
+    } catch (error62) {
+      logger.error({ err: error62 }, "IP block list lookup failed");
+      res.status(503).json({ error: "Le contr\xF4le de s\xE9curit\xE9 est temporairement indisponible." });
+      return;
+    }
+    next();
+  };
+}
+var ipBlockMiddleware = createIpBlockMiddleware();
+
 // src/app.ts
-var app = (0, import_express6.default)();
-app.set("trust proxy", false);
+var app = (0, import_express7.default)();
+var trustedProxyAddresses = new Set(
+  (process.env.TRUSTED_PROXY_IPS ?? "").split(",").map((value) => normalizeIpAddress(value)).filter((value) => Boolean(value))
+);
+app.set("trust proxy", (address) => {
+  const normalized = normalizeIpAddress(address);
+  return normalized !== null && trustedProxyAddresses.has(normalized);
+});
 app.disable("x-powered-by");
 app.use((req, res, next) => {
-  const nonce = (0, import_node_crypto5.randomBytes)(18).toString("base64");
+  const nonce = (0, import_node_crypto6.randomBytes)(18).toString("base64");
   const recaptchaIsEnabled = readRecaptchaSettings().status === "enabled";
   const recaptchaScriptSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "";
   const recaptchaFrameSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/" : "";
@@ -63810,14 +64290,33 @@ app.use(
     }
   })
 );
+app.use((req, res, next) => {
+  res.once("finish", () => {
+    const status = res.statusCode;
+    if (status !== 401 && status !== 403 && status !== 404 && status !== 429 && status < 500) return;
+    try {
+      if (!readTelegramConfig()) return;
+      const safePath = safeSecurityRequestPath(sanitizeRequestUrl(req.url));
+      if (!safePath) return;
+      notifySecurityEvent({
+        page: safePath,
+        ip: isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null,
+        status
+      });
+    } catch {
+    }
+  });
+  next();
+});
+app.use(ipBlockMiddleware);
 app.use((0, import_cors.default)({
   credentials: true,
   origin(origin, callback) {
     callback(null, !origin || isAllowedOrigin(origin));
   }
 }));
-app.use(import_express6.default.json({ limit: "1mb" }));
-app.use(import_express6.default.urlencoded({ extended: true, limit: "100kb", parameterLimit: 100 }));
+app.use(import_express7.default.json({ limit: "1mb" }));
+app.use(import_express7.default.urlencoded({ extended: true, limit: "100kb", parameterLimit: 100 }));
 app.use("/api/admin", (_req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Pragma", "no-cache");
@@ -63835,7 +64334,7 @@ var pleskWebDistDir = import_node_path4.default.join(process.cwd(), "public");
 var workspaceWebDistDir = import_node_path4.default.join(process.cwd(), "dist", "public");
 var defaultWebDistDir = (0, import_node_fs2.existsSync)(pleskWebDistDir) ? pleskWebDistDir : workspaceWebDistDir;
 var webDistDir = import_node_path4.default.resolve(process.env.WEB_DIST_DIR ?? defaultWebDistDir);
-app.use(import_express6.default.static(webDistDir, { index: false }));
+app.use(import_express7.default.static(webDistDir, { index: false }));
 app.use((req, res, next) => {
   const isPageRequest = req.method === "GET" || req.method === "HEAD";
   const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
@@ -63897,28 +64396,54 @@ function listenForRequests(server2, rawPort, passenger2, onListening) {
 
 // src/index.ts
 var passenger = globalThis.PhusionPassenger;
-try {
-  assertApiRuntimeEnvironment(
-    passenger,
-    process.env.NODE_ENV,
-    Boolean(process.env.PLESK_MEDIA_DIR?.trim())
-  );
-  if (passenger) getPleskMediaDirectory();
-} catch (error62) {
-  logger.fatal({ err: error62 }, "API runtime configuration failed");
-  process.exit(1);
-}
 var server = (0, import_node_http.createServer)(app_default);
 server.on("error", (err) => {
   logger.error({ err }, "Error starting HTTP listener");
   process.exit(1);
 });
-listenForRequests(server, process.env.PORT, passenger, () => {
-  logger.info(
-    { transport: passenger ? "passenger" : "tcp" },
-    "Server listening"
-  );
-});
+async function startServer() {
+  try {
+    assertApiRuntimeEnvironment(
+      passenger,
+      process.env.NODE_ENV,
+      Boolean(process.env.PLESK_MEDIA_DIR?.trim())
+    );
+    if (passenger) getPleskMediaDirectory();
+    if (readTelegramConfig()) {
+      try {
+        await initializeIpBlockStore();
+      } catch (error62) {
+        logger.error(
+          { err: error62 },
+          "Telegram notifications are enabled, but persistent IP blocking is unavailable."
+        );
+      }
+      if (process.env.TELEGRAM_AUTO_CONFIGURE_WEBHOOK?.trim().toLowerCase() === "true" && isIpBlockStoreReady()) {
+        const configured = await configureTelegramWebhook();
+        if (!configured) {
+          logger.warn("Telegram webhook registration failed; bot callbacks will not arrive until configured.");
+        } else {
+          logger.info("Telegram webhook registered.");
+        }
+      } else if (process.env.TELEGRAM_AUTO_CONFIGURE_WEBHOOK?.trim().toLowerCase() === "true") {
+        logger.warn("Telegram webhook was not registered because the IP block store is unavailable.");
+      } else {
+        logger.info("Telegram notifications are enabled; webhook controls require explicit webhook configuration.");
+      }
+    }
+  } catch (error62) {
+    logger.fatal({ err: error62 }, "API runtime configuration failed");
+    process.exit(1);
+    return;
+  }
+  listenForRequests(server, process.env.PORT, passenger, () => {
+    logger.info(
+      { transport: passenger ? "passenger" : "tcp" },
+      "Server listening"
+    );
+  });
+}
+void startServer();
 /*! Bundled license information:
 
 depd/index.js:

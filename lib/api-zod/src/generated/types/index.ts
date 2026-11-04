@@ -8,3 +8,7 @@
 
 export * from './errorEnvelope';
 export * from './healthStatus';
+export * from './publicActivityInput';
+export * from './publicActivityInputKind';
+export * from './securityTelemetryConfig';
+export * from './telegramWebhookUpdateInput';

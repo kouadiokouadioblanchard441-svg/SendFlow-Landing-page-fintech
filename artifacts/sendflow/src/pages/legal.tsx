@@ -431,6 +431,7 @@ export function PrivacyPage({ supportEmail, legalEmail, legalAddress, contactPho
         <LegalBulletList>
           <li>opérateurs de mobile money, banques, établissements de paiement et prestataires qui exécutent ou vérifient l’opération ;</li>
           <li>prestataires techniques d’hébergement, de stockage, de sécurité, de messagerie, de support et de supervision ;</li>
+          <li>si la supervision est activée, Telegram peut recevoir l’adresse IP disponible, la page publique et la catégorie d’action afin d’alerter le groupe SendFlow autorisé ; les contenus des formulaires ne sont pas transmis.</li>
           <li>prestataires de vérification d’identité, de lutte contre la fraude et de conformité ;</li>
           <li>conseils professionnels, auditeurs et assureurs soumis à une obligation de confidentialité ;</li>
           <li>autorités administratives, judiciaires ou réglementaires lorsqu’une demande légale l’exige.</li>

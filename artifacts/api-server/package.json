@@ -18,7 +18,8 @@
     "test:newsletter": "tsx --test scripts/newsletter.test.ts",
     "test:landing-visibility": "tsx --test scripts/landing-visibility.test.ts",
     "test:public-storage": "tsx --test scripts/public-object-storage.test.ts",
-    "test:origin-security": "tsx --test scripts/origin-security.test.ts"
+    "test:origin-security": "tsx --test scripts/origin-security.test.ts",
+    "test:telegram-audit": "tsx --test scripts/telegram-audit.test.ts scripts/ip-block.test.ts scripts/security-router.test.ts"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

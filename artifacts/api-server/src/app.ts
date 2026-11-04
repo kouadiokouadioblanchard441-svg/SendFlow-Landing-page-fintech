@@ -10,9 +10,27 @@ import { logger, sanitizeRequestUrl, serializeSafeError } from "./lib/logger";
 import { readRecaptchaSettings } from "./lib/recaptcha";
 import { isAllowedOrigin } from "./middlewares/security";
 import { requestErrorHandler } from "./middlewares/requestErrorHandler";
+import { ipBlockMiddleware } from "./middlewares/ipBlock";
+import {
+  isPublicClientIp,
+  normalizePublicIp,
+  normalizeIpAddress,
+  notifySecurityEvent,
+  readTelegramConfig,
+  safeSecurityRequestPath,
+} from "./lib/telegramAudit";
 
 const app: Express = express();
-app.set("trust proxy", false);
+const trustedProxyAddresses = new Set(
+  (process.env.TRUSTED_PROXY_IPS ?? "")
+    .split(",")
+    .map((value) => normalizeIpAddress(value))
+    .filter((value): value is string => Boolean(value)),
+);
+app.set("trust proxy", (address: string) => {
+  const normalized = normalizeIpAddress(address);
+  return normalized !== null && trustedProxyAddresses.has(normalized);
+});
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   const nonce = randomBytes(18).toString("base64");
@@ -103,6 +121,26 @@ app.use(
     },
   }),
 );
+app.use((req, res, next) => {
+  res.once("finish", () => {
+    const status = res.statusCode;
+    if (status !== 401 && status !== 403 && status !== 404 && status !== 429 && status < 500) return;
+    try {
+      if (!readTelegramConfig()) return;
+      const safePath = safeSecurityRequestPath(sanitizeRequestUrl(req.url));
+      if (!safePath) return;
+      notifySecurityEvent({
+        page: safePath,
+        ip: isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null,
+        status,
+      });
+    } catch {
+      // Monitoring configuration must never cause an otherwise valid request to fail.
+    }
+  });
+  next();
+});
+app.use(ipBlockMiddleware);
 app.use(cors({
   credentials: true,
   origin(origin, callback) {

@@ -14,3 +14,26 @@ export interface ErrorEnvelope {
   error: string;
 }
 
+export interface SecurityTelemetryConfig {
+  enabled: boolean;
+}
+
+export type PublicActivityInputKind = typeof PublicActivityInputKind[keyof typeof PublicActivityInputKind];
+
+
+export const PublicActivityInputKind = {
+  page_view: 'page_view',
+  click: 'click',
+  form_submit: 'form_submit',
+} as const;
+
+export interface PublicActivityInput {
+  kind: PublicActivityInputKind;
+  /** @maxLength 200 */
+  page: string;
+  /** @maxLength 80 */
+  target?: string;
+}
+
+export interface TelegramWebhookUpdateInput { [key: string]: unknown }
+

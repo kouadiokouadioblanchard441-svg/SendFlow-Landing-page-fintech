@@ -11,6 +11,7 @@
     "test:landing-countries": "tsx --test scripts/landing-countries.test.ts",
     "test:localized-routes": "tsx --test scripts/localized-routes.test.ts",
     "test:contact": "tsx --test scripts/contact.test.ts",
+    "test:public-activity": "tsx --test scripts/public-activity.test.ts",
     "test:browser-smoke": "node scripts/browser-smoke.mjs",
     "test:loading-animation": "tsx --test scripts/loading-animation.test.ts",
     "test:seo": "tsx --test scripts/seo-documents.test.ts && node --check scripts/verify-public-seo.ts",

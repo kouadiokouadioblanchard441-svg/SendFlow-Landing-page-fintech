@@ -8,6 +8,7 @@
 - [SendFlow motion and appearance](landing-appearance-approval.md) — Keep layout intact unless requested; page transitions should feel polished and directional.
 - [Découvrir page style](discover-page-style.md) — Match the privacy-policy reference and keep the five long-form sections fully localized, 1,000+ words in French and English.
 - [Server-side input validation](server-input-validation.md) — Treat every browser-provided value as untrusted and validate it at the API boundary before storage or use.
+- [Telegram monitoring and IP blocks](telegram-monitoring.md) — Keep Telegram credentials in Plesk Node environment; IP bans cover Node requests only and require verified proxy trust.
 - [Newsletter campaign retries](newsletter-campaign-retries.md) — Keep failed sends read-only until per-recipient delivery tracking can prevent accidental duplicate campaigns.
 - [Empty CMS collections](empty-cms-collections.md) — A loaded empty public collection is authoritative; never resurrect defaults just because its length is zero.
 - [Admin content editability](admin-content-editability.md) — The user requires all SendFlow site information to be editable in the admin panel, with nothing hardcoded.
