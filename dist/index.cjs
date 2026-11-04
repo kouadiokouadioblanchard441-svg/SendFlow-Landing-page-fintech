@@ -28539,7 +28539,7 @@ var require_pino = __commonJS({
     function pinoBundlerAbsolutePath(p) {
       try {
         const path5 = require("path");
-        const outputDir = "/home/runner/work/SendFlow-Landing-page-fintech/SendFlow-Landing-page-fintech/artifacts/api-server/dist";
+        const outputDir = "/home/runner/workspace/artifacts/api-server/dist";
         return path5.resolve(outputDir, p.replace(/^\.\//, ""));
       } catch (e) {
         const f = new Function("p", "return new URL(p, import.meta.url).pathname");
@@ -61797,6 +61797,8 @@ async function openPleskPublicObject({
 }
 
 // src/lib/landingVisibility.ts
+var DEFAULT_HOME_CONTACT_WHATSAPP = "+2250758427823";
+var DEFAULT_WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbDYGGEHwXb3jv0Oyg2T";
 var publicFields = {
   media: ["id", "slug", "kind", "sourcePath", "storagePath", "publicUrl", "mimeType", "altFr", "altEn", "width", "height", "isVisible"],
   content: ["id", "contentKey", "locale", "group", "contentType", "value", "orderIndex", "isVisible"],
@@ -61880,6 +61882,16 @@ function projectPublicFields(row, fields) {
 function visibleRows(rows, fields) {
   return rows.filter((row) => row.isVisible === true).map((row) => projectPublicFields(row, fields));
 }
+function publicSettingsRow(settings) {
+  const publicSettings = settings ? projectPublicFields(settings, publicFields.settings) : {};
+  if (typeof publicSettings.homeContactWhatsapp !== "string") {
+    publicSettings.homeContactWhatsapp = DEFAULT_HOME_CONTACT_WHATSAPP;
+  }
+  if (typeof publicSettings.whatsappUrl !== "string") {
+    publicSettings.whatsappUrl = DEFAULT_WHATSAPP_CHANNEL_URL;
+  }
+  return publicSettings;
+}
 function filterPublicLandingBundle(bundle) {
   const media = visibleRows(bundle.media, publicFields.media);
   const content = visibleRows(bundle.content, publicFields.content);
@@ -61907,7 +61919,7 @@ function filterPublicLandingBundle(bundle) {
     legalPages: legalPages2,
     legalSections: bundle.legalSections.filter((section) => legalPageIds.has(section.pageId)).map((section) => projectPublicFields(section, publicFields.legalSections)),
     founder: bundle.founder?.isVisible === true ? projectPublicFields(bundle.founder, publicFields.founder) : null,
-    settings: bundle.settings ? projectPublicFields(bundle.settings, publicFields.settings) : null
+    settings: publicSettingsRow(bundle.settings)
   };
 }
 
