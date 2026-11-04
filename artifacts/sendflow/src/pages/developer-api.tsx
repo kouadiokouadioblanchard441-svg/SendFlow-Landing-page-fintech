@@ -7,6 +7,7 @@ import { SendFlowFooter, type FooterContentItem, type FooterSettings } from '@/c
 import { usePublicMobileMenu } from '@/hooks/use-public-mobile-menu';
 import { developerApiExample } from '@/lib/developer-api-example';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
+import { DOCUMENTATION_CTA_URL_KEY, getHttpsUrl } from '@/lib/registration-cta';
 import { useSeo } from '@/lib/seo';
 import publicSeoRoutes from '@/lib/public-seo-routes.json';
 import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
@@ -27,9 +28,10 @@ const copy = {
     page: 'API développeur',
     menuOpen: 'Ouvrir le menu',
     menuClose: 'Fermer le menu',
-    eyebrow: 'Espace développeur',
-    title: 'API développeur SendFlow pour les paiements Mobile Money.',
-    intro: 'Découvrez le point d’entrée de paiement SendFlow et consultez un exemple de requête publié, dans un format pensé pour une première lecture technique.',
+    eyebrow: 'Documentation de l’API de paiement',
+    title: 'Documentation de l’API de paiement Mobile Money',
+    intro: 'Consultez les informations publiques de l’API de paiement SendFlow : méthode HTTP, point d’entrée publié et exemple de requête JSON. Cette page ne décrit ni les méthodes d’authentification ni les formats de réponse.',
+    documentationCta: 'Ouvrir la documentation complète de l’API',
     integration: 'Point d’entrée',
     method: 'Méthode HTTP',
     endpoint: 'Paiement entrant',
@@ -59,9 +61,10 @@ const copy = {
     page: 'Developer API',
     menuOpen: 'Open menu',
     menuClose: 'Close menu',
-    eyebrow: 'Developer resources',
-    title: 'SendFlow Developer API for Mobile Money payments.',
-    intro: 'Explore the SendFlow payment entry point and review a published request example, presented for a clear first technical read.',
+    eyebrow: 'Payment API documentation',
+    title: 'Mobile Money Payment API Documentation',
+    intro: 'Review the public SendFlow payment API details: HTTP method, published entry point and JSON request example. Authentication methods and response formats are not documented on this page.',
+    documentationCta: 'Open the full API documentation',
     integration: 'Entry point',
     method: 'HTTP method',
     endpoint: 'Pay-in',
@@ -145,6 +148,9 @@ export default function DeveloperApiPage() {
   const [countriesLoading, setCountriesLoading] = useState(true);
   usePublicMobileMenu(menuOpen, setMenuOpen);
   const t = copy[language];
+  const documentationHref = getHttpsUrl(content.find((item) =>
+    item.contentKey === DOCUMENTATION_CTA_URL_KEY && item.locale === 'fr' && item.isVisible,
+  )?.value);
 
   useSeo({
     path: '/api-developpeur',
@@ -266,6 +272,17 @@ export default function DeveloperApiPage() {
               <p className="mt-7 max-w-[610px] text-base font-medium leading-7 text-[#586575] sm:text-lg sm:leading-8">
                 {contentValue(content, 'developer.page.intro', language, t.intro)}
               </p>
+              {documentationHref && (
+                <a
+                  href={documentationHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#4c0fa8] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_20px_rgba(76,15,168,.18)] transition-colors hover:bg-[#3c0c86] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d35d8]"
+                >
+                  {t.documentationCta}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </a>
+              )}
               <div className="mt-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[.12em] text-[#647184]">
                 <span className="grid h-8 w-8 place-items-center rounded-full border border-[#1769ff]/15 bg-[#f3f7ff] text-[#1769ff]">01</span>
                 <span>{t.integration}</span>

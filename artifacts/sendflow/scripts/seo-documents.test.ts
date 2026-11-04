@@ -6,7 +6,7 @@ import { absoluteSeoUrl, renderSeoDocuments } from './seo-documents.ts';
 import { getLocaleFromPath, getLocalizedAlternates, getLocalizedPath } from '../src/lib/localized-routes.ts';
 
 const root = new URL('../', import.meta.url);
-const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource, pricingPageSource, appSource, feeCardsSource, feeLogosSource] = await Promise.all(
+const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource, pricingPageSource, appSource, feeCardsSource, feeLogosSource, developerApiPageSource] = await Promise.all(
   [
     'index.html',
     'public/sitemap.xml',
@@ -18,6 +18,7 @@ const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource, pricingPageSo
     'src/App.tsx',
     'src/components/OperatorFeesSection.tsx',
     'src/lib/operator-fee-logos.ts',
+    'src/pages/developer-api.tsx',
   ].map((file) => fs.readFile(new URL(file, root), 'utf8')),
 );
 const publicSeoRoutes = JSON.parse(routeSeoJson);
@@ -81,6 +82,30 @@ test('home and feature SEO target developer payments in both languages', () => {
   assert.ok(sitemap.includes('<loc>/en/developer-api</loc>'));
   assert.ok(sitemap.includes('<loc>/tarifs</loc>'));
   assert.ok(sitemap.includes('<loc>/en/pricing</loc>'));
+});
+
+test('developer API SEO targets payment documentation and links to the configured docs site', () => {
+  const { fr, en, service } = publicSeoRoutes.developerApi;
+
+  assert.equal(fr.path, '/api-developpeur');
+  assert.equal(fr.name, 'Documentation de l’API de paiement Mobile Money');
+  assert.equal(fr.title, 'Documentation de l’API de paiement Mobile Money | SendFlow');
+  assert.ok(fr.title.length >= 50 && fr.title.length <= 60);
+  assert.match(fr.description, /documentation de l’API de paiement/i);
+  assert.match(fr.description, /exemple JSON/i);
+
+  assert.equal(en.path, '/en/developer-api');
+  assert.equal(en.name, 'Mobile Money Payment API Documentation');
+  assert.equal(en.title, 'Mobile Money Payment API Documentation | SendFlow Africa');
+  assert.match(en.description, /payment API documentation/i);
+
+  assert.match(developerApiPageSource, /DOCUMENTATION_CTA_URL_KEY/);
+  assert.match(developerApiPageSource, /getHttpsUrl/);
+  assert.match(developerApiPageSource, /target="_blank"/);
+  assert.match(developerApiPageSource, /rel="noopener noreferrer"/);
+  assert.match(developerApiPageSource, /Documentation de l’API de paiement Mobile Money/);
+  assert.equal(service.fr.serviceType, 'Documentation de l’API de paiement Mobile Money');
+  assert.equal(service.en.serviceType, 'Mobile Money payment API documentation');
 });
 
 test('the pricing page reuses the home fee cards and published fee data', () => {

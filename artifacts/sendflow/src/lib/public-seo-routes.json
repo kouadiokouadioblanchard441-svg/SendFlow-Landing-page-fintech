@@ -50,24 +50,24 @@
   "developerApi": {
     "fr": {
       "path": "/api-developpeur",
-      "name": "API développeur",
-      "title": "API développeur SendFlow | Paiements Mobile Money",
-      "description": "Intégrez les paiements Mobile Money avec l’API SendFlow. Consultez un exemple de requête confirmé et découvrez les pays actuellement publiés."
+      "name": "Documentation de l’API de paiement Mobile Money",
+      "title": "Documentation de l’API de paiement Mobile Money | SendFlow",
+      "description": "Documentation de l’API de paiement SendFlow pour développeurs : méthode HTTP, point d’entrée publié et exemple JSON. Consultez les pays affichés sur le site."
     },
     "en": {
       "path": "/en/developer-api",
-      "name": "Developer API",
-      "title": "Developer API | SendFlow Mobile Money Payments",
-      "description": "Integrate Mobile Money payments with the SendFlow API. Review a confirmed request example and explore the countries currently published."
+      "name": "Mobile Money Payment API Documentation",
+      "title": "Mobile Money Payment API Documentation | SendFlow Africa",
+      "description": "SendFlow payment API documentation for developers: HTTP method, published entry point and JSON request example. Check the countries listed on this site."
     },
     "service": {
       "fr": {
-        "name": "API développeur SendFlow",
-        "serviceType": "API de paiement Mobile Money"
+        "name": "Documentation de l’API de paiement SendFlow",
+        "serviceType": "Documentation de l’API de paiement Mobile Money"
       },
       "en": {
-        "name": "SendFlow developer API",
-        "serviceType": "Mobile Money payment API"
+        "name": "SendFlow payment API documentation",
+        "serviceType": "Mobile Money payment API documentation"
       }
     }
   },
