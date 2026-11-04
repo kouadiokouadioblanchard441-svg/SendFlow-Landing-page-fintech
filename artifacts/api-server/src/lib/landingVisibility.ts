@@ -1,6 +1,8 @@
 type VisibleRow = { isVisible?: unknown; [key: string]: unknown };
 type PublicRow = Record<string, unknown>;
 
+const DEFAULT_HOME_CONTACT_WHATSAPP = "+2250758427823";
+
 export type LandingVisibilityBundle = {
   media: Array<VisibleRow>;
   content: Array<VisibleRow>;
@@ -75,6 +77,21 @@ function visibleRows(rows: VisibleRow[], fields: readonly string[]): PublicRow[]
     .map((row) => projectPublicFields(row, fields));
 }
 
+function publicSettingsRow(settings: Record<string, unknown> | null): PublicRow {
+  const publicSettings = settings
+    ? projectPublicFields(settings, publicFields.settings)
+    : {};
+
+  // The WhatsApp contact is public configuration; keep it available when the
+  // existing database row has a null value, while allowing an explicit blank
+  // value from the admin panel to disable the channel.
+  if (typeof publicSettings.homeContactWhatsapp !== "string") {
+    publicSettings.homeContactWhatsapp = DEFAULT_HOME_CONTACT_WHATSAPP;
+  }
+
+  return publicSettings;
+}
+
 export function filterPublicLandingBundle(bundle: LandingVisibilityBundle): PublicLandingBundle {
   const media = visibleRows(bundle.media, publicFields.media);
   const content = visibleRows(bundle.content, publicFields.content);
@@ -110,8 +127,6 @@ export function filterPublicLandingBundle(bundle: LandingVisibilityBundle): Publ
     founder: bundle.founder?.isVisible === true
       ? projectPublicFields(bundle.founder, publicFields.founder)
       : null,
-    settings: bundle.settings
-      ? projectPublicFields(bundle.settings, publicFields.settings)
-      : null,
+    settings: publicSettingsRow(bundle.settings),
   };
 }

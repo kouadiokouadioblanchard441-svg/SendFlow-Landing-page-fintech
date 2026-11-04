@@ -793,6 +793,8 @@ function FounderEditor({
   );
 }
 
+const DEFAULT_HOME_CONTACT_WHATSAPP = '+2250758427823';
+
 const siteSettingsDefaults: Record<string, Primitive> = {
   supportEmail: '',
   supportPhone: '',
@@ -803,7 +805,7 @@ const siteSettingsDefaults: Record<string, Primitive> = {
   whatsappUrl: '',
   homeContactEmail: '',
   homeContactPhone: '',
-  homeContactWhatsapp: '',
+  homeContactWhatsapp: DEFAULT_HOME_CONTACT_WHATSAPP,
   featuresContactEmail: '',
   featuresContactPhone: '',
   featuresContactWhatsapp: '',
@@ -871,17 +873,20 @@ function SiteSettingsEditor({
   saving: boolean;
   onSave: (values: Record<string, Primitive>) => void;
 }) {
-  const [values, setValues] = useState<Record<string, Primitive>>(() => ({
-    ...siteSettingsDefaults,
-    ...(bundle.settings ?? {}),
-    ...ctaValues(bundle.content),
-  }));
-  useEffect(() => {
-    setValues({
+  const getSettingsValues = () => {
+    const configuredWhatsapp = bundle.settings?.homeContactWhatsapp;
+    return {
       ...siteSettingsDefaults,
       ...(bundle.settings ?? {}),
       ...ctaValues(bundle.content),
-    });
+      homeContactWhatsapp: typeof configuredWhatsapp === 'string'
+        ? configuredWhatsapp
+        : DEFAULT_HOME_CONTACT_WHATSAPP,
+    };
+  };
+  const [values, setValues] = useState<Record<string, Primitive>>(getSettingsValues);
+  useEffect(() => {
+    setValues(getSettingsValues());
   }, [bundle.settings, bundle.content]);
 
   const update = (key: string, value: Primitive) => setValues((current) => ({ ...current, [key]: value }));

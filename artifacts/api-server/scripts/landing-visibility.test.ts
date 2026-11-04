@@ -46,7 +46,11 @@ test("public landing data includes only explicitly visible rows and valid visibl
   assert.deepEqual(publicBundle.legalSections, [{ id: 1, pageId: 1, sectionNumber: 1 }]);
   assert.equal(publicBundle.founder, null);
   assert.deepEqual(publicBundle.media, [{ id: 1, slug: "public", isVisible: true }]);
-  assert.deepEqual(publicBundle.settings, { id: 1, companyName: "SendFlow" });
+  assert.deepEqual(publicBundle.settings, {
+    id: 1,
+    companyName: "SendFlow",
+    homeContactWhatsapp: "+2250758427823",
+  });
   assert.equal("sessionSecret" in publicBundle.settings!, false);
   assert.equal("updatedAt" in publicBundle.settings!, false);
   assert.equal("passwordHash" in (publicBundle.founder ?? {}), false);
@@ -99,5 +103,32 @@ test("public projections return only allowlisted fields from visible founder and
     id: 1,
     supportEmail: "support@example.org",
     whatsappUrl: "https://wa.me/000",
+    homeContactWhatsapp: "+2250758427823",
   });
+});
+
+test("an explicit WhatsApp contact overrides the default and an empty value disables it", () => {
+  const emptyBundle = {
+    media: [], content: [], sections: [], features: [], faqs: [],
+    countries: [], operators: [], countryOperators: [], globeBadges: [],
+    legalPages: [], legalSections: [], founder: null,
+  };
+
+  for (const value of ["+225 07 58 42 78 23", ""]) {
+    const publicBundle = filterPublicLandingBundle({
+      ...emptyBundle,
+      settings: { homeContactWhatsapp: value },
+    });
+    assert.equal(publicBundle.settings?.homeContactWhatsapp, value);
+  }
+});
+
+test("the public WhatsApp default is present even before site settings exist", () => {
+  const publicBundle = filterPublicLandingBundle({
+    media: [], content: [], sections: [], features: [], faqs: [],
+    countries: [], operators: [], countryOperators: [], globeBadges: [],
+    legalPages: [], legalSections: [], founder: null, settings: null,
+  });
+
+  assert.equal(publicBundle.settings?.homeContactWhatsapp, "+2250758427823");
 });
