@@ -10,7 +10,7 @@
   <url><loc>https://sendflow.africa/conditions-utilisation</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://sendflow.africa/confidentialite</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://sendflow.africa/mentions-legales</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://sendflow.africa/en/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://sendflow.africa/en</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://sendflow.africa/en/features</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://sendflow.africa/en/developer-api</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://sendflow.africa/en/security</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
