@@ -1,7 +1,7 @@
 export type PublicLocale = 'fr' | 'en';
 
 const localizedRoutePairs = [
-  { fr: '/', en: '/en/' },
+  { fr: '/', en: '/en' },
   { fr: '/fonctionnalites', en: '/en/features' },
   { fr: '/api-developpeur', en: '/en/developer-api' },
   { fr: '/securite', en: '/en/security' },
@@ -17,7 +17,7 @@ const localizedRoutePairs = [
 function normalizeRoute(path: string): string {
   const pathname = path.split(/[?#]/, 1)[0] || '/';
   if (pathname === '/') return '/';
-  if (pathname === '/en' || pathname === '/en/') return '/en/';
+  if (pathname === '/en' || pathname === '/en/') return '/en';
   return `/${pathname.replace(/^\/+|\/+$/g, '')}`;
 }
 

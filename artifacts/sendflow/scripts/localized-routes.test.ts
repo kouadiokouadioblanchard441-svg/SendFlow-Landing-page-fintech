@@ -5,8 +5,8 @@ import { getLocalizedPath } from '../src/lib/localized-routes.ts';
 test('localized home anchors keep their section hash in French and English', () => {
   assert.equal(getLocalizedPath('#how', 'fr'), '/#how');
   assert.equal(getLocalizedPath('#international', 'fr'), '/#international');
-  assert.equal(getLocalizedPath('#how', 'en'), '/en/#how');
-  assert.equal(getLocalizedPath('#international', 'en'), '/en/#international');
+  assert.equal(getLocalizedPath('#how', 'en'), '/en#how');
+  assert.equal(getLocalizedPath('#international', 'en'), '/en#international');
 });
 
 test('localized routes retain query strings and fragments', () => {

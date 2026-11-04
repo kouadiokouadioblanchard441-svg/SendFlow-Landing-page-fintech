@@ -298,6 +298,16 @@ const renderRouteSeo = (sourceHtml, route, locale, group) => {
     html = html.replace(schemaPattern, `$1\n      ${serializedSchema}\n    $3`);
   }
 
+  const noScriptFallback = `<noscript data-sendflow-seo-fallback="true"><main class="sf-seo-noscript"><h1>${escapeHtml(route.name)}</h1><p>${escapeHtml(route.description)}</p></main></noscript>`;
+  html = html.replace(
+    /<noscript data-sendflow-seo-fallback="true">[\s\S]*?<\/noscript>/gi,
+    "",
+  );
+  if (!html.includes("</body>")) {
+    throw new Error(`Plesk route has no closing body tag: ${route.path}`);
+  }
+  html = html.replace("</body>", `  ${noScriptFallback}\n</body>`);
+
   return html;
 };
 
@@ -322,6 +332,12 @@ for (const group of seoRouteGroups) {
     ) {
       throw new Error(
         `Plesk route SEO metadata was not rendered correctly: ${route.path}`,
+      );
+    }
+    const noScriptFallback = `<noscript data-sendflow-seo-fallback="true"><main class="sf-seo-noscript"><h1>${escapeHtml(route.name)}</h1><p>${escapeHtml(route.description)}</p></main></noscript>`;
+    if (!routeHtml.includes(noScriptFallback)) {
+      throw new Error(
+        `Plesk route no-JavaScript SEO fallback was not rendered correctly: ${route.path}`,
       );
     }
     if (

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 
 const baseUrl = process.argv.slice(2).find((argument) => argument !== '--');
@@ -23,6 +24,20 @@ const routes = [
   },
   { path: '/en/features/', locale: 'en', heading: 'Our Features' },
 ];
+const routeGroups = Object.values(JSON.parse(
+  await readFile(new URL('../src/lib/public-seo-routes.json', import.meta.url), 'utf8'),
+));
+const seoRoutes = routeGroups.flatMap((group) =>
+  ['fr', 'en'].map((locale) => ({
+    ...group[locale],
+    locale,
+    alternates: {
+      fr: group.fr.path,
+      en: group.en.path,
+      'x-default': group.fr.path,
+    },
+  })),
+);
 
 const browser = await chromium.launch({
   headless: true,
@@ -191,6 +206,82 @@ try {
     console.log(`Verified rendered ${route.locale} route ${route.path}: ${heading}`);
     await page.close();
   }
+
+  const noScriptContext = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await noScriptContext.newPage();
+    for (const route of seoRoutes) {
+      const response = await page.goto(new URL(route.path, origin).href, {
+        waitUntil: 'domcontentloaded',
+      });
+      assert.equal(response?.status(), 200, `${route.path} should return HTTP 200 without JavaScript`);
+      assert.equal(await page.title(), route.title, `${route.path} should have its own static title`);
+      assert.equal(
+        await page.locator('html').getAttribute('lang'),
+        route.locale,
+        `${route.path} should declare its static locale`,
+      );
+
+      const headings = page.locator('h1');
+      await headings.first().waitFor({ state: 'visible', timeout: 10_000 });
+      assert.equal(await headings.count(), 1, `${route.path} should expose one static H1 without JavaScript`);
+      assert.equal(
+        (await headings.first().innerText()).trim(),
+        route.name,
+        `${route.path} should have a route-specific no-JavaScript heading`,
+      );
+      assert.equal(
+        await page.locator('meta[name="description"]').getAttribute('content'),
+        route.description,
+        `${route.path} should have a route-specific static description`,
+      );
+      assert.equal(
+        await page.locator('meta[name="robots"]').getAttribute('content'),
+        'index, follow',
+        `${route.path} should remain indexable`,
+      );
+      assert.equal(
+        new URL(await page.locator('link[rel="canonical"]').getAttribute('href')).pathname,
+        route.path,
+        `${route.path} should have a matching canonical URL`,
+      );
+      for (const [locale, path] of Object.entries(route.alternates)) {
+        const href = await page.locator(`link[rel="alternate"][hreflang="${locale}"]`).getAttribute('href');
+        assert.ok(href, `${route.path} should declare its ${locale} alternate`);
+        assert.equal(new URL(href).pathname, path, `${route.path} has an incorrect ${locale} alternate`);
+      }
+    }
+  } finally {
+    await noScriptContext.close();
+  }
+  console.log(`Verified static SEO fallback and metadata for all ${seoRoutes.length} localized routes`);
+
+  for (const route of seoRoutes) {
+    const page = await browser.newPage();
+    const response = await page.goto(new URL(route.path, origin).href, {
+      waitUntil: 'domcontentloaded',
+    });
+    assert.equal(response?.status(), 200, `${route.path} should load directly`);
+    await page.locator('h1').first().waitFor({ state: 'visible', timeout: 20_000 });
+    assert.equal(await page.locator('h1').count(), 1, `${route.path} should render one visible H1`);
+    assert.equal(
+      await page.locator('html').getAttribute('lang'),
+      route.locale,
+      `${route.path} should render in ${route.locale}`,
+    );
+    const title = (await page.title()).trim();
+    assert.ok(title.length > 0, `${route.path} should render a non-empty title`);
+    await page.waitForFunction(
+      (expectedPath) => {
+        const canonical = document.querySelector('link[rel="canonical"]');
+        return canonical && new URL(canonical.href).pathname === expectedPath;
+      },
+      route.path,
+      { timeout: 10_000 },
+    );
+    await page.close();
+  }
+  console.log(`Verified client-rendered content and direct navigation for all ${seoRoutes.length} localized routes`);
 
   for (const viewport of [
     { width: 320, height: 480 },

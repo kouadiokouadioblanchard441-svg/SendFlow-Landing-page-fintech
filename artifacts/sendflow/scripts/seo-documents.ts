@@ -32,7 +32,7 @@ export function renderSeoDocuments(
     '<!-- sendflow-hreflang -->',
     [
       `<link rel="alternate" hreflang="fr" href="${origin}/" />`,
-      `<link rel="alternate" hreflang="en" href="${origin}/en/" />`,
+      `<link rel="alternate" hreflang="en" href="${origin}/en" />`,
       `<link rel="alternate" hreflang="x-default" href="${origin}/" />`,
     ].join('\n    '),
   );

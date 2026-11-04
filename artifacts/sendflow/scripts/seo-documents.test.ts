@@ -36,7 +36,7 @@ test('a single normalized public HTTPS origin controls all SEO output', () => {
   assert.ok(rendered.robots.includes('Disallow: /panel/'));
   assert.ok(rendered.html.includes(`<link rel="canonical" href="${origin}/" />`));
   assert.ok(rendered.html.includes(`<link rel="alternate" hreflang="fr" href="${origin}/" />`));
-  assert.ok(rendered.html.includes(`<link rel="alternate" hreflang="en" href="${origin}/en/" />`));
+  assert.ok(rendered.html.includes(`<link rel="alternate" hreflang="en" href="${origin}/en" />`));
   assert.ok(rendered.html.includes(`property="og:url" content="${origin}/"`));
   assert.ok(rendered.html.includes(`property="og:image" content="${origin}/sendflow-favicon.png"`));
   assert.ok(rendered.html.includes(`name="twitter:image" content="${origin}/sendflow-favicon.png"`));
@@ -70,7 +70,7 @@ test('home and feature SEO target developer payments in both languages', () => {
   assert.match(publicSeoRoutes.features.fr.description, /API de paiement.*développeurs/);
   assert.match(publicSeoRoutes.features.en.description, /payment API for developers/);
   assert.equal(publicSeoRoutes.home.fr.path, '/');
-  assert.equal(publicSeoRoutes.home.en.path, '/en/');
+  assert.equal(publicSeoRoutes.home.en.path, '/en');
   assert.equal(publicSeoRoutes.developerApi.fr.path, '/api-developpeur');
   assert.equal(publicSeoRoutes.developerApi.en.path, '/en/developer-api');
   assert.equal(publicSeoRoutes.pricing.fr.path, '/tarifs');
@@ -129,11 +129,28 @@ test('every localized public page has its own browser title beginning with its p
   }
 });
 
+test('the sitemap contains exactly the configured localized public routes', () => {
+  const routes = Object.values(publicSeoRoutes).flatMap((group: any) => [
+    group.fr.path,
+    group.en.path,
+  ]);
+  const sitemapPaths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+
+  assert.equal(new Set(routes).size, routes.length, 'Public routes must be unique');
+  assert.equal(new Set(sitemapPaths).size, sitemapPaths.length, 'Sitemap URLs must be unique');
+  assert.deepEqual([...sitemapPaths].sort(), [...routes].sort());
+  assert.ok(!sitemapPaths.some((route) => /(^|\/)(admin|panel)(\/|$)/i.test(route)));
+});
+
 test('public routes have stable reciprocal French and English URLs', () => {
   assert.equal(getLocaleFromPath('/en/features'), 'en');
+  assert.equal(getLocaleFromPath('/en'), 'en');
+  assert.equal(getLocaleFromPath('/en/'), 'en');
   assert.equal(getLocalizedPath('/fonctionnalites', 'en'), '/en/features');
+  assert.equal(getLocalizedPath('/', 'en'), '/en');
   assert.equal(getLocalizedPath('/en/features', 'fr'), '/fonctionnalites');
-  assert.deepEqual(getLocalizedAlternates('/en/'), { fr: '/', en: '/en/' });
+  assert.deepEqual(getLocalizedAlternates('/en/'), { fr: '/', en: '/en' });
+  assert.deepEqual(getLocalizedAlternates('/en'), { fr: '/', en: '/en' });
   assert.deepEqual(getLocalizedAlternates('/france-senegal'), {
     fr: '/france-senegal',
     en: '/en/france-senegal',

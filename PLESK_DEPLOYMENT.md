@@ -19,6 +19,20 @@ La capture Plesk la plus récente montre **Application Root** et **Document Root
 
 Le build génère aussi `dist/public/.htaccess` : chaque route SEO pré-rendue est réécrite vers son propre `index.html`, avec ou sans barre oblique finale. Cela évite qu’Apache traite une URL comme `/securite` comme un dossier et renvoie une erreur au lieu de sa page. Les autres routes web inconnues vont vers `index.html` pour que React les traite. Une règle laisse explicitement `/api` et `/api/*` à Passenger ; le serveur répond en JSON pour les routes API inconnues et ne leur renvoie jamais le HTML de la SPA. Les anciens liens admin de forme `/panel/<code>/<email>` sont redirigés vers `/panel` sans cache ni référent afin de ne plus conserver ces valeurs dans l’adresse du navigateur.
 
+### Indexation des pages publiques
+
+`artifacts/sendflow/src/lib/public-seo-routes.json` est la source des 22 URL publiques en français et en anglais. Chaque page livrée reçoit son propre titre, sa description, son URL canonique, ses liens `hreflang` et ses données structurées. Le paquet ajoute aussi un titre H1 et un résumé visibles lorsqu’un navigateur ou robot n’exécute pas JavaScript; l’application React reste le rendu principal pour les visiteurs.
+
+La page d’accueil anglaise utilise `/en` comme URL canonique. `/en/` reste accessible comme alias, mais sa balise canonique pointe vers `/en`; le sitemap ne liste que `/en`. Les routes d’administration et le panel ne figurent pas dans le sitemap et restent en `noindex`.
+
+Pour contrôler le site après le pull et le redémarrage Plesk, depuis le checkout du dépôt :
+
+```sh
+pnpm --filter @workspace/sendflow run seo:verify -- https://sendflow.africa
+```
+
+Cette vérification teste le sitemap, `robots.txt` et les 22 routes (réponse HTML, titre, description, canonique, alternates linguistiques et rendu de secours sans JavaScript). Elle confirme l’accessibilité technique, pas l’ajout effectif dans l’index Google. Après livraison, soumets `https://sendflow.africa/sitemap.xml` dans Google Search Console et consulte l’inspection d’URL pour suivre l’indexation réelle.
+
 Si une page publique renvoie encore le 500 générique Plesk après le pull, compare la route avec et sans `/` final et vérifie que le `.htaccess` livré contient une règle directe pour cette route. Un 500 HTML sur `/api/healthz` n’est pas une réponse de santé de l’API : vérifie dans **Plesk → Websites & Domains → sendflow.africa → Logs** l’erreur Apache/Passenger au même horaire et le journal de l’application Node. Ce journal est nécessaire pour distinguer un démarrage Passenger invalide d’un problème de proxy ou de permissions; les captures et les journaux d’accès seuls ne donnent pas l’exception. Les erreurs qui atteignent Express sont journalisées en JSON avec l’identifiant, la méthode et la route (jetons `/panel` masqués), le type et la trace; les corps de requête et les en-têtes sensibles ne sont pas journalisés, et les valeurs de credentials courantes sont expurgées. Une erreur de démarrage Node est aussi journalisée avant l’arrêt du processus. Si aucun événement Node n’apparaît pour une requête, le problème survient avant l’application.
 
 Plesk doit démarrer le bundle avec `/sendflow.africa/dist` comme répertoire courant : le serveur y cherche `build-info.json` et `public/`. La configuration retenue est donc Application Root=`/sendflow.africa/dist`, Startup File=`index.cjs`, Document Root=`/sendflow.africa/dist/public`. Le `index.cjs` compilé est créé par le build. Le wrapper source à la racine Git n’est pas le startup file à sélectionner dans cette configuration.
