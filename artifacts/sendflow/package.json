@@ -13,7 +13,7 @@
     "test:contact": "tsx --test scripts/contact.test.ts",
     "test:browser-smoke": "node scripts/browser-smoke.mjs",
     "test:loading-animation": "tsx --test scripts/loading-animation.test.ts",
-    "test:seo": "tsx --test scripts/seo-documents.test.ts",
+    "test:seo": "tsx --test scripts/seo-documents.test.ts && node --check scripts/verify-public-seo.ts",
     "test:client-security": "tsx --test scripts/client-security.test.ts",
     "seo:verify": "node scripts/verify-public-seo.ts"
   },

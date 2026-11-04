@@ -126,28 +126,6 @@ function escapeHtml(value: string) {
     .replaceAll('>', '&gt;');
 }
 
-function readMetaContent(html: string, attribute: string, key: string) {
-  const match = html.match(
-    new RegExp(
-      `<meta(?=[^>]*\\b${attribute}="${escapeRegex(key)}")[^>]*\\bcontent="([^"]*)"[^>]*>`,
-      'i',
-    ),
-  );
-  return match?.[1];
-}
-
-function readLinkHref(html: string, rel: string, hreflang?: string) {
-  const linkPattern = hreflang
-    ? new RegExp(
-      `<link(?=[^>]*\\brel="alternate")(?=[^>]*\\bhreflang="${escapeRegex(hreflang)}")[^>]*\\bhref="([^"]*)"[^>]*>`,
-      'i',
-    )
-    : new RegExp(
-      `<link(?=[^>]*\\brel="${escapeRegex(rel)}")[^>]*\\bhref="([^"]*)"[^>]*>`,
-      'i',
-    );
-  return html.match(linkPattern)?.[1];
-}
 
 function readMetaContent(html: string, attribute: string, key: string) {
   const match = html.match(
