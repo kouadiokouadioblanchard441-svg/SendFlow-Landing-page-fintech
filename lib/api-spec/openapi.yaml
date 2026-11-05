@@ -10,11 +10,26 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: Landing
+    description: Public landing content and presentation-ready pricing.
   - name: Storage
     description: Public landing asset serving.
   - name: Security
     description: Public activity signals and Telegram security controls.
 paths:
+  /landing:
+    get:
+      operationId: getPublicLanding
+      tags: [Landing]
+      summary: Read public landing content
+      description: Returns visible landing content and a server-validated pricing view; private and unpublished fields are excluded.
+      responses:
+        "200":
+          description: Public landing bundle.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLandingResponse"
   /healthz:
     get:
       operationId: healthCheck
@@ -130,6 +145,103 @@ paths:
           description: The requested security action could not be completed.
 components:
   schemas:
+    PublicLandingResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        operatorFees:
+          $ref: "#/components/schemas/PublicOperatorFees"
+      required: [operatorFees]
+    PublicOperatorFees:
+      oneOf:
+        - $ref: "#/components/schemas/PublicOperatorFeesReady"
+        - $ref: "#/components/schemas/PublicOperatorFeesEmpty"
+        - $ref: "#/components/schemas/PublicOperatorFeesUnavailable"
+    PublicOperatorFeesReady:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [ready]
+        collectionTitleFr:
+          type: string
+        collectionTitleEn:
+          type: string
+        transferTitleFr:
+          type: string
+        transferTitleEn:
+          type: string
+        bankTransferLabelFr:
+          type: string
+        bankTransferLabelEn:
+          type: string
+        bankTransferAmountXof:
+          type: integer
+          minimum: 0
+        operators:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicOperatorFee"
+      required:
+        - status
+        - collectionTitleFr
+        - collectionTitleEn
+        - transferTitleFr
+        - transferTitleEn
+        - bankTransferLabelFr
+        - bankTransferLabelEn
+        - bankTransferAmountXof
+        - operators
+    PublicOperatorFeesEmpty:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [empty]
+      required: [status]
+    PublicOperatorFeesUnavailable:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [unavailable]
+      required: [status]
+    PublicOperatorFee:
+      type: object
+      additionalProperties: false
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        background:
+          type: string
+          nullable: true
+        foreground:
+          type: string
+          nullable: true
+        collectionPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        transferPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+      required:
+        - slug
+        - name
+        - logoUrl
+        - background
+        - foreground
+        - collectionPercent
+        - transferPercent
     HealthStatus:
       type: object
       properties:

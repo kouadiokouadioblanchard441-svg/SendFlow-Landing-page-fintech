@@ -6,7 +6,7 @@ import { absoluteSeoUrl, renderSeoDocuments } from './seo-documents.ts';
 import { getLocaleFromPath, getLocalizedAlternates, getLocalizedPath } from '../src/lib/localized-routes.ts';
 
 const root = new URL('../', import.meta.url);
-const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource, pricingPageSource, appSource, feeCardsSource, feeLogosSource, developerApiPageSource] = await Promise.all(
+const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource, pricingPageSource, appSource, feeCardsSource, feeLogosSource, developerApiPageSource, landingVisibilitySource, apiSpec] = await Promise.all(
   [
     'index.html',
     'public/sitemap.xml',
@@ -19,6 +19,8 @@ const [html, sitemap, robots, routeSeoJson, viteConfig, seoSource, pricingPageSo
     'src/components/OperatorFeesSection.tsx',
     'src/lib/operator-fee-logos.ts',
     'src/pages/developer-api.tsx',
+    '../api-server/src/lib/landingVisibility.ts',
+    '../../lib/api-spec/openapi.yaml',
   ].map((file) => fs.readFile(new URL(file, root), 'utf8')),
 );
 const publicSeoRoutes = JSON.parse(routeSeoJson);
@@ -110,17 +112,25 @@ test('developer API SEO targets payment documentation and links to the configure
 
 test('the pricing page reuses the home fee cards and published fee data', () => {
   assert.match(pricingPageSource, /queryKey:\s*\['\/api\/landing'\]/);
-  assert.match(pricingPageSource, /OPERATOR_FEES_CONTENT_KEY/);
-  assert.match(pricingPageSource, /parseOperatorFeesConfig\(feeRecord\?\.value\)/);
-  assert.match(pricingPageSource, /code === 'CI'/);
-  assert.match(pricingPageSource, /hasMissingRates/);
+  assert.match(pricingPageSource, /import type \{ PublicOperatorFees \}/);
+  assert.match(pricingPageSource, /feeView\?\.status === 'ready'/);
+  assert.doesNotMatch(pricingPageSource, /OPERATOR_FEES_CONTENT_KEY/);
+  assert.doesNotMatch(pricingPageSource, /parseOperatorFeesConfig/);
+  assert.doesNotMatch(pricingPageSource, /hasMissingRates/);
+  assert.match(appSource, /bundle\.operatorFees/);
+  assert.doesNotMatch(appSource, /parseOperatorFeesConfig/);
+  assert.match(landingVisibilitySource, /buildPublicOperatorFees/);
+  assert.match(landingVisibilitySource, /hasExactOperatorFeeCoverage/);
+  assert.match(landingVisibilitySource, /OPERATOR_FEES_CONTENT_KEY/);
+  assert.match(apiSpec, /\/landing:/);
+  assert.match(apiSpec, /PublicOperatorFeesReady/);
   assert.match(appSource, /import OperatorFeesSection from '@\/components\/OperatorFeesSection'/);
   assert.match(pricingPageSource, /import OperatorFeesSection/);
   assert.match(pricingPageSource, /<OperatorFeesSection language=\{language\} config=\{feeSectionConfig\} defaultOpen \/>/);
   assert.match(feeCardsSource, /button-toggle-collection-fees/);
   assert.match(feeCardsSource, /button-toggle-transfer-fees/);
   assert.match(pricingPageSource, /feeOperatorLogoBySlug\[operator\.slug\]/);
-  assert.match(pricingPageSource, /operators\.sort\(\(a, b\) => a\.name\.localeCompare\(b\.name, language\)\)/);
+  assert.match(landingVisibilitySource, /\.sort\(\(a, b\) => a\.name\.localeCompare\(b\.name, "fr"\)\)/);
   assert.match(feeLogosSource, /orange:/);
   assert.match(feeLogosSource, /mtn:/);
   assert.match(feeLogosSource, /'moov-africa':/);

@@ -23,6 +23,7 @@ import type {
   ErrorEnvelope,
   HealthStatus,
   PublicActivityInput,
+  PublicLandingResponse,
   SecurityTelemetryConfig,
   TelegramWebhookUpdateInput
 } from './api.schemas';
@@ -53,6 +54,84 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetPublicLandingUrl = () => {
+
+
+
+
+  return `/api/landing`
+}
+
+/**
+ * Returns visible landing content and a server-validated pricing view; private and unpublished fields are excluded.
+ * @summary Read public landing content
+ */
+export const getPublicLanding = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicLandingResponse> => {
+
+  return customFetch<PublicLandingResponse>(getGetPublicLandingUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicLandingQueryKey = () => {
+    return [
+    `/api/landing`
+    ] as const;
+    }
+
+
+export const getGetPublicLandingQueryOptions = <TData = Awaited<ReturnType<typeof getPublicLanding>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicLanding>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicLandingQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicLanding>>> = ({ signal }) => getPublicLanding({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicLanding>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicLandingQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicLanding>>>
+export type GetPublicLandingQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Read public landing content
+ */
+
+export function useGetPublicLanding<TData = Awaited<ReturnType<typeof getPublicLanding>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicLanding>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicLandingQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getHealthCheckUrl = () => {
 

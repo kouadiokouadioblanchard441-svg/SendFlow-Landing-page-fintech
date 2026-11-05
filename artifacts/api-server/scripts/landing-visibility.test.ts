@@ -58,6 +58,111 @@ test("public landing data includes only explicitly visible rows and valid visibl
   assert.equal("unexpectedFutureField" in publicBundle, false);
 });
 
+test("public landing returns server-validated operator pricing instead of raw pricing content", () => {
+  const bundle = {
+    media: [
+      { slug: "orange-mark", publicUrl: "/api/storage/public-objects/orange.png", isVisible: true },
+      { slug: "hidden-mark", publicUrl: "/api/storage/public-objects/hidden.png", isVisible: false },
+    ],
+    content: [
+      {
+        contentKey: "pricing.operator-fees",
+        locale: "fr",
+        isVisible: true,
+        value: JSON.stringify({
+          collectionTitleFr: "Frais à l'encaissement",
+          collectionTitleEn: "Collection fees",
+          transferTitleFr: "Frais de transfert",
+          transferTitleEn: "Transfer fees",
+          bankTransferLabelFr: "Banque",
+          bankTransferLabelEn: "Bank",
+          bankTransferAmountXof: 950,
+          operators: [
+            { slug: "orange", collectionPercent: 3, transferPercent: 2.6 },
+          ],
+        }),
+      },
+      { contentKey: "hero.title", locale: "fr", value: "SendFlow", isVisible: true },
+    ],
+    sections: [],
+    features: [],
+    faqs: [],
+    countries: [{ id: 4, code: "CI", nameFr: "Côte d’Ivoire", isVisible: true }],
+    operators: [{
+      id: 8,
+      slug: "orange",
+      name: "Orange",
+      logoKey: "orange-mark",
+      background: null,
+      foreground: null,
+      isVisible: true,
+    }],
+    countryOperators: [{ countryId: 4, operatorId: 8, orderIndex: 1 }],
+    globeBadges: [],
+    legalPages: [],
+    legalSections: [],
+    founder: null,
+    settings: null,
+  };
+
+  const publicBundle = filterPublicLandingBundle(bundle);
+
+  assert.deepEqual(publicBundle.content.map((row) => row.contentKey), ["hero.title"]);
+  assert.deepEqual(publicBundle.operatorFees, {
+    status: "ready",
+    collectionTitleFr: "Frais à l'encaissement",
+    collectionTitleEn: "Collection fees",
+    transferTitleFr: "Frais de transfert",
+    transferTitleEn: "Transfer fees",
+    bankTransferLabelFr: "Banque",
+    bankTransferLabelEn: "Bank",
+    bankTransferAmountXof: 950,
+    operators: [{
+      slug: "orange",
+      name: "Orange",
+      logoUrl: "/api/storage/public-objects/orange.png",
+      background: null,
+      foreground: null,
+      collectionPercent: 3,
+      transferPercent: 2.6,
+    }],
+  });
+});
+
+test("public operator pricing is unavailable when an active operator lacks a rate", () => {
+  const bundle = {
+    media: [],
+    content: [{
+      contentKey: "pricing.operator-fees",
+      locale: "fr",
+      isVisible: true,
+      value: JSON.stringify({
+        collectionTitleFr: "Frais",
+        collectionTitleEn: "Fees",
+        transferTitleFr: "Transfert",
+        transferTitleEn: "Transfer",
+        bankTransferLabelFr: "Banque",
+        bankTransferLabelEn: "Bank",
+        bankTransferAmountXof: 950,
+        operators: [],
+      }),
+    }],
+    sections: [],
+    features: [],
+    faqs: [],
+    countries: [{ id: 4, code: "CI", isVisible: true }],
+    operators: [{ id: 8, slug: "orange", name: "Orange", isVisible: true }],
+    countryOperators: [{ countryId: 4, operatorId: 8, orderIndex: 1 }],
+    globeBadges: [],
+    legalPages: [],
+    legalSections: [],
+    founder: null,
+    settings: null,
+  };
+
+  assert.deepEqual(filterPublicLandingBundle(bundle).operatorFees, { status: "unavailable" });
+});
+
 test("a founder profile without an explicit visible flag is private", () => {
   const bundle = {
     media: [], content: [], sections: [], features: [], faqs: [],

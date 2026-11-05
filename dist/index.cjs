@@ -53889,6 +53889,36 @@ function date4(params) {
 }
 
 // ../../lib/api-zod/src/generated/api.ts
+var getPublicLandingResponseOperatorFeesOneBankTransferAmountXofMin = 0;
+var getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMin = 0;
+var getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMax = 100;
+var getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMin = 0;
+var getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMax = 100;
+var GetPublicLandingResponse = object({
+  "operatorFees": union([object({
+    "status": _enum2(["ready"]),
+    "collectionTitleFr": string2(),
+    "collectionTitleEn": string2(),
+    "transferTitleFr": string2(),
+    "transferTitleEn": string2(),
+    "bankTransferLabelFr": string2(),
+    "bankTransferLabelEn": string2(),
+    "bankTransferAmountXof": int().min(getPublicLandingResponseOperatorFeesOneBankTransferAmountXofMin),
+    "operators": array(object({
+      "slug": string2(),
+      "name": string2(),
+      "logoUrl": string2().nullable(),
+      "background": string2().nullable(),
+      "foreground": string2().nullable(),
+      "collectionPercent": number2().min(getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMin).max(getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMax),
+      "transferPercent": number2().min(getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMin).max(getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMax)
+    }))
+  }), object({
+    "status": _enum2(["empty"])
+  }), object({
+    "status": _enum2(["unavailable"])
+  })])
+});
 var HealthCheckResponse = object({
   "status": string2(),
   "buildId": string2().nullable()
@@ -61820,203 +61850,6 @@ async function openPleskPublicObject({
   return { handle, size: stats.size, lastModified: stats.mtime };
 }
 
-// src/lib/landingVisibility.ts
-var DEFAULT_HOME_CONTACT_WHATSAPP = "+2250758427823";
-var DEFAULT_WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbDYGGEHwXb3jv0Oyg2T";
-var publicFields = {
-  media: ["id", "slug", "kind", "sourcePath", "storagePath", "publicUrl", "mimeType", "altFr", "altEn", "width", "height", "isVisible"],
-  content: ["id", "contentKey", "locale", "group", "contentType", "value", "orderIndex", "isVisible"],
-  sections: ["id", "slug", "kind", "orderIndex", "eyebrowFr", "eyebrowEn", "titleFr", "titleEn", "bodyFr", "bodyEn", "imageKey", "isVisible"],
-  features: ["id", "slug", "group", "orderIndex", "titleFr", "titleEn", "bodyFr", "bodyEn", "iconKey", "imageKey", "isVisible"],
-  faqs: ["id", "orderIndex", "questionFr", "questionEn", "answerFr", "answerEn", "isVisible"],
-  countries: ["id", "code", "nameFr", "nameEn", "flag", "tone", "orderIndex", "heroPositionX", "heroPositionY", "isVisible"],
-  operators: ["id", "slug", "name", "logoKey", "background", "foreground", "isVisible"],
-  globeBadges: ["id", "operatorId", "positionX", "positionY", "orderIndex", "isVisible"],
-  legalPages: ["id", "slug", "titleFr", "titleEn", "introFr", "introEn", "isVisible"],
-  legalSections: ["id", "pageId", "sectionNumber", "titleFr", "titleEn", "bodyFr", "bodyEn", "orderIndex"],
-  founder: [
-    "id",
-    "name",
-    "roleFr",
-    "roleEn",
-    "shortBioFr",
-    "shortBioEn",
-    "storyFr",
-    "storyEn",
-    "visionFr",
-    "visionEn",
-    "educationFr",
-    "educationEn",
-    "missionFr",
-    "missionEn",
-    "photoKey",
-    "linkedinUrl",
-    "websiteUrl",
-    "instagramUrl",
-    "xUrl",
-    "email",
-    "isVisible"
-  ],
-  settings: [
-    "id",
-    "supportEmail",
-    "supportPhone",
-    "websiteUrl",
-    "linkedinUrl",
-    "instagramUrl",
-    "facebookUrl",
-    "whatsappUrl",
-    "homeContactEmail",
-    "homeContactPhone",
-    "homeContactWhatsapp",
-    "featuresContactEmail",
-    "featuresContactPhone",
-    "featuresContactWhatsapp",
-    "securityContactEmail",
-    "securityContactPhone",
-    "securityContactWhatsapp",
-    "downloadContactEmail",
-    "downloadContactPhone",
-    "downloadContactWhatsapp",
-    "aboutContactEmail",
-    "aboutContactPhone",
-    "aboutContactWhatsapp",
-    "legalContactEmail",
-    "legalContactPhone",
-    "legalContactWhatsapp",
-    "companyName",
-    "legalForm",
-    "legalAddress",
-    "legalEmail",
-    "footerAddressFlag",
-    "footerAddressCountry",
-    "footerAddress",
-    "regulatorNameFr",
-    "regulatorNameEn",
-    "regulatorLogoKey",
-    "googlePlayUrl",
-    "appStoreUrl",
-    "apkUrl"
-  ]
-};
-function projectPublicFields(row, fields) {
-  const source = row;
-  return Object.fromEntries(fields.filter((field) => Object.prototype.hasOwnProperty.call(source, field)).map((field) => [field, source[field]]));
-}
-function visibleRows(rows, fields) {
-  return rows.filter((row) => row.isVisible === true).map((row) => projectPublicFields(row, fields));
-}
-function publicSettingsRow(settings) {
-  const publicSettings = settings ? projectPublicFields(settings, publicFields.settings) : {};
-  if (typeof publicSettings.homeContactWhatsapp !== "string") {
-    publicSettings.homeContactWhatsapp = DEFAULT_HOME_CONTACT_WHATSAPP;
-  }
-  if (typeof publicSettings.whatsappUrl !== "string") {
-    publicSettings.whatsappUrl = DEFAULT_WHATSAPP_CHANNEL_URL;
-  }
-  return publicSettings;
-}
-function filterPublicLandingBundle(bundle) {
-  const media = visibleRows(bundle.media, publicFields.media);
-  const content = visibleRows(bundle.content, publicFields.content);
-  const sections = visibleRows(bundle.sections, publicFields.sections);
-  const features = visibleRows(bundle.features, publicFields.features);
-  const faqs = visibleRows(bundle.faqs, publicFields.faqs);
-  const countries = visibleRows(bundle.countries, publicFields.countries);
-  const operators = visibleRows(bundle.operators, publicFields.operators);
-  const legalPages2 = visibleRows(bundle.legalPages, publicFields.legalPages);
-  const countryIds = new Set(countries.map((country) => country.id));
-  const operatorIds = new Set(operators.map((operator) => operator.id));
-  const legalPageIds = new Set(legalPages2.map((page) => page.id));
-  return {
-    media,
-    content,
-    sections,
-    features,
-    faqs,
-    countries,
-    operators,
-    countryOperators: bundle.countryOperators.filter(
-      (relation) => countryIds.has(relation.countryId) && operatorIds.has(relation.operatorId)
-    ).map(({ countryId, operatorId, orderIndex: orderIndex2 }) => ({ countryId, operatorId, orderIndex: orderIndex2 })),
-    globeBadges: visibleRows(bundle.globeBadges, publicFields.globeBadges).filter((badge) => operatorIds.has(badge.operatorId)),
-    legalPages: legalPages2,
-    legalSections: bundle.legalSections.filter((section) => legalPageIds.has(section.pageId)).map((section) => projectPublicFields(section, publicFields.legalSections)),
-    founder: bundle.founder?.isVisible === true ? projectPublicFields(bundle.founder, publicFields.founder) : null,
-    settings: publicSettingsRow(bundle.settings)
-  };
-}
-
-// src/lib/newsletterToken.ts
-function parseNewsletterToken(value) {
-  const token = typeof value === "string" ? value.trim() : "";
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
-}
-
-// src/lib/recaptcha.ts
-var MINIMUM_SCORE = 0.5;
-var VERIFY_TIMEOUT_MS = 5e3;
-function getConfiguredRecaptchaHostname(siteUrl = getPublicSiteUrl()) {
-  if (!siteUrl) return null;
-  try {
-    const parsed = new URL(siteUrl);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:" || parsed.username || parsed.password) {
-      return null;
-    }
-    return parsed.hostname.toLowerCase().replace(/\.$/, "") || null;
-  } catch {
-    return null;
-  }
-}
-function readRecaptchaSettings(env = process.env) {
-  const siteKey = env.RECAPTCHA_SITE_KEY?.trim() ?? "";
-  const secretKey = env.RECAPTCHA_SECRET_KEY?.trim() ?? "";
-  if (!siteKey && !secretKey) return { status: "disabled" };
-  if (!siteKey || !secretKey) return { status: "misconfigured" };
-  return { status: "enabled", siteKey, secretKey };
-}
-async function verifyRecaptchaToken(input2, fetchImpl = fetch) {
-  if (!input2.token.trim() || !input2.secretKey.trim() || !input2.expectedHostname.trim()) {
-    return { valid: false, reason: "invalid" };
-  }
-  try {
-    const response = await fetchImpl("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        secret: input2.secretKey,
-        response: input2.token
-      }),
-      signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS)
-    });
-    if (!response.ok) return { valid: false, reason: "unavailable" };
-    const result = await response.json();
-    const hostname3 = typeof result.hostname === "string" ? result.hostname.trim().toLowerCase().replace(/\.$/, "") : "";
-    const expectedHostname = input2.expectedHostname.trim().toLowerCase().replace(/\.$/, "");
-    const score = typeof result.score === "number" ? result.score : Number.NaN;
-    if (result.success === true && result.action === input2.expectedAction && hostname3 === expectedHostname && Number.isFinite(score) && score >= MINIMUM_SCORE) {
-      return { valid: true };
-    }
-    return { valid: false, reason: "invalid" };
-  } catch {
-    return { valid: false, reason: "unavailable" };
-  }
-}
-
-// src/lib/newsletterPolicy.ts
-var NEWSLETTER_ACTIVE_STATUS = "subscribed";
-var NEWSLETTER_CONSENT_TEXT_VERSION = "newsletter-v1";
-var NEWSLETTER_CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1e3;
-function getNewsletterConfirmationExpiry(now) {
-  return new Date(now.getTime() + NEWSLETTER_CONFIRMATION_TTL_MS);
-}
-function isNewsletterConfirmationUsable(status, token, expiresAt, now) {
-  return status === "pending" && Boolean(token) && expiresAt instanceof Date && expiresAt.getTime() > now.getTime();
-}
-function getNewsletterConfirmationUrl(origin, token) {
-  return `${origin}/api/newsletter/confirm#${encodeURIComponent(token)}`;
-}
-
 // src/lib/requestValidation.ts
 var text2 = (maxLength) => external_exports.string().max(maxLength).refine((value) => !value.includes("\0"));
 var meaningfulText = (maxLength) => external_exports.string().trim().min(1).max(maxLength).refine((value) => !value.includes("\0"));
@@ -62371,6 +62204,265 @@ function parsePositivePathId(value) {
   if (typeof value !== "string" || !/^[1-9]\d{0,9}$/.test(value)) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed <= 2147483647 ? parsed : null;
+}
+
+// src/lib/landingVisibility.ts
+var DEFAULT_HOME_CONTACT_WHATSAPP = "+2250758427823";
+var DEFAULT_WHATSAPP_CHANNEL_URL = "https://whatsapp.com/channel/0029VbDYGGEHwXb3jv0Oyg2T";
+var publicFields = {
+  media: ["id", "slug", "kind", "sourcePath", "storagePath", "publicUrl", "mimeType", "altFr", "altEn", "width", "height", "isVisible"],
+  content: ["id", "contentKey", "locale", "group", "contentType", "value", "orderIndex", "isVisible"],
+  sections: ["id", "slug", "kind", "orderIndex", "eyebrowFr", "eyebrowEn", "titleFr", "titleEn", "bodyFr", "bodyEn", "imageKey", "isVisible"],
+  features: ["id", "slug", "group", "orderIndex", "titleFr", "titleEn", "bodyFr", "bodyEn", "iconKey", "imageKey", "isVisible"],
+  faqs: ["id", "orderIndex", "questionFr", "questionEn", "answerFr", "answerEn", "isVisible"],
+  countries: ["id", "code", "nameFr", "nameEn", "flag", "tone", "orderIndex", "heroPositionX", "heroPositionY", "isVisible"],
+  operators: ["id", "slug", "name", "logoKey", "background", "foreground", "isVisible"],
+  globeBadges: ["id", "operatorId", "positionX", "positionY", "orderIndex", "isVisible"],
+  legalPages: ["id", "slug", "titleFr", "titleEn", "introFr", "introEn", "isVisible"],
+  legalSections: ["id", "pageId", "sectionNumber", "titleFr", "titleEn", "bodyFr", "bodyEn", "orderIndex"],
+  founder: [
+    "id",
+    "name",
+    "roleFr",
+    "roleEn",
+    "shortBioFr",
+    "shortBioEn",
+    "storyFr",
+    "storyEn",
+    "visionFr",
+    "visionEn",
+    "educationFr",
+    "educationEn",
+    "missionFr",
+    "missionEn",
+    "photoKey",
+    "linkedinUrl",
+    "websiteUrl",
+    "instagramUrl",
+    "xUrl",
+    "email",
+    "isVisible"
+  ],
+  settings: [
+    "id",
+    "supportEmail",
+    "supportPhone",
+    "websiteUrl",
+    "linkedinUrl",
+    "instagramUrl",
+    "facebookUrl",
+    "whatsappUrl",
+    "homeContactEmail",
+    "homeContactPhone",
+    "homeContactWhatsapp",
+    "featuresContactEmail",
+    "featuresContactPhone",
+    "featuresContactWhatsapp",
+    "securityContactEmail",
+    "securityContactPhone",
+    "securityContactWhatsapp",
+    "downloadContactEmail",
+    "downloadContactPhone",
+    "downloadContactWhatsapp",
+    "aboutContactEmail",
+    "aboutContactPhone",
+    "aboutContactWhatsapp",
+    "legalContactEmail",
+    "legalContactPhone",
+    "legalContactWhatsapp",
+    "companyName",
+    "legalForm",
+    "legalAddress",
+    "legalEmail",
+    "footerAddressFlag",
+    "footerAddressCountry",
+    "footerAddress",
+    "regulatorNameFr",
+    "regulatorNameEn",
+    "regulatorLogoKey",
+    "googlePlayUrl",
+    "appStoreUrl",
+    "apkUrl"
+  ]
+};
+function projectPublicFields(row, fields) {
+  const source = row;
+  return Object.fromEntries(fields.filter((field) => Object.prototype.hasOwnProperty.call(source, field)).map((field) => [field, source[field]]));
+}
+function visibleRows(rows, fields) {
+  return rows.filter((row) => row.isVisible === true).map((row) => projectPublicFields(row, fields));
+}
+function publicSettingsRow(settings) {
+  const publicSettings = settings ? projectPublicFields(settings, publicFields.settings) : {};
+  if (typeof publicSettings.homeContactWhatsapp !== "string") {
+    publicSettings.homeContactWhatsapp = DEFAULT_HOME_CONTACT_WHATSAPP;
+  }
+  if (typeof publicSettings.whatsappUrl !== "string") {
+    publicSettings.whatsappUrl = DEFAULT_WHATSAPP_CHANNEL_URL;
+  }
+  return publicSettings;
+}
+function buildPublicOperatorFees(bundle) {
+  const feeRow = bundle.content.find(
+    (row) => row.isVisible === true && row.contentKey === OPERATOR_FEES_CONTENT_KEY && row.locale === "fr" && typeof row.value === "string"
+  );
+  if (!feeRow || typeof feeRow.value !== "string") return { status: "unavailable" };
+  let rawConfig;
+  try {
+    rawConfig = JSON.parse(feeRow.value);
+  } catch {
+    return { status: "unavailable" };
+  }
+  const parsedConfig = operatorFeesSchema.safeParse(rawConfig);
+  if (!parsedConfig.success) return { status: "unavailable" };
+  const country = bundle.countries.find(
+    (row) => row.isVisible === true && row.code === "CI" && Number.isSafeInteger(row.id) && row.id > 0
+  );
+  if (!country) return { status: "unavailable" };
+  const assignedIds = new Set(
+    bundle.countryOperators.filter((assignment) => assignment.countryId === country.id).map((assignment) => assignment.operatorId)
+  );
+  const visibleOperators = bundle.operators.filter(
+    (operator) => operator.isVisible === true && assignedIds.has(operator.id)
+  );
+  if (visibleOperators.length === 0) return { status: "empty" };
+  const visibleSlugs = visibleOperators.map((operator) => operator.slug);
+  const feeSlugs = parsedConfig.data.operators.map((operator) => operator.slug);
+  if (visibleSlugs.some((slug) => typeof slug !== "string") || visibleSlugs.some((slug) => typeof slug === "string" && !/^[a-z0-9][a-z0-9._-]{0,79}$/i.test(slug)) || !hasExactOperatorFeeCoverage(feeSlugs, visibleSlugs)) {
+    return { status: "unavailable" };
+  }
+  const ratesBySlug = new Map(parsedConfig.data.operators.map((operator) => [operator.slug, operator]));
+  const publicMedia = bundle.media.filter((item) => item.isVisible === true);
+  const operators = visibleOperators.flatMap((operator) => {
+    if (typeof operator.slug !== "string" || typeof operator.name !== "string" || !operator.name.trim()) {
+      return [];
+    }
+    const rate = ratesBySlug.get(operator.slug);
+    if (!rate) return [];
+    const logo = typeof operator.logoKey === "string" ? publicMedia.find((item) => item.slug === operator.logoKey && typeof item.publicUrl === "string") : void 0;
+    return [{
+      slug: operator.slug,
+      name: operator.name,
+      logoUrl: typeof logo?.publicUrl === "string" ? logo.publicUrl : null,
+      background: typeof operator.background === "string" ? operator.background : null,
+      foreground: typeof operator.foreground === "string" ? operator.foreground : null,
+      collectionPercent: rate.collectionPercent,
+      transferPercent: rate.transferPercent
+    }];
+  }).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  if (operators.length !== visibleOperators.length) return { status: "unavailable" };
+  return {
+    status: "ready",
+    collectionTitleFr: parsedConfig.data.collectionTitleFr,
+    collectionTitleEn: parsedConfig.data.collectionTitleEn,
+    transferTitleFr: parsedConfig.data.transferTitleFr,
+    transferTitleEn: parsedConfig.data.transferTitleEn,
+    bankTransferLabelFr: parsedConfig.data.bankTransferLabelFr,
+    bankTransferLabelEn: parsedConfig.data.bankTransferLabelEn,
+    bankTransferAmountXof: parsedConfig.data.bankTransferAmountXof,
+    operators
+  };
+}
+function filterPublicLandingBundle(bundle) {
+  const media = visibleRows(bundle.media, publicFields.media);
+  const content = visibleRows(bundle.content, publicFields.content).filter((row) => row.contentKey !== OPERATOR_FEES_CONTENT_KEY);
+  const sections = visibleRows(bundle.sections, publicFields.sections);
+  const features = visibleRows(bundle.features, publicFields.features);
+  const faqs = visibleRows(bundle.faqs, publicFields.faqs);
+  const countries = visibleRows(bundle.countries, publicFields.countries);
+  const operators = visibleRows(bundle.operators, publicFields.operators);
+  const legalPages2 = visibleRows(bundle.legalPages, publicFields.legalPages);
+  const countryIds = new Set(countries.map((country) => country.id));
+  const operatorIds = new Set(operators.map((operator) => operator.id));
+  const legalPageIds = new Set(legalPages2.map((page) => page.id));
+  return {
+    media,
+    content,
+    sections,
+    features,
+    faqs,
+    countries,
+    operators,
+    countryOperators: bundle.countryOperators.filter(
+      (relation) => countryIds.has(relation.countryId) && operatorIds.has(relation.operatorId)
+    ).map(({ countryId, operatorId, orderIndex: orderIndex2 }) => ({ countryId, operatorId, orderIndex: orderIndex2 })),
+    globeBadges: visibleRows(bundle.globeBadges, publicFields.globeBadges).filter((badge) => operatorIds.has(badge.operatorId)),
+    legalPages: legalPages2,
+    legalSections: bundle.legalSections.filter((section) => legalPageIds.has(section.pageId)).map((section) => projectPublicFields(section, publicFields.legalSections)),
+    founder: bundle.founder?.isVisible === true ? projectPublicFields(bundle.founder, publicFields.founder) : null,
+    settings: publicSettingsRow(bundle.settings),
+    operatorFees: buildPublicOperatorFees(bundle)
+  };
+}
+
+// src/lib/newsletterToken.ts
+function parseNewsletterToken(value) {
+  const token = typeof value === "string" ? value.trim() : "";
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
+}
+
+// src/lib/recaptcha.ts
+var MINIMUM_SCORE = 0.5;
+var VERIFY_TIMEOUT_MS = 5e3;
+function getConfiguredRecaptchaHostname(siteUrl = getPublicSiteUrl()) {
+  if (!siteUrl) return null;
+  try {
+    const parsed = new URL(siteUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:" || parsed.username || parsed.password) {
+      return null;
+    }
+    return parsed.hostname.toLowerCase().replace(/\.$/, "") || null;
+  } catch {
+    return null;
+  }
+}
+function readRecaptchaSettings(env = process.env) {
+  const siteKey = env.RECAPTCHA_SITE_KEY?.trim() ?? "";
+  const secretKey = env.RECAPTCHA_SECRET_KEY?.trim() ?? "";
+  if (!siteKey && !secretKey) return { status: "disabled" };
+  if (!siteKey || !secretKey) return { status: "misconfigured" };
+  return { status: "enabled", siteKey, secretKey };
+}
+async function verifyRecaptchaToken(input2, fetchImpl = fetch) {
+  if (!input2.token.trim() || !input2.secretKey.trim() || !input2.expectedHostname.trim()) {
+    return { valid: false, reason: "invalid" };
+  }
+  try {
+    const response = await fetchImpl("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: input2.secretKey,
+        response: input2.token
+      }),
+      signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS)
+    });
+    if (!response.ok) return { valid: false, reason: "unavailable" };
+    const result = await response.json();
+    const hostname3 = typeof result.hostname === "string" ? result.hostname.trim().toLowerCase().replace(/\.$/, "") : "";
+    const expectedHostname = input2.expectedHostname.trim().toLowerCase().replace(/\.$/, "");
+    const score = typeof result.score === "number" ? result.score : Number.NaN;
+    if (result.success === true && result.action === input2.expectedAction && hostname3 === expectedHostname && Number.isFinite(score) && score >= MINIMUM_SCORE) {
+      return { valid: true };
+    }
+    return { valid: false, reason: "invalid" };
+  } catch {
+    return { valid: false, reason: "unavailable" };
+  }
+}
+
+// src/lib/newsletterPolicy.ts
+var NEWSLETTER_ACTIVE_STATUS = "subscribed";
+var NEWSLETTER_CONSENT_TEXT_VERSION = "newsletter-v1";
+var NEWSLETTER_CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1e3;
+function getNewsletterConfirmationExpiry(now) {
+  return new Date(now.getTime() + NEWSLETTER_CONFIRMATION_TTL_MS);
+}
+function isNewsletterConfirmationUsable(status, token, expiresAt, now) {
+  return status === "pending" && Boolean(token) && expiresAt instanceof Date && expiresAt.getTime() > now.getTime();
+}
+function getNewsletterConfirmationUrl(origin, token) {
+  return `${origin}/api/newsletter/confirm#${encodeURIComponent(token)}`;
 }
 
 // src/routes/landing.ts

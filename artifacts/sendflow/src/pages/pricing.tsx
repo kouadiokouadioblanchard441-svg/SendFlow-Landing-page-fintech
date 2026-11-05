@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight, Globe2, Menu, ShieldCheck, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
+import type { PublicOperatorFees } from '@workspace/api-zod';
 import sendflowMark from '@/assets/brand/sendflow-mark-original.png';
 import sendflowWordmark from '@/assets/brand/sendflow-wordmark-original.png';
 import { ProtectedImage } from '@/components/protected-image';
@@ -10,26 +11,14 @@ import { usePublicMobileMenu } from '@/hooks/use-public-mobile-menu';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
 import { useSeo } from '@/lib/seo';
 import publicSeoRoutes from '@/lib/public-seo-routes.json';
-import { OPERATOR_FEES_CONTENT_KEY, parseOperatorFeesConfig } from '@/lib/operator-fees';
 import { feeOperatorLogoBySlug } from '@/lib/operator-fee-logos';
 import { useQuery } from '@tanstack/react-query';
 
 type Language = 'fr' | 'en';
 
 type PricingLandingBundle = {
+  operatorFees: PublicOperatorFees;
   content: FooterContentItem[];
-  countries: Array<{ id: number; code: string; nameFr: string; nameEn: string; flag: string; isVisible: boolean }>;
-  operators: Array<{
-    id: number;
-    slug: string;
-    name: string;
-    logoKey: string | null;
-    background: string | null;
-    foreground: string | null;
-    isVisible: boolean;
-  }>;
-  countryOperators: Array<{ countryId: number; operatorId: number; orderIndex: number }>;
-  media: Array<{ slug: string; publicUrl: string | null; storagePath: string | null; sourcePath: string; isVisible: boolean }>;
   settings?: FooterSettings | null;
 };
 
@@ -95,17 +84,12 @@ export default function PricingPage() {
   const seo = publicSeoRoutes.pricing[language];
   const { data, isLoading, isError, refetch } = usePublicLandingBundle();
   const content = Array.isArray(data?.content) ? data.content : [];
-  const countries = Array.isArray(data?.countries) ? data.countries : [];
-  const publicOperators = Array.isArray(data?.operators) ? data.operators : [];
-  const countryOperators = Array.isArray(data?.countryOperators) ? data.countryOperators : [];
-  const media = Array.isArray(data?.media) ? data.media : [];
+  const feeView = data?.operatorFees;
   const bundleShapeValid = Boolean(
     data &&
     Array.isArray(data.content) &&
-    Array.isArray(data.countries) &&
-    Array.isArray(data.operators) &&
-    Array.isArray(data.countryOperators) &&
-    Array.isArray(data.media),
+    feeView &&
+    ['ready', 'empty', 'unavailable'].includes(feeView.status),
   );
   const settings = data?.settings ?? null;
 
@@ -120,62 +104,25 @@ export default function PricingPage() {
     ],
   });
 
-  const feeRecord = content.find((item) =>
-    item.contentKey === OPERATOR_FEES_CONTENT_KEY && item.locale === 'fr' && item.isVisible,
+  const unavailable = !isLoading && !isError && (
+    !bundleShapeValid || !feeView || feeView.status === 'unavailable'
   );
-  const feeConfig = parseOperatorFeesConfig(feeRecord?.value);
-  const country = countries.find((item) => item.code === 'CI' && item.isVisible);
-  const countryIsValid = Boolean(
-    country &&
-    Number.isSafeInteger(country.id) &&
-    country.id > 0 &&
-    typeof country.nameFr === 'string' &&
-    country.nameFr.trim() &&
-    typeof country.nameEn === 'string' &&
-    country.nameEn.trim(),
-  );
-  const operatorRates = new Map(feeConfig?.operators.map((operator) => [operator.slug, operator]) ?? []);
-  const countryAssignments = country && countryIsValid
-    ? countryOperators.filter((assignment) => assignment.countryId === country.id).sort((a, b) => a.orderIndex - b.orderIndex)
-    : [];
-  const operators: FeeOperatorDisplay[] = country && countryIsValid
-    ? countryAssignments.flatMap((assignment) => {
-      const operator = publicOperators.find((item) => item.id === assignment.operatorId && item.isVisible);
-      if (!operator) return [];
-      const rate = operatorRates.get(operator.slug);
-      const logo = operator.logoKey
-        ? media.find((item) => item.slug === operator.logoKey && item.isVisible && item.publicUrl)
-        : undefined;
-      const fallbackLogo = feeOperatorLogoBySlug[operator.slug];
-      return rate ? [{
-        slug: operator.slug,
-        name: operator.name,
-        logoUrl: logo?.publicUrl ?? fallbackLogo?.image ?? null,
-        background: operator.background ?? fallbackLogo?.background ?? null,
-        foreground: operator.foreground ?? fallbackLogo?.foreground ?? null,
-        collectionPercent: rate.collectionPercent,
-        transferPercent: rate.transferPercent,
-      }] : [];
-    })
-    : [];
-  operators.sort((a, b) => a.name.localeCompare(b.name, language));
-  const visibleAssignedOperators = country && countryIsValid
-    ? publicOperators.filter((operator) =>
-      operator.isVisible && countryOperators.some((assignment) =>
-        assignment.countryId === country.id && assignment.operatorId === operator.id,
-      ),
-    )
-    : [];
-  const hasMissingRates = visibleAssignedOperators.some((operator) => !operatorRates.has(operator.slug));
-  const unavailable = !isLoading && !isError && (!bundleShapeValid || !feeConfig || !countryIsValid || hasMissingRates);
-  const empty = !isLoading && !isError && !unavailable && operators.length === 0;
-  const feeSectionConfig: FeeSectionConfig | null = feeConfig && countryIsValid && !hasMissingRates
+  const empty = !isLoading && !isError && feeView?.status === 'empty';
+  const feeSectionConfig: FeeSectionConfig | null = feeView?.status === 'ready'
     ? {
-      collectionTitle: language === 'fr' ? feeConfig.collectionTitleFr : feeConfig.collectionTitleEn,
-      transferTitle: language === 'fr' ? feeConfig.transferTitleFr : feeConfig.transferTitleEn,
-      bankTransferLabel: language === 'fr' ? feeConfig.bankTransferLabelFr : feeConfig.bankTransferLabelEn,
-      bankTransferAmountXof: feeConfig.bankTransferAmountXof,
-      operators,
+      collectionTitle: language === 'fr' ? feeView.collectionTitleFr : feeView.collectionTitleEn,
+      transferTitle: language === 'fr' ? feeView.transferTitleFr : feeView.transferTitleEn,
+      bankTransferLabel: language === 'fr' ? feeView.bankTransferLabelFr : feeView.bankTransferLabelEn,
+      bankTransferAmountXof: feeView.bankTransferAmountXof,
+      operators: feeView.operators.map((operator): FeeOperatorDisplay => {
+        const fallbackLogo = feeOperatorLogoBySlug[operator.slug];
+        return {
+          ...operator,
+          logoUrl: operator.logoUrl ?? fallbackLogo?.image ?? null,
+          background: operator.background ?? fallbackLogo?.background ?? null,
+          foreground: operator.foreground ?? fallbackLogo?.foreground ?? null,
+        };
+      }),
     }
     : null;
   const closeMenu = () => setMenuOpen(false);

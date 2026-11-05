@@ -3,6 +3,7 @@ import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } fr
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
 import { ArrowDownRight, ArrowRight, Check, ChevronDown, ChevronRight, Globe2, LockKeyhole, Menu, Play, Sparkles, X } from 'lucide-react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import type { PublicOperatorFees as PublicOperatorFeesData } from '@workspace/api-zod';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useSeo } from '@/lib/seo';
@@ -20,7 +21,6 @@ import DeveloperApiCard from '@/components/DeveloperApiCard';
 import FeatureActionCards from '@/components/FeatureActionCards';
 import OperatorFeesSection from '@/components/OperatorFeesSection';
 import { developerApiExample } from '@/lib/developer-api-example';
-import { OPERATOR_FEES_CONTENT_KEY, parseOperatorFeesConfig } from '@/lib/operator-fees';
 import { feeOperatorLogoBySlug } from '@/lib/operator-fee-logos';
 import {
   getRegistrationUrl,
@@ -150,6 +150,7 @@ const contentCopy = (
   en: content?.find((item) => item.contentKey === key && item.locale === 'en' && item.isVisible)?.value ?? fallback.en,
 });
 type PublicLandingBundle = {
+  operatorFees: PublicOperatorFeesData;
   content: Array<{ contentKey: string; locale: string; value: string; isVisible: boolean }>;
   sections: Array<{ slug: string; kind: string; orderIndex: number; titleFr: string; titleEn: string; bodyFr: string | null; bodyEn: string | null; imageKey: string | null; isVisible: boolean }>;
   features: Array<{ slug: string; group: string; titleFr: string; titleEn: string; bodyFr: string; bodyEn: string; iconKey: string | null; isVisible: boolean }>;
@@ -368,43 +369,17 @@ function PublicOperatorFees({
 }) {
   if (!bundle) return null;
 
-  const feeContent = bundle.content.find((item) =>
-    item.contentKey === OPERATOR_FEES_CONTENT_KEY && item.locale === 'fr' && item.isVisible,
-  );
-  const feeConfig = parseOperatorFeesConfig(feeContent?.value);
-  if (!feeConfig) return null;
-
-  const ratesBySlug = new Map(feeConfig.operators.map((operator) => [operator.slug, operator]));
-  const ivoryCoast = bundle.countries.find((country) => country.code === 'CI' && country.isVisible);
-  if (!ivoryCoast) return null;
-  const ivoryCoastOperatorIds = new Set(
-    bundle.countryOperators
-      .filter((assignment) => assignment.countryId === ivoryCoast.id)
-      .map((assignment) => assignment.operatorId),
-  );
-  const visibleOperators = bundle.operators.filter((operator) =>
-    operator.isVisible && ivoryCoastOperatorIds.has(operator.id),
-  );
-  if (visibleOperators.some((operator) => !ratesBySlug.has(operator.slug))) return null;
-
-  const operators = visibleOperators
-    .map((operator) => {
-      const rate = ratesBySlug.get(operator.slug);
-      const logo = operator.logoKey
-        ? bundle.media.find((item) => item.slug === operator.logoKey && item.isVisible)
-        : undefined;
-      const fallbackLogo = feeOperatorLogoBySlug[operator.slug];
-      return {
-        slug: operator.slug,
-        name: operator.name,
-        logoUrl: logo?.publicUrl ?? fallbackLogo?.image ?? null,
-        background: operator.background ?? fallbackLogo?.background ?? null,
-        foreground: operator.foreground ?? fallbackLogo?.foreground ?? null,
-        collectionPercent: rate?.collectionPercent ?? 0,
-        transferPercent: rate?.transferPercent ?? 0,
-      };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name, language));
+  const feeConfig = bundle.operatorFees;
+  if (feeConfig.status !== 'ready') return null;
+  const operators = feeConfig.operators.map((operator) => {
+    const fallbackLogo = feeOperatorLogoBySlug[operator.slug];
+    return {
+      ...operator,
+      logoUrl: operator.logoUrl ?? fallbackLogo?.image ?? null,
+      background: operator.background ?? fallbackLogo?.background ?? null,
+      foreground: operator.foreground ?? fallbackLogo?.foreground ?? null,
+    };
+  });
 
   return (
     <OperatorFeesSection

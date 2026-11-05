@@ -9,6 +9,47 @@ import * as zod from 'zod';
 
 
 /**
+ * Returns visible landing content and a server-validated pricing view; private and unpublished fields are excluded.
+ * @summary Read public landing content
+ */
+export const getPublicLandingResponseOperatorFeesOneBankTransferAmountXofMin = 0;
+
+export const getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMin = 0;
+export const getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMax = 100;
+
+export const getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMin = 0;
+export const getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMax = 100;
+
+
+
+export const GetPublicLandingResponse = zod.object({
+  "operatorFees": zod.union([zod.object({
+  "status": zod.enum(['ready']),
+  "collectionTitleFr": zod.string(),
+  "collectionTitleEn": zod.string(),
+  "transferTitleFr": zod.string(),
+  "transferTitleEn": zod.string(),
+  "bankTransferLabelFr": zod.string(),
+  "bankTransferLabelEn": zod.string(),
+  "bankTransferAmountXof": zod.int().min(getPublicLandingResponseOperatorFeesOneBankTransferAmountXofMin),
+  "operators": zod.array(zod.object({
+  "slug": zod.string(),
+  "name": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "background": zod.string().nullable(),
+  "foreground": zod.string().nullable(),
+  "collectionPercent": zod.number().min(getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMin).max(getPublicLandingResponseOperatorFeesOneOperatorsItemCollectionPercentMax),
+  "transferPercent": zod.number().min(getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMin).max(getPublicLandingResponseOperatorFeesOneOperatorsItemTransferPercentMax)
+}))
+}),zod.object({
+  "status": zod.enum(['empty'])
+}),zod.object({
+  "status": zod.enum(['unavailable'])
+})])
+})
+
+
+/**
  * Returns server health status and the non-sensitive build ID, or null when no packaged build metadata is available.
  * @summary Health check
  */

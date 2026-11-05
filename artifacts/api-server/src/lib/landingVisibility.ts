@@ -1,3 +1,9 @@
+import {
+  hasExactOperatorFeeCoverage,
+  OPERATOR_FEES_CONTENT_KEY,
+  operatorFeesSchema,
+} from "./requestValidation";
+
 type VisibleRow = { isVisible?: unknown; [key: string]: unknown };
 type PublicRow = Record<string, unknown>;
 
@@ -35,7 +41,30 @@ export type PublicLandingBundle = {
   legalSections: PublicRow[];
   founder: PublicRow | null;
   settings: PublicRow | null;
+  operatorFees: PublicOperatorFees;
 };
+
+export type PublicOperatorFees =
+  | {
+      status: "ready";
+      collectionTitleFr: string;
+      collectionTitleEn: string;
+      transferTitleFr: string;
+      transferTitleEn: string;
+      bankTransferLabelFr: string;
+      bankTransferLabelEn: string;
+      bankTransferAmountXof: number;
+      operators: Array<{
+        slug: string;
+        name: string;
+        logoUrl: string | null;
+        background: string | null;
+        foreground: string | null;
+        collectionPercent: number;
+        transferPercent: number;
+      }>;
+    }
+  | { status: "empty" | "unavailable" };
 
 const publicFields = {
   media: ["id", "slug", "kind", "sourcePath", "storagePath", "publicUrl", "mimeType", "altFr", "altEn", "width", "height", "isVisible"],
@@ -98,9 +127,96 @@ function publicSettingsRow(settings: Record<string, unknown> | null): PublicRow 
   return publicSettings;
 }
 
+function buildPublicOperatorFees(bundle: LandingVisibilityBundle): PublicOperatorFees {
+  const feeRow = bundle.content.find((row) =>
+    row.isVisible === true &&
+    row.contentKey === OPERATOR_FEES_CONTENT_KEY &&
+    row.locale === "fr" &&
+    typeof row.value === "string",
+  );
+  if (!feeRow || typeof feeRow.value !== "string") return { status: "unavailable" };
+
+  let rawConfig: unknown;
+  try {
+    rawConfig = JSON.parse(feeRow.value);
+  } catch {
+    return { status: "unavailable" };
+  }
+  const parsedConfig = operatorFeesSchema.safeParse(rawConfig);
+  if (!parsedConfig.success) return { status: "unavailable" };
+
+  const country = bundle.countries.find((row) =>
+    row.isVisible === true && row.code === "CI" && Number.isSafeInteger(row.id) && row.id > 0,
+  );
+  if (!country) return { status: "unavailable" };
+
+  const assignedIds = new Set(
+    bundle.countryOperators
+      .filter((assignment) => assignment.countryId === country.id)
+      .map((assignment) => assignment.operatorId),
+  );
+  const visibleOperators = bundle.operators.filter((operator) =>
+    operator.isVisible === true && assignedIds.has(operator.id),
+  );
+  if (visibleOperators.length === 0) return { status: "empty" };
+
+  const visibleSlugs = visibleOperators.map((operator) => operator.slug);
+  const feeSlugs = parsedConfig.data.operators.map((operator) => operator.slug);
+  if (
+    visibleSlugs.some((slug) => typeof slug !== "string") ||
+    visibleSlugs.some((slug) => typeof slug === "string" && !/^[a-z0-9][a-z0-9._-]{0,79}$/i.test(slug)) ||
+    !hasExactOperatorFeeCoverage(feeSlugs, visibleSlugs as string[])
+  ) {
+    return { status: "unavailable" };
+  }
+
+  const ratesBySlug = new Map(parsedConfig.data.operators.map((operator) => [operator.slug, operator]));
+  const publicMedia = bundle.media.filter((item) => item.isVisible === true);
+  const operators = visibleOperators
+    .flatMap((operator) => {
+      if (
+        typeof operator.slug !== "string" ||
+        typeof operator.name !== "string" ||
+        !operator.name.trim()
+      ) {
+        return [];
+      }
+      const rate = ratesBySlug.get(operator.slug);
+      if (!rate) return [];
+      const logo = typeof operator.logoKey === "string"
+        ? publicMedia.find((item) => item.slug === operator.logoKey && typeof item.publicUrl === "string")
+        : undefined;
+      return [{
+        slug: operator.slug,
+        name: operator.name,
+        logoUrl: typeof logo?.publicUrl === "string" ? logo.publicUrl : null,
+        background: typeof operator.background === "string" ? operator.background : null,
+        foreground: typeof operator.foreground === "string" ? operator.foreground : null,
+        collectionPercent: rate.collectionPercent,
+        transferPercent: rate.transferPercent,
+      }];
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+
+  if (operators.length !== visibleOperators.length) return { status: "unavailable" };
+
+  return {
+    status: "ready",
+    collectionTitleFr: parsedConfig.data.collectionTitleFr,
+    collectionTitleEn: parsedConfig.data.collectionTitleEn,
+    transferTitleFr: parsedConfig.data.transferTitleFr,
+    transferTitleEn: parsedConfig.data.transferTitleEn,
+    bankTransferLabelFr: parsedConfig.data.bankTransferLabelFr,
+    bankTransferLabelEn: parsedConfig.data.bankTransferLabelEn,
+    bankTransferAmountXof: parsedConfig.data.bankTransferAmountXof,
+    operators,
+  };
+}
+
 export function filterPublicLandingBundle(bundle: LandingVisibilityBundle): PublicLandingBundle {
   const media = visibleRows(bundle.media, publicFields.media);
-  const content = visibleRows(bundle.content, publicFields.content);
+  const content = visibleRows(bundle.content, publicFields.content)
+    .filter((row) => row.contentKey !== OPERATOR_FEES_CONTENT_KEY);
   const sections = visibleRows(bundle.sections, publicFields.sections);
   const features = visibleRows(bundle.features, publicFields.features);
   const faqs = visibleRows(bundle.faqs, publicFields.faqs);
@@ -134,5 +250,6 @@ export function filterPublicLandingBundle(bundle: LandingVisibilityBundle): Publ
       ? projectPublicFields(bundle.founder, publicFields.founder)
       : null,
     settings: publicSettingsRow(bundle.settings),
+    operatorFees: buildPublicOperatorFees(bundle),
   };
 }

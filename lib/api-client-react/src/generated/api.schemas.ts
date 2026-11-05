@@ -5,6 +5,73 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type PublicOperatorFeesReadyStatus = typeof PublicOperatorFeesReadyStatus[keyof typeof PublicOperatorFeesReadyStatus];
+
+
+export const PublicOperatorFeesReadyStatus = {
+  ready: 'ready',
+} as const;
+
+export interface PublicOperatorFee {
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+  background: string | null;
+  foreground: string | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  collectionPercent: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  transferPercent: number;
+}
+
+export interface PublicOperatorFeesReady {
+  status: PublicOperatorFeesReadyStatus;
+  collectionTitleFr: string;
+  collectionTitleEn: string;
+  transferTitleFr: string;
+  transferTitleEn: string;
+  bankTransferLabelFr: string;
+  bankTransferLabelEn: string;
+  /** @minimum 0 */
+  bankTransferAmountXof: number;
+  operators: PublicOperatorFee[];
+}
+
+export type PublicOperatorFeesEmptyStatus = typeof PublicOperatorFeesEmptyStatus[keyof typeof PublicOperatorFeesEmptyStatus];
+
+
+export const PublicOperatorFeesEmptyStatus = {
+  empty: 'empty',
+} as const;
+
+export interface PublicOperatorFeesEmpty {
+  status: PublicOperatorFeesEmptyStatus;
+}
+
+export type PublicOperatorFeesUnavailableStatus = typeof PublicOperatorFeesUnavailableStatus[keyof typeof PublicOperatorFeesUnavailableStatus];
+
+
+export const PublicOperatorFeesUnavailableStatus = {
+  unavailable: 'unavailable',
+} as const;
+
+export interface PublicOperatorFeesUnavailable {
+  status: PublicOperatorFeesUnavailableStatus;
+}
+
+export type PublicOperatorFees = PublicOperatorFeesReady | PublicOperatorFeesEmpty | PublicOperatorFeesUnavailable;
+
+export interface PublicLandingResponse {
+  operatorFees: PublicOperatorFees;
+  [key: string]: unknown;
+ }
+
 export interface HealthStatus {
   status: string;
   buildId: string | null;
