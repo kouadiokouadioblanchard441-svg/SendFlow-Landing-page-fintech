@@ -25,7 +25,7 @@ export function createIpBlockMiddleware(
       return;
     }
     if (!isReady()) {
-      next();
+      res.status(503).json({ error: "Le contrôle de sécurité est temporairement indisponible." });
       return;
     }
 

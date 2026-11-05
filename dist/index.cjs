@@ -64179,7 +64179,7 @@ function createIpBlockMiddleware(checkBlocked = isIpBlocked, isReady = isIpBlock
       return;
     }
     if (!isReady()) {
-      next();
+      res.status(503).json({ error: "Le contr\xF4le de s\xE9curit\xE9 est temporairement indisponible." });
       return;
     }
     const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
