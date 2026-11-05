@@ -3,10 +3,15 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const appSource = await readFile(
-  fileURLToPath(new URL("../src/App.tsx", import.meta.url)),
-  "utf8",
-);
+const [appSource, viteConfig] = await Promise.all([
+  readFile(fileURLToPath(new URL("../src/App.tsx", import.meta.url)), "utf8"),
+  readFile(fileURLToPath(new URL("../vite.config.ts", import.meta.url)), "utf8"),
+]);
+
+test("production frontend minifies JavaScript and does not emit source maps", () => {
+  assert.match(viteConfig, /minify:\s*['"]esbuild['"]/);
+  assert.match(viteConfig, /sourcemap:\s*false/);
+});
 
 test("admin credentials are not extracted from URLs or persisted by the client", () => {
   assert.doesNotMatch(appSource, /takePanelCredentialsFromUrl|initialPanelCredentials/);
