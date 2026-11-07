@@ -26,3 +26,4 @@
 - [SendFlow CSP and Vite nonces](csp-vite-nonces.md) — Vite removes module-entry nonces at build time; attach the response nonce to compiled HTML and verify in a browser.
 - [Environment example hygiene](env-example-hygiene.md) — Keep tracked environment templates to unmistakable placeholders; scanners can miss values and Git history persists them.
 - [Workspace dependency overrides](pnpm-workspace-overrides.md) — Keep transitive pins in the workspace override map; root-manifest overrides can replace broader lockfile rules.
+- [SendFlow 404 behavior](sendflow-not-found-page.md) — Unknown URLs should show a plain, localized “page not found” page, not a fake browser/network outage.

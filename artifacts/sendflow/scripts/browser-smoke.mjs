@@ -45,6 +45,34 @@ const browser = await chromium.launch({
 });
 
 try {
+  const notFoundPage = await browser.newPage();
+  const missingRouteResponse = await notFoundPage.goto(
+    new URL('/page-inexistante-smoke-test', origin).href,
+    { waitUntil: 'domcontentloaded' },
+  );
+  assert.equal(missingRouteResponse?.status(), 200, 'The SPA shell should load for an unknown route');
+  await notFoundPage.getByRole('heading', { name: 'Cette page n’existe pas' }).waitFor({
+    state: 'visible',
+    timeout: 20_000,
+  });
+  assert.equal(await notFoundPage.getByText('ERREUR 404').count(), 1);
+  assert.equal(
+    await notFoundPage.locator('.sf-navigation-loader').count(),
+    0,
+    'An unknown route should not be covered by the full-screen loader on first load',
+  );
+  console.log('Verified the French 404 page on a direct unknown URL');
+  await notFoundPage.goto(new URL('/en/page-not-found-smoke-test', origin).href, {
+    waitUntil: 'domcontentloaded',
+  });
+  await notFoundPage.getByRole('heading', { name: 'This page can’t be found' }).waitFor({
+    state: 'visible',
+    timeout: 20_000,
+  });
+  assert.equal(await notFoundPage.getByText('ERROR 404').count(), 1);
+  console.log('Verified the English 404 page on a direct unknown URL');
+  await notFoundPage.close();
+
   for (const route of routes) {
     const page = await browser.newPage();
     const browserErrors = [];

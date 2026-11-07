@@ -1,23 +1,31 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { FileQuestion } from 'lucide-react';
 
 export default function NotFound() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="pt-6">
-          <div className="flex mb-4 gap-2">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-gray-900">
-              404 Page Not Found
-            </h1>
-          </div>
+  const isEnglish = window.location.pathname.toLowerCase().startsWith('/en/');
 
-          <p className="mt-4 text-sm text-gray-600">
-            Did you forget to add the page to the router?
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+  return (
+    <main className="min-h-screen w-full bg-white px-7 pt-[14vh] text-[#202124] sm:px-10">
+      <section className="mx-auto max-w-xl" aria-labelledby="not-found-title">
+        <FileQuestion
+          aria-hidden="true"
+          className="mb-14 h-12 w-12 text-[#5f6368]"
+          strokeWidth={1.8}
+        />
+        <h1
+          id="not-found-title"
+          className="mb-4 text-[22px] font-semibold leading-tight tracking-[-0.02em] sm:text-2xl"
+        >
+          {isEnglish ? 'This page can’t be found' : 'Cette page n’existe pas'}
+        </h1>
+        <p className="max-w-lg text-[16px] leading-[1.7] text-[#5f6368]">
+          {isEnglish
+            ? 'The address may be incorrect, or the page may have been moved or removed.'
+            : 'L’adresse demandée est peut-être incorrecte, ou cette page a été déplacée ou supprimée.'}
+        </p>
+        <p className="mt-5 text-sm font-medium tracking-[0.02em] text-[#5f6368]">
+          {isEnglish ? 'ERROR 404' : 'ERREUR 404'}
+        </p>
+      </section>
+    </main>
   );
 }

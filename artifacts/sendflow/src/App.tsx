@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import type { PublicOperatorFees as PublicOperatorFeesData } from '@workspace/api-zod';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import NotFound from '@/pages/not-found';
 import { useSeo } from '@/lib/seo';
 import publicSeoRoutes from '@/lib/public-seo-routes.json';
 import { getLocaleFromPath, getLocalizedPath } from '@/lib/localized-routes';
@@ -85,7 +86,6 @@ import simpleExperienceIcon from './assets/sendflow-icon-simple-experience.svg';
 import visibleDetailsIcon from './assets/sendflow-icon-visible-details.svg';
 import privateIcon from './assets/sendflow-icon-private.svg';
 
-const NotFound = lazy(() => import('@/pages/not-found'));
 const AdminPage = lazy(() => import('@/pages/admin'));
 const AboutPage = lazy(() => import('@/pages/about'));
 const LegalMentionsPage = lazy(() =>
@@ -542,7 +542,7 @@ function AnimatedRoutes() {
   const previousRoutePath = useRef(getTransitionRoutePath(location));
   const hasMountedRoutes = useRef(false);
   const navigationTimeout = useRef<number | null>(null);
-  const [isNavigating, setIsNavigating] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
   const previousIndex = getRouteMotionIndex(previousLocation.current);
   const nextIndex = getRouteMotionIndex(location);
   const direction: RouteMotionSettings['direction'] =
@@ -568,7 +568,7 @@ function AnimatedRoutes() {
       if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
 
-    if (!isInitialMount && !hasRouteChanged) return;
+    if (isInitialMount || !hasRouteChanged) return;
 
     setIsNavigating(true);
     if (navigationTimeout.current !== null) window.clearTimeout(navigationTimeout.current);
