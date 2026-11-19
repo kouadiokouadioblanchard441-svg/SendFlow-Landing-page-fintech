@@ -7,8 +7,12 @@ process.env.APP_URL ??= "https://sendflow.example";
 
 const {
   callTelegramApi,
+  configureTelegramWebhook,
+  deriveTelegramWebhookSecret,
+  getTelegramChatMemberStatus,
   getIpBlockTableSqlForTest,
-  isAuthorizedTelegramAdmin,
+  isAuthorizedTelegramGroupAdmin,
+  isTelegramAdministratorStatus,
   isIpBlockStoreReady,
   isPublicClientIp,
   isTelegramWebhookAuthorized,
@@ -19,28 +23,26 @@ const {
   safeSecurityRequestPath,
 } = await import("../src/lib/telegramAudit.ts");
 
-test("Telegram monitoring is off unless explicitly enabled", () => {
-  const config = readTelegramConfig({
-    TELEGRAM_AUDIT_ENABLED: "false",
-  });
+test("Telegram monitoring is off when the bot token and group ID are absent", () => {
+  const config = readTelegramConfig({});
   assert.equal(config, null);
 });
 
-test("enabled monitoring requires complete, valid server configuration", () => {
+test("Telegram monitoring enables with only the bot token and group ID", () => {
+  const botToken = "123456789:abcdefghijklmnopqrstuvwxyzABCDEFG";
   assert.throws(
-    () => readTelegramConfig({ TELEGRAM_AUDIT_ENABLED: "true" }),
-    /TELEGRAM_BOT_TOKEN/,
+    () => readTelegramConfig({ TELEGRAM_BOT_TOKEN: botToken }),
+    /TELEGRAM_CHAT_ID/,
   );
   const config = readTelegramConfig({
-    TELEGRAM_AUDIT_ENABLED: "true",
-    TELEGRAM_BOT_TOKEN: "123456789:abcdefghijklmnopqrstuvwxyzABCDEFG",
+    TELEGRAM_BOT_TOKEN: botToken,
     TELEGRAM_CHAT_ID: "-100123456789",
-    TELEGRAM_WEBHOOK_SECRET: "A-secure_secret-123",
-    TELEGRAM_ADMIN_USER_IDS: "12345, 67890",
   });
   assert.ok(config);
-  assert.deepEqual([...config.adminUserIds], ["12345", "67890"]);
   assert.equal(config.chatId, "-100123456789");
+  assert.equal(config.webhookSecret, deriveTelegramWebhookSecret(botToken));
+  assert.match(config.webhookSecret, /^[A-Fa-f0-9]{64}$/);
+  assert.notEqual(config.webhookSecret, botToken);
 });
 
 test("IP handling rejects private and malformed addresses before block buttons are created", () => {
@@ -80,22 +82,103 @@ test("Telegram webhook secret comparison rejects absent, wrong, and unequal-leng
   assert.equal(isTelegramWebhookAuthorized("long-secret", "long-secret"), true);
 });
 
-test("only allowlisted Telegram users in the configured chat can control IP blocks", () => {
-  const config = {
-    chatId: "-100123456789",
-    adminUserIds: new Set(["12345"]),
+test("only Telegram group creators and administrators are accepted for block controls", () => {
+  assert.equal(isTelegramAdministratorStatus("creator"), true);
+  assert.equal(isTelegramAdministratorStatus("administrator"), true);
+  assert.equal(isTelegramAdministratorStatus("member"), false);
+  assert.equal(isTelegramAdministratorStatus("restricted"), false);
+  assert.equal(isTelegramAdministratorStatus("left"), false);
+  assert.equal(
+    isAuthorizedTelegramGroupAdmin("-100123456789", "-100123456789", "administrator"),
+    true,
+  );
+  assert.equal(
+    isAuthorizedTelegramGroupAdmin("-100999999999", "-100123456789", "administrator"),
+    false,
+  );
+  assert.equal(
+    isAuthorizedTelegramGroupAdmin("-100123456789", "-100123456789", "member"),
+    false,
+  );
+});
+
+test("Telegram group membership checks only accept a valid getChatMember response", async () => {
+  const config = readTelegramConfig({
+    TELEGRAM_BOT_TOKEN: "123456789:abcdefghijklmnopqrstuvwxyzABCDEFG",
+    TELEGRAM_CHAT_ID: "-100123456789",
+  });
+  assert.ok(config);
+  let requestedUrl = "";
+  let requestBody = "";
+  const status = await getTelegramChatMemberStatus(
+    "12345",
+    config,
+    async (input, init) => {
+      requestedUrl = String(input);
+      requestBody = String(init?.body);
+      return new Response(JSON.stringify({
+        ok: true,
+        result: { status: "administrator" },
+      }), { status: 200 });
+    },
+  );
+  assert.equal(status, "administrator");
+  assert.ok(requestedUrl.endsWith("/getChatMember"));
+  assert.deepEqual(JSON.parse(requestBody), {
+    chat_id: "-100123456789",
+    user_id: "12345",
+  });
+
+  const malformedStatus = await getTelegramChatMemberStatus(
+    "99999",
+    config,
+    async () => new Response(JSON.stringify({ ok: false }), { status: 200 }),
+  );
+  assert.equal(malformedStatus, null);
+});
+
+test("Telegram webhook configures itself with the derived secret and public SendFlow URL", async () => {
+  const previous = {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    chat: process.env.TELEGRAM_CHAT_ID,
+    publicSiteUrl: process.env.PUBLIC_SITE_URL,
   };
-  assert.equal(isAuthorizedTelegramAdmin("12345", "-100123456789", config), true);
-  assert.equal(isAuthorizedTelegramAdmin("12345", "-100999999999", config), false);
-  assert.equal(isAuthorizedTelegramAdmin("99999", "-100123456789", config), false);
+  const botToken = "123456789:abcdefghijklmnopqrstuvwxyzABCDEFG";
+  Object.assign(process.env, {
+    TELEGRAM_BOT_TOKEN: botToken,
+    TELEGRAM_CHAT_ID: "-100123456789",
+    PUBLIC_SITE_URL: "https://sendflow.africa",
+  });
+  try {
+    let payload: Record<string, unknown> | undefined;
+    const registered = await configureTelegramWebhook(async (_input, init) => {
+      payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+    assert.equal(registered, true);
+    assert.deepEqual(payload, {
+      url: "https://sendflow.africa/api/security/telegram/webhook",
+      secret_token: deriveTelegramWebhookSecret(botToken),
+      allowed_updates: ["callback_query"],
+    });
+    assert.doesNotMatch(JSON.stringify(payload), /123456789:abcdefghijklmnopqrstuvwxyzABCDEFG/);
+  } finally {
+    for (const [key, value] of Object.entries({
+      TELEGRAM_BOT_TOKEN: previous.token,
+      TELEGRAM_CHAT_ID: previous.chat,
+      PUBLIC_SITE_URL: previous.publicSiteUrl,
+    })) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test("Telegram request failures never include the bot token or upstream body in logs/errors", async () => {
   const config = {
     botToken: "123456789:abcdefghijklmnopqrstuvwxyzABCDEFG",
     chatId: "-100123456789",
-    webhookSecret: "A-secure_secret-123",
-    adminUserIds: new Set(["12345"]),
+    webhookSecret: deriveTelegramWebhookSecret("123456789:abcdefghijklmnopqrstuvwxyzABCDEFG"),
   };
   let calledUrl = "";
   const succeeded = await callTelegramApi(

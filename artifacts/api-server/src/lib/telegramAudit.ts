@@ -1,7 +1,8 @@
 import { isIP } from "node:net";
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
+import { getPublicSiteUrl } from "./publicSiteUrl";
 
 export type PublicActivityKind = "page_view" | "click" | "form_submit";
 
@@ -17,7 +18,6 @@ export type TelegramConfig = {
   botToken: string;
   chatId: string;
   webhookSecret: string;
-  adminUserIds: Set<string>;
 };
 
 const IP_BLOCKS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS security_ip_blocks (
@@ -91,24 +91,17 @@ export function normalizePublicIp(value: string): string | null {
 export function readTelegramConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): TelegramConfig | null {
-  if (env.TELEGRAM_AUDIT_ENABLED?.trim().toLowerCase() !== "true") return null;
+  const botToken = env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = env.TELEGRAM_CHAT_ID?.trim();
+  if (!botToken && !chatId) return null;
 
-  const missing = [
-    "TELEGRAM_BOT_TOKEN",
-    "TELEGRAM_CHAT_ID",
-    "TELEGRAM_WEBHOOK_SECRET",
-    "TELEGRAM_ADMIN_USER_IDS",
-  ].filter((name) => !env[name]?.trim());
-  if (missing.length > 0) {
+  if (!botToken || !chatId) {
+    const missing = [
+      !botToken && "TELEGRAM_BOT_TOKEN",
+      !chatId && "TELEGRAM_CHAT_ID",
+    ].filter((name): name is string => Boolean(name));
     throw new Error(`Telegram audit is enabled but required settings are missing: ${missing.join(", ")}`);
   }
-
-  const botToken = env.TELEGRAM_BOT_TOKEN!.trim();
-  const chatId = env.TELEGRAM_CHAT_ID!.trim();
-  const webhookSecret = env.TELEGRAM_WEBHOOK_SECRET!.trim();
-  const adminUserIds = new Set(
-    env.TELEGRAM_ADMIN_USER_IDS!.split(",").map((id) => id.trim()).filter(Boolean),
-  );
 
   if (!/^\d+:[A-Za-z0-9_-]{20,}$/.test(botToken)) {
     throw new Error("TELEGRAM_BOT_TOKEN has an invalid format.");
@@ -116,17 +109,18 @@ export function readTelegramConfig(
   if (!/^-?\d+$/.test(chatId)) {
     throw new Error("TELEGRAM_CHAT_ID must be a numeric Telegram chat ID.");
   }
-  if (!/^[A-Za-z0-9_-]{1,256}$/.test(webhookSecret)) {
-    throw new Error("TELEGRAM_WEBHOOK_SECRET must contain only letters, numbers, underscores, or hyphens.");
-  }
-  if (
-    adminUserIds.size === 0 ||
-    [...adminUserIds].some((id) => !/^\d{1,20}$/.test(id))
-  ) {
-    throw new Error("TELEGRAM_ADMIN_USER_IDS must contain comma-separated numeric Telegram user IDs.");
-  }
 
-  return { botToken, chatId, webhookSecret, adminUserIds };
+  return {
+    botToken,
+    chatId,
+    webhookSecret: deriveTelegramWebhookSecret(botToken),
+  };
+}
+
+export function deriveTelegramWebhookSecret(botToken: string): string {
+  return createHmac("sha256", botToken)
+    .update("sendflow-telegram-webhook-v1")
+    .digest("hex");
 }
 
 export function isTelegramWebhookAuthorized(
@@ -137,12 +131,17 @@ export function isTelegramWebhookAuthorized(
   return timingSafeEqual(Buffer.from(suppliedSecret), Buffer.from(expectedSecret));
 }
 
-export function isAuthorizedTelegramAdmin(
-  userId: string,
-  chatId: string,
-  config: Pick<TelegramConfig, "adminUserIds" | "chatId">,
+export function isTelegramAdministratorStatus(status: unknown): boolean {
+  return status === "creator" || status === "administrator";
+}
+
+export function isAuthorizedTelegramGroupAdmin(
+  callbackChatId: string,
+  configuredChatId: string,
+  memberStatus: unknown,
 ): boolean {
-  return config.chatId === chatId && config.adminUserIds.has(userId);
+  return callbackChatId === configuredChatId &&
+    isTelegramAdministratorStatus(memberStatus);
 }
 
 export function safePublicPagePath(value: unknown): string | null {
@@ -259,6 +258,40 @@ export async function callTelegramApi(
   } catch {
     logger.warn({ method }, "Telegram API request could not be completed");
     return false;
+  }
+}
+
+export async function getTelegramChatMemberStatus(
+  userId: string,
+  config: TelegramConfig,
+  request: typeof fetch = fetch,
+): Promise<string | null> {
+  try {
+    const response = await request(
+      `https://api.telegram.org/bot${config.botToken}/getChatMember`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chat_id: config.chatId, user_id: userId }),
+        signal: AbortSignal.timeout(5_000),
+      },
+    );
+    if (!response.ok) {
+      logger.warn({ statusCode: response.status, method: "getChatMember" }, "Telegram API request failed");
+      return null;
+    }
+    const result = await response.json() as {
+      ok?: unknown;
+      result?: { status?: unknown };
+    };
+    if (result.ok !== true || typeof result.result?.status !== "string") {
+      logger.warn({ method: "getChatMember" }, "Telegram API rejected a membership check");
+      return null;
+    }
+    return result.result.status;
+  } catch {
+    logger.warn({ method: "getChatMember" }, "Telegram membership check could not be completed");
+    return null;
   }
 }
 
@@ -401,10 +434,16 @@ export async function handleTelegramUpdate(update: unknown): Promise<"ignored" |
       ? String(query.message.chat.id)
       : "";
   const action = parseCallback(query.data);
+  const memberStatus = callbackId &&
+      action &&
+      callbackChatId === config.chatId &&
+      /^\d{1,20}$/.test(userId)
+    ? await getTelegramChatMemberStatus(userId, config)
+    : null;
   if (
     !callbackId ||
     !action ||
-    !isAuthorizedTelegramAdmin(userId, callbackChatId, config)
+    !isAuthorizedTelegramGroupAdmin(callbackChatId, config.chatId, memberStatus)
   ) {
     if (callbackId) {
       await callTelegramApi("answerCallbackQuery", {
@@ -435,21 +474,34 @@ export async function handleTelegramUpdate(update: unknown): Promise<"ignored" |
   return "handled";
 }
 
-export async function configureTelegramWebhook(): Promise<boolean> {
+export async function configureTelegramWebhook(
+  request: typeof fetch = fetch,
+): Promise<boolean> {
   const config = readTelegramConfig();
   if (!config) return false;
-  const baseUrl = process.env.PUBLIC_SITE_URL?.trim();
-  if (!baseUrl) throw new Error("PUBLIC_SITE_URL is required to configure the Telegram webhook.");
-  const parsed = new URL(baseUrl);
+  const baseUrl = getPublicSiteUrl() ??
+    (process.env.NODE_ENV === "production" ? "https://sendflow.africa" : undefined);
+  if (!baseUrl) {
+    logger.warn("Telegram webhook was not registered because the public site URL is not configured.");
+    return false;
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    logger.warn("Telegram webhook was not registered because the public site URL is invalid.");
+    return false;
+  }
   if (parsed.protocol !== "https:") {
-    throw new Error("PUBLIC_SITE_URL must use HTTPS to configure the Telegram webhook.");
+    logger.warn("Telegram webhook was not registered because the public site URL is not HTTPS.");
+    return false;
   }
   const webhookUrl = new URL("/api/security/telegram/webhook", parsed.origin).toString();
   const registered = await callTelegramApi("setWebhook", {
     url: webhookUrl,
     secret_token: config.webhookSecret,
     allowed_updates: ["callback_query"],
-  }, config);
+  }, config, request);
   telegramWebhookReady = registered;
   return registered;
 }

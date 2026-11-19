@@ -8,20 +8,15 @@ process.env.NEON_DATABASE_URL ??=
 process.env.APP_URL = "https://sendflow.example";
 
 const { default: securityRouter } = await import("../src/routes/security.ts");
+const { deriveTelegramWebhookSecret } = await import("../src/lib/telegramAudit.ts");
 
 test("public telemetry and Telegram webhook enforce configuration and origin checks", async () => {
   const previous = {
-    enabled: process.env.TELEGRAM_AUDIT_ENABLED,
     token: process.env.TELEGRAM_BOT_TOKEN,
     chat: process.env.TELEGRAM_CHAT_ID,
-    secret: process.env.TELEGRAM_WEBHOOK_SECRET,
-    admins: process.env.TELEGRAM_ADMIN_USER_IDS,
   };
-  delete process.env.TELEGRAM_AUDIT_ENABLED;
   delete process.env.TELEGRAM_BOT_TOKEN;
   delete process.env.TELEGRAM_CHAT_ID;
-  delete process.env.TELEGRAM_WEBHOOK_SECRET;
-  delete process.env.TELEGRAM_ADMIN_USER_IDS;
 
   const app = express().use(express.json()).use("/api", securityRouter);
   const server = createServer(app);
@@ -44,12 +39,10 @@ test("public telemetry and Telegram webhook enforce configuration and origin che
     assert.equal(disabledEvent.status, 204);
     assert.equal(await disabledEvent.text(), "");
 
+    const botToken = "123456789:abcdefghijklmnopqrstuvwxyzABCDEFG";
     Object.assign(process.env, {
-      TELEGRAM_AUDIT_ENABLED: "true",
-      TELEGRAM_BOT_TOKEN: "123456789:abcdefghijklmnopqrstuvwxyzABCDEFG",
+      TELEGRAM_BOT_TOKEN: botToken,
       TELEGRAM_CHAT_ID: "-100123456789",
-      TELEGRAM_WEBHOOK_SECRET: "A-secure_secret-123",
-      TELEGRAM_ADMIN_USER_IDS: "12345",
     });
 
     const crossOriginEvent = await fetch(`${origin}/api/security/telemetry/events`, {
@@ -84,7 +77,7 @@ test("public telemetry and Telegram webhook enforce configuration and origin che
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-telegram-bot-api-secret-token": "A-secure_secret-123",
+        "x-telegram-bot-api-secret-token": deriveTelegramWebhookSecret(botToken),
       },
       body: JSON.stringify({ update_id: 123 }),
     });
@@ -93,11 +86,8 @@ test("public telemetry and Telegram webhook enforce configuration and origin che
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     for (const [key, value] of Object.entries({
-      TELEGRAM_AUDIT_ENABLED: previous.enabled,
       TELEGRAM_BOT_TOKEN: previous.token,
       TELEGRAM_CHAT_ID: previous.chat,
-      TELEGRAM_WEBHOOK_SECRET: previous.secret,
-      TELEGRAM_ADMIN_USER_IDS: previous.admins,
     })) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;

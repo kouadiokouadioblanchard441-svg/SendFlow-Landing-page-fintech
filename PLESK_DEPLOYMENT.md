@@ -249,12 +249,8 @@ Environment variables**, jamais dans Git :
 | `RESEND_FROM_EMAIL` | Pour l’envoi d’e-mails | Adresse d’expédition vérifiée chez Resend. |
 | `PUBLIC_SITE_URL` | Recommandée | `https://sendflow.africa` pour les contrôles d’origine et les liens générés par l’API. |
 | `RECAPTCHA_SITE_KEY` et `RECAPTCHA_SECRET_KEY` | Facultatives, ensemble | Active le badge reCAPTCHA v3 et la vérification des inscriptions à la newsletter. La clé secrète reste côté serveur. Voir la section reCAPTCHA ci-dessous. |
-| `TELEGRAM_AUDIT_ENABLED` | Facultative | Valeur `true` pour activer les notifications Telegram. Laisser désactivée jusqu’à la mise à jour de la politique de confidentialité et à la vérification du groupe, des identifiants admin et du proxy. |
-| `TELEGRAM_BOT_TOKEN` | Si Telegram est activé | Jeton BotFather, uniquement dans l’environnement Node Plesk. Ne jamais l’ajouter à Git, à `VITE_*`, au frontend ou à une URL. |
-| `TELEGRAM_CHAT_ID` | Si Telegram est activé | Identifiant numérique du groupe privé qui reçoit les alertes. Limiter l’accès du groupe aux personnes autorisées. |
-| `TELEGRAM_WEBHOOK_SECRET` | Si Telegram est activé | Secret aléatoire transmis par Telegram dans l’en-tête du webhook ; utiliser uniquement des lettres, chiffres, `_` et `-`. |
-| `TELEGRAM_ADMIN_USER_IDS` | Si Telegram est activé | Identifiants Telegram numériques, séparés par des virgules. Seuls ces comptes peuvent bloquer/débloquer une IP avec les boutons du groupe. |
-| `TELEGRAM_AUTO_CONFIGURE_WEBHOOK` | Facultative | Valeur `true` pour que le démarrage Node enregistre `/api/security/telegram/webhook` auprès du bot. Cette opération remplace le webhook déjà configuré pour ce bot : réserver un bot dédié à SendFlow et activer explicitement après vérification. |
+| `TELEGRAM_BOT_TOKEN` | Pour activer Telegram | Jeton BotFather, uniquement dans l’environnement Node Plesk. Ne jamais l’ajouter à Git, à `VITE_*`, au frontend ou à une URL. |
+| `TELEGRAM_CHAT_ID` | Pour activer Telegram | Identifiant numérique du groupe privé qui reçoit les alertes. La présence de ces deux variables active la supervision et l’enregistrement du webhook au démarrage. |
 | `TRUSTED_PROXY_IPS` | Selon le proxy Plesk | Adresses IP exactes des proxys de confiance, séparées par des virgules. Ne pas y mettre `*`, un nombre de sauts ou des plages larges. Sans cette valeur, `X-Forwarded-For` n’est pas cru ; si Node ne voit que l’IP privée de Passenger, Telegram indiquera que l’IP visiteur est indisponible et n’affichera pas de bouton de blocage. |
 | `PORT` | Non sous Passenger | Ne pas fixer de port dans Plesk Passenger. Nécessaire uniquement si le serveur est lancé directement par Node hors Passenger. |
 | `LOG_LEVEL` | Facultative | Niveau de journalisation ; `info` par défaut. |
@@ -285,15 +281,29 @@ est limitée et signale les excès. Ce canal n’est donc pas un journal d’aud
 garanti. Les adresses bloquées sont, elles, conservées dans la table
 `security_ip_blocks` jusqu’au déblocage.
 
-Renseigne les variables Telegram dans **Plesk → Node.js → Environment variables**,
-puis active `TELEGRAM_AUDIT_ENABLED=true`. Le démarrage crée de façon idempotente
-la seule table `security_ip_blocks`; le compte PostgreSQL doit donc avoir le
-droit `CREATE`. Les boutons IP ne sont affichés qu’après l’enregistrement du
-webhook. Active aussi `TELEGRAM_AUTO_CONFIGURE_WEBHOOK=true` puis redémarre
-l’application pour configurer le webhook automatiquement.
-Le bot doit être ajouté au groupe privé et disposer du droit d’envoyer des
-messages. Les identifiants Telegram autorisés sont contrôlés côté serveur ;
-l’appui d’un autre membre sur un bouton ne modifie pas la liste.
+Renseigne uniquement `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID` dans
+**Plesk → Node.js → Environment variables**, puis redémarre l’application.
+Leur présence active la supervision automatiquement. Le backend dérive un
+secret webhook du jeton côté serveur, puis enregistre
+`/api/security/telegram/webhook` auprès de Telegram au démarrage. Réserve un bot
+dédié à SendFlow : l’enregistrement remplace le webhook déjà configuré pour ce
+bot.
+
+Le bot doit être **administrateur du groupe privé**, avec le droit d’envoyer des
+messages. À chaque clic sur un bouton de blocage/déblocage, le backend vérifie
+auprès de Telegram que la personne qui a cliqué est actuellement créatrice ou
+administratrice de ce groupe. Les autres membres ne peuvent pas déclencher
+l’action. Cette vérification exige que Telegram puisse retourner l’appartenance
+au groupe ; si l’API Telegram est indisponible ou ne confirme pas le rôle,
+l’action est refusée.
+
+Au premier démarrage, l’application crée de façon idempotente la table
+`security_ip_blocks`; le compte PostgreSQL doit donc avoir le droit `CREATE`.
+Les boutons IP n’apparaissent qu’après la création de cette table et
+l’enregistrement du webhook. Si les anciennes variables
+`TELEGRAM_AUDIT_ENABLED`, `TELEGRAM_WEBHOOK_SECRET`,
+`TELEGRAM_ADMIN_USER_IDS` ou `TELEGRAM_AUTO_CONFIGURE_WEBHOOK` sont encore
+présentes dans Plesk, elles ne sont plus utilisées et peuvent être retirées.
 
 Avant l’activation, mets à jour la politique de confidentialité publiée depuis
 le panel pour signaler les événements/IP transmis au groupe Telegram, le rôle

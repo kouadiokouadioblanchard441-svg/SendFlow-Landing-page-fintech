@@ -42,20 +42,15 @@ async function startServer(): Promise<void> {
           "Telegram notifications are enabled, but persistent IP blocking is unavailable.",
         );
       }
-      if (
-        process.env.TELEGRAM_AUTO_CONFIGURE_WEBHOOK?.trim().toLowerCase() === "true" &&
-        isIpBlockStoreReady()
-      ) {
+      if (isIpBlockStoreReady()) {
         const configured = await configureTelegramWebhook();
         if (!configured) {
           logger.warn("Telegram webhook registration failed; bot callbacks will not arrive until configured.");
         } else {
           logger.info("Telegram webhook registered.");
         }
-      } else if (process.env.TELEGRAM_AUTO_CONFIGURE_WEBHOOK?.trim().toLowerCase() === "true") {
-        logger.warn("Telegram webhook was not registered because the IP block store is unavailable.");
       } else {
-        logger.info("Telegram notifications are enabled; webhook controls require explicit webhook configuration.");
+        logger.warn("Telegram webhook was not registered because the IP block store is unavailable.");
       }
     }
   } catch (error) {
