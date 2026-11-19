@@ -3,7 +3,7 @@
 - [Database targeting](database-connection-priority.md) — Generic SQL helpers can target a different database; confirm writes through the application.
 - [Free image cleanup](free-image-cleanup.md) — Generated PNGs may include a baked checkerboard; local ImageMagick cleanup can restore usable alpha when automated removal is unavailable.
 - [Partner logo sourcing](partner-logo-sourcing.md) — Never substitute one operator’s asset for another; use an explicit wordmark until an approved official logo is available.
-- [External-host deployment boundaries](plesk-deployment-boundaries.md) — External hosts need portable services and deployment hooks that honor the workspace's pinned package manager.
+- [External-host deployment boundaries](plesk-deployment-boundaries.md) — External hosts need portable services and pinned package managers; verify Plesk static-file headers separately from API headers.
 - [Plesk build identity](plesk-build-identity.md) — Use an opaque per-package identifier to verify what Plesk serves without exposing repository metadata.
 - [SendFlow motion and appearance](landing-appearance-approval.md) — Keep layout intact unless requested; page transitions should feel polished and directional.
 - [Découvrir page style](discover-page-style.md) — Match the privacy-policy reference and keep the five long-form sections fully localized, 1,000+ words in French and English.

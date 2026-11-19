@@ -75,6 +75,12 @@ For SendFlow production, the validated root `dist/` must be included in `main` s
 
 **How to apply:** On each source push to `main`, run CI tests and build first, then publish the validated root `dist/` as a regular non-forced commit to `main`; Plesk must pull that commit. Keep unrelated nested package `dist/` outputs excluded. Never claim the files are on Plesk until a successful server-side pull is confirmed, and never claim the site is healthy without a live check. Preserve the user's established direct-push workflow; do not change branch protection without an explicit request.
 
+On SendFlow, missing headers on public HTML/XML while Express API responses have them indicates that static delivery is bypassing Express or Apache header rules. Check Plesk's Nginx direct-static extension list for `.html`, `.htm`, and `.xml`; do not assume a successful API header check proves the landing pages are protected.
+
+**Why:** Production probes showed the root, prerendered pages, and sitemap without headers while `/api/healthz` and API 404 responses had them. Nginx and Cloudflare sit in front of Passenger, and their route-specific handling is not visible from the repository.
+
+**How to apply:** Route those public documents through Passenger/Express or apply an equivalent static-only rule. Preserve the Express nonce CSP for API and panel routes; avoid adding a second global CSP that would conflict with it. Recheck live HTML, XML, API, and errors after Plesk pulls the build.
+
 Do not use `X-Forwarded-For` as the client identity for SendFlow's Plesk-hosted API unless the live proxy configuration is verified to overwrite untrusted incoming values. Until then, use the TCP peer address and keep Express proxy trust disabled.
 
 **Why:** The repository cannot establish how the active Plesk/Passenger proxy forwards the original client address; trusting an unverified header lets callers forge their rate-limit identity.
