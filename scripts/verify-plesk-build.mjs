@@ -276,6 +276,36 @@ async function verifyApacheFallback() {
       `${distLabel}/public/.htaccess must redirect retired credential-bearing admin paths to /panel.`,
     );
   }
+  if (!rules.has('SetEnvIf Request_URI "^/api(/|$)" sendflow_api')) {
+    errors.push(
+      `${distLabel}/public/.htaccess must identify API requests so static CSP does not replace the backend nonce policy.`,
+    );
+  }
+  if (!rules.has("Header always unset X-Powered-By")) {
+    errors.push(
+      `${distLabel}/public/.htaccess must remove the server technology response header when Apache supports mod_headers.`,
+    );
+  }
+  const staticCsp = [...rules].find((line) =>
+    line.startsWith('Header always set Content-Security-Policy "'),
+  );
+  if (
+    !staticCsp ||
+    !staticCsp.endsWith("env=!sendflow_api") ||
+    ![
+      "default-src 'none'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "script-src 'self'",
+      "script-src-attr 'none'",
+      "style-src 'self'",
+      "connect-src 'self'",
+    ].every((directive) => staticCsp.includes(directive))
+  ) {
+    errors.push(
+      `${distLabel}/public/.htaccess must apply a restrictive static-page CSP while leaving API responses to Express.`,
+    );
+  }
   if (!/^RewriteRule \^ index\.html \[L\]$/m.test(htaccess)) {
     errors.push(
       `${distLabel}/public/.htaccess must route unknown public pages to index.html.`,

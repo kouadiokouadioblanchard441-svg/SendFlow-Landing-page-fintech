@@ -19,6 +19,8 @@ La capture Plesk la plus récente montre **Application Root** et **Document Root
 
 Le build génère aussi `dist/public/.htaccess` : chaque route SEO pré-rendue est réécrite vers son propre `index.html`, avec ou sans barre oblique finale. Cela évite qu’Apache traite une URL comme `/securite` comme un dossier et renvoie une erreur au lieu de sa page. Les autres routes web inconnues vont vers `index.html` pour que React les traite. Une règle laisse explicitement `/api` et `/api/*` à Passenger ; le serveur répond en JSON pour les routes API inconnues et ne leur renvoie jamais le HTML de la SPA. Les anciens liens admin de forme `/panel/<code>/<email>` sont redirigés vers `/panel` sans cache ni référent afin de ne plus conserver ces valeurs dans l’adresse du navigateur.
 
+Le même fichier demande à Apache d’ajouter les en-têtes de sécurité des pages statiques, une CSP restrictive sans scripts inline, et de retirer `X-Powered-By`. Il laisse les réponses `/api` à la CSP à nonce d’Express. Ces directives ne sont effectives que si Plesk sert les fichiers par Apache avec `mod_headers` et `mod_setenvif` actifs ; après chaque livraison, vérifie les en-têtes publics réellement reçus, car un proxy ou une règle Plesk/Cloudflare peut les remplacer.
+
 ### Indexation des pages publiques
 
 `artifacts/sendflow/src/lib/public-seo-routes.json` est la source des 22 URL publiques en français et en anglais. Chaque page livrée reçoit son propre titre, sa description, son URL canonique, ses liens `hreflang` et ses données structurées. Le paquet ajoute aussi un titre H1 et un résumé visibles lorsqu’un navigateur ou robot n’exécute pas JavaScript; l’application React reste le rendu principal pour les visiteurs.

@@ -62926,7 +62926,7 @@ function createRateLimiter(options) {
 function createSharedRateLimiter(options) {
   let requestsSinceCleanup = 0;
   return async (req, res, next) => {
-    const remoteAddress = req.socket?.remoteAddress;
+    const remoteAddress = req.ip || req.socket?.remoteAddress;
     const secret = process.env.SESSION_SECRET;
     if (!remoteAddress || !secret) {
       res.status(503).json({

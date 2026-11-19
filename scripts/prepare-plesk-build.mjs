@@ -121,6 +121,7 @@ await writeFile(
     'SetEnvIf Request_URI "^/api(/|$)" sendflow_api',
     "</IfModule>",
     "<IfModule mod_headers.c>",
+    "Header onsuccess unset X-Powered-By",
     "Header always unset X-Powered-By",
     'Header always set X-Content-Type-Options "nosniff"',
     'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"',
