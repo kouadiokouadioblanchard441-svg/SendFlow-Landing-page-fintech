@@ -12,10 +12,12 @@ process.env.NEON_DATABASE_URL ??=
   "postgresql://offline-test:offline-test@127.0.0.1:1/sendflow";
 
 const {
+  formatAuditEvent,
   formatRequestReport,
   formatVisitorReport,
   parseTelegramAuditCommand,
 } = await import("../src/lib/telegramAudit.ts");
+const { parseClientInfo } = await import("../src/lib/clientInfo.ts");
 const {
   lookupLocalGeoIp,
   resetGeoIpDatabasesForTest,
@@ -102,6 +104,28 @@ test("local GeoIP lookup returns city, network, and mobile-carrier database fiel
   }
 });
 
+test("client details are normalized from the server request header without storing raw user-agent", () => {
+  assert.deepEqual(
+    parseClientInfo(
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/130.0.0.0 Mobile Safari/537.36",
+    ),
+    { browser: "Chrome", platform: "Android", device: "Mobile" },
+  );
+  assert.deepEqual(
+    parseClientInfo("Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1"),
+    { browser: "Safari", platform: "iOS", device: "Tablette" },
+  );
+  assert.deepEqual(parseClientInfo(undefined), {
+    browser: null,
+    platform: null,
+    device: null,
+  });
+  assert.deepEqual(
+    parseClientInfo("Mozilla/5.0 Googlebot/2.1 (+http://www.google.com/bot.html)"),
+    { browser: "Bot (Googlebot)", platform: null, device: "Bot" },
+  );
+});
+
 test("Telegram request reports are bounded and do not include request payloads", () => {
   const visitorReport = formatVisitorReport([
     {
@@ -116,6 +140,10 @@ test("Telegram request reports are bounded and do not include request payloads",
       connection_type: "Cellular",
       mobile_country_code: "612",
       mobile_network_code: "03",
+      browser: "Chrome",
+      platform: "Android",
+      device: "Mobile",
+      first_seen: "2026-11-18T08:00:00.000Z",
       last_seen: "2026-11-19T10:00:00.000Z",
     },
   ], 1, 1);
@@ -140,17 +168,51 @@ test("Telegram request reports are bounded and do not include request payloads",
       connection_type: "Cellular",
       mobile_country_code: "612",
       mobile_network_code: "03",
+      browser: "Chrome",
+      platform: "Android",
+      device: "Mobile",
     },
   ], 1, 1);
   assert.match(requestReport, /POST \/api\/newsletter/);
   assert.match(requestReport, /202/);
   assert.match(requestReport, /Example Mobile/);
   assert.match(requestReport, /Cellular/);
+  assert.match(requestReport, /Chrome/);
+  assert.match(requestReport, /Mobile/);
   assert.doesNotMatch(requestReport, /email|password|cookie|body/i);
   assert.equal(REQUEST_AUDIT_RETENTION_DAYS, 90);
 
   const schema = getRequestAuditSchemaForTest();
   assert.match(schema, /CREATE TABLE IF NOT EXISTS request_audit_events/);
   assert.match(schema, /ip_address varchar\(45\)/);
+  assert.match(schema, /browser varchar\(80\)/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS request_audit_visitors/);
+  assert.match(schema, /first_seen timestamptz/);
+  assert.doesNotMatch(schema, /user_agent varchar/i);
   assert.doesNotMatch(schema, /request_body|cookie|authorization/i);
+});
+
+test("new public page visits format a first-seen notice with server-derived details", () => {
+  const message = formatAuditEvent({
+    kind: "page_view",
+    page: "/",
+    ip: "41.138.89.238",
+    city: "Cotonou",
+    country: "Benin",
+    isp: "Example ISP",
+    browser: "Chrome",
+    platform: "Android",
+    device: "Mobile",
+    occurredAt: "2026-11-08T13:19:29.000Z",
+    isNewVisitor: true,
+  });
+  assert.match(message, /🆕 Nouvelle IP/);
+  assert.match(message, /41\.138\.89\.238/);
+  assert.match(message, /Cotonou, Benin/);
+  assert.match(message, /Example ISP/);
+  assert.match(message, /Chrome \(Android\)/);
+  assert.match(message, /Mobile/);
+  assert.match(message, /08 novembre 2026 à 13:19:29 UTC/);
+  assert.match(message, /90 jours/);
+  assert.doesNotMatch(message, /compte/i);
 });

@@ -298,6 +298,13 @@ nom exact de l’opérateur mobile. Si une base manque, SendFlow continue à
 journaliser les requêtes et laisse vides les champs non disponibles. Aucun GPS
 n’est collecté.
 
+Les notifications de visite utilisent aussi le User-Agent reçu par Node pour
+estimer le navigateur, le système et la catégorie d’appareil. Ces valeurs sont
+des indices déclarés par le navigateur, peuvent être absents ou falsifiés, et le
+User-Agent brut n’est pas conservé. Une IP est dite « nouvelle » uniquement si
+elle n’a pas de visite enregistrée dans la fenêtre de conservation de 90 jours;
+cela ne permet pas de conclure qu’elle est nouvelle pour un compte utilisateur.
+
 Dans le groupe privé, les administrateurs autorisés peuvent utiliser
 `/visiteurs` pour consulter les IP uniques des 90 derniers jours et
 `/requetes` pour parcourir les requêtes Node/Express enregistrées. Ajoute le bot
@@ -331,8 +338,9 @@ la table de blocage et l’enregistrement du webhook. Si les anciennes variables
 présentes dans Plesk, elles ne sont plus utilisées et peuvent être retirées.
 
 Avant l’activation, mets à jour la politique de confidentialité publiée depuis
-le panel pour signaler les IP, données de localisation approximatives, types de
-requêtes observés, destinataires Telegram et conservation de 90 jours. Les
+le panel pour signaler les IP, données de localisation approximatives,
+informations navigateur/appareil estimées, types de requêtes observés,
+destinataires Telegram et conservation de 90 jours. Les
 requêtes enregistrées ne sont pas envoyées au fournisseur GeoIP : seules les
 bases de correspondance sont téléchargées puis interrogées localement. La page
 de confidentialité étant éditable en base par le panel, le dépôt ne peut pas

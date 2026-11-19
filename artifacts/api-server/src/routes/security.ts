@@ -11,6 +11,9 @@ import {
   safeActivityTarget,
   safePublicPagePath,
 } from "../lib/telegramAudit";
+import { lookupLocalGeoIp } from "../lib/geoIp";
+import { parseClientInfo } from "../lib/clientInfo";
+import { isRequestAuditStoreReady, recordPageView } from "../lib/requestAudit";
 
 const router: IRouter = Router();
 const eventLimiter = createRateLimiter({
@@ -28,7 +31,7 @@ router.get("/security/telemetry/config", (_req, res): void => {
   }
 });
 
-router.post("/security/telemetry/events", eventLimiter, (req, res): void => {
+router.post("/security/telemetry/events", eventLimiter, async (req, res): Promise<void> => {
   let config;
   try {
     config = readTelegramConfig();
@@ -55,10 +58,34 @@ router.post("/security/telemetry/events", eventLimiter, (req, res): void => {
   }
 
   const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
+  const geo = lookupLocalGeoIp(ipAddress);
+  const clientInfo = parseClientInfo(req.get("user-agent"));
+  const occurredAt = new Date();
+  let isNewVisitor = false;
+  if (
+    parsed.data.kind === "page_view" &&
+    ipAddress &&
+    isRequestAuditStoreReady()
+  ) {
+    isNewVisitor = await recordPageView(ipAddress, geo, clientInfo);
+  }
   enqueueAuditEvent({
     kind: parsed.data.kind,
     page,
     ip: ipAddress,
+    country: geo?.country,
+    city: geo?.city,
+    asn: geo?.asn,
+    networkOrganization: geo?.networkOrganization,
+    isp: geo?.isp,
+    connectionType: geo?.connectionType,
+    mobileCountryCode: geo?.mobileCountryCode,
+    mobileNetworkCode: geo?.mobileNetworkCode,
+    browser: clientInfo.browser,
+    platform: clientInfo.platform,
+    device: clientInfo.device,
+    occurredAt,
+    isNewVisitor,
     ...(safeActivityTarget(parsed.data.target)
       ? { target: safeActivityTarget(parsed.data.target) }
       : {}),

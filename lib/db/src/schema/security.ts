@@ -27,6 +27,9 @@ export const requestAuditEvents = pgTable(
     connectionType: varchar("connection_type", { length: 80 }),
     mobileCountryCode: varchar("mobile_country_code", { length: 8 }),
     mobileNetworkCode: varchar("mobile_network_code", { length: 8 }),
+    browser: varchar("browser", { length: 80 }),
+    platform: varchar("platform", { length: 40 }),
+    device: varchar("device", { length: 40 }),
   },
   (table) => [
     index("request_audit_events_created_at_idx").on(table.createdAt),
@@ -35,3 +38,30 @@ export const requestAuditEvents = pgTable(
 );
 
 export type RequestAuditEvent = typeof requestAuditEvents.$inferSelect;
+
+export const requestAuditVisitors = pgTable(
+  "request_audit_visitors",
+  {
+    ipAddress: varchar("ip_address", { length: 45 }).primaryKey(),
+    firstSeen: timestamp("first_seen", { withTimezone: true }).notNull().defaultNow(),
+    lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
+    countryCode: varchar("country_code", { length: 2 }),
+    country: varchar("country", { length: 100 }),
+    region: varchar("region", { length: 100 }),
+    city: varchar("city", { length: 100 }),
+    asn: integer("asn"),
+    networkOrganization: varchar("network_organization", { length: 180 }),
+    isp: varchar("isp", { length: 180 }),
+    connectionType: varchar("connection_type", { length: 80 }),
+    mobileCountryCode: varchar("mobile_country_code", { length: 8 }),
+    mobileNetworkCode: varchar("mobile_network_code", { length: 8 }),
+    browser: varchar("browser", { length: 80 }),
+    platform: varchar("platform", { length: 40 }),
+    device: varchar("device", { length: 40 }),
+  },
+  (table) => [
+    index("request_audit_visitors_last_seen_idx").on(table.lastSeen),
+  ],
+);
+
+export type RequestAuditVisitor = typeof requestAuditVisitors.$inferSelect;

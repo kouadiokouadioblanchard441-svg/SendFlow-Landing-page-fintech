@@ -22,6 +22,7 @@ import {
 } from "./lib/telegramAudit";
 import { lookupLocalGeoIp } from "./lib/geoIp";
 import { recordNodeRequest } from "./lib/requestAudit";
+import { parseClientInfo } from "./lib/clientInfo";
 
 const app: Express = express();
 const trustedProxyAddresses = new Set(
@@ -122,6 +123,7 @@ app.use((req, res, next) => {
       const safePath = safeSecurityRequestPath(sanitizeRequestUrl(req.url)) ?? "/[redacted]";
       const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
       const geo = lookupLocalGeoIp(ipAddress);
+      const clientInfo = parseClientInfo(req.get("user-agent"));
       const method = /^[A-Z]{1,12}$/.test(req.method) ? req.method : "OTHER";
       void recordNodeRequest({
         method,
@@ -129,6 +131,7 @@ app.use((req, res, next) => {
         status,
         ipAddress,
         geo,
+        clientInfo,
       });
       enqueueAuditEvent({
         kind: "http_request",
@@ -144,6 +147,10 @@ app.use((req, res, next) => {
         connectionType: geo?.connectionType,
         mobileCountryCode: geo?.mobileCountryCode,
         mobileNetworkCode: geo?.mobileNetworkCode,
+        browser: clientInfo.browser,
+        platform: clientInfo.platform,
+        device: clientInfo.device,
+        occurredAt: new Date(),
       });
       if (status === 401 || status === 403 || status === 404 || status === 429 || status >= 500) {
         notifySecurityEvent({ page: safePath, ip: ipAddress, status });

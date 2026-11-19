@@ -62445,6 +62445,7 @@ __export(schema_exports, {
   newsletterSubscribers: () => newsletterSubscribers,
   rateLimitBuckets: () => rateLimitBuckets,
   requestAuditEvents: () => requestAuditEvents,
+  requestAuditVisitors: () => requestAuditVisitors,
   securityIpBlocks: () => securityIpBlocks
 });
 
@@ -62814,11 +62815,38 @@ var requestAuditEvents = pgTable(
     isp: varchar("isp", { length: 180 }),
     connectionType: varchar("connection_type", { length: 80 }),
     mobileCountryCode: varchar("mobile_country_code", { length: 8 }),
-    mobileNetworkCode: varchar("mobile_network_code", { length: 8 })
+    mobileNetworkCode: varchar("mobile_network_code", { length: 8 }),
+    browser: varchar("browser", { length: 80 }),
+    platform: varchar("platform", { length: 40 }),
+    device: varchar("device", { length: 40 })
   },
   (table) => [
     index("request_audit_events_created_at_idx").on(table.createdAt),
     index("request_audit_events_ip_created_at_idx").on(table.ipAddress, table.createdAt)
+  ]
+);
+var requestAuditVisitors = pgTable(
+  "request_audit_visitors",
+  {
+    ipAddress: varchar("ip_address", { length: 45 }).primaryKey(),
+    firstSeen: timestamp("first_seen", { withTimezone: true }).notNull().defaultNow(),
+    lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
+    countryCode: varchar("country_code", { length: 2 }),
+    country: varchar("country", { length: 100 }),
+    region: varchar("region", { length: 100 }),
+    city: varchar("city", { length: 100 }),
+    asn: integer2("asn"),
+    networkOrganization: varchar("network_organization", { length: 180 }),
+    isp: varchar("isp", { length: 180 }),
+    connectionType: varchar("connection_type", { length: 80 }),
+    mobileCountryCode: varchar("mobile_country_code", { length: 8 }),
+    mobileNetworkCode: varchar("mobile_network_code", { length: 8 }),
+    browser: varchar("browser", { length: 80 }),
+    platform: varchar("platform", { length: 40 }),
+    device: varchar("device", { length: 40 })
+  },
+  (table) => [
+    index("request_audit_visitors_last_seen_idx").on(table.lastSeen)
   ]
 );
 
@@ -65246,9 +65274,65 @@ var REQUEST_AUDIT_SCHEMA_SQL = `
     isp varchar(180),
     connection_type varchar(80),
     mobile_country_code varchar(8),
-    mobile_network_code varchar(8)
+    mobile_network_code varchar(8),
+    browser varchar(80),
+    platform varchar(40),
+    device varchar(40)
   )
 `;
+var REQUEST_AUDIT_SCHEMA_UPGRADE_SQL = [
+  "ALTER TABLE request_audit_events ADD COLUMN IF NOT EXISTS browser varchar(80)",
+  "ALTER TABLE request_audit_events ADD COLUMN IF NOT EXISTS platform varchar(40)",
+  "ALTER TABLE request_audit_events ADD COLUMN IF NOT EXISTS device varchar(40)",
+  `CREATE TABLE IF NOT EXISTS request_audit_visitors (
+    ip_address varchar(45) PRIMARY KEY,
+    first_seen timestamptz NOT NULL DEFAULT now(),
+    last_seen timestamptz NOT NULL DEFAULT now(),
+    country_code varchar(2),
+    country varchar(100),
+    region varchar(100),
+    city varchar(100),
+    asn integer,
+    network_organization varchar(180),
+    isp varchar(180),
+    connection_type varchar(80),
+    mobile_country_code varchar(8),
+    mobile_network_code varchar(8),
+    browser varchar(80),
+    platform varchar(40),
+    device varchar(40)
+  )`,
+  `WITH visit_times AS (
+     SELECT ip_address, MIN(created_at) AS first_seen, MAX(created_at) AS last_seen
+     FROM request_audit_events
+     WHERE ip_address IS NOT NULL
+       AND created_at >= now() - interval '90 days'
+     GROUP BY ip_address
+   ),
+   latest_visit AS (
+     SELECT DISTINCT ON (ip_address)
+       ip_address, country_code, country, region, city, asn, network_organization,
+       isp, connection_type, mobile_country_code, mobile_network_code, browser, platform, device
+     FROM request_audit_events
+     WHERE ip_address IS NOT NULL
+       AND created_at >= now() - interval '90 days'
+     ORDER BY ip_address, created_at DESC
+   )
+   INSERT INTO request_audit_visitors
+     (ip_address, first_seen, last_seen, country_code, country, region, city, asn,
+      network_organization, isp, connection_type, mobile_country_code, mobile_network_code,
+      browser, platform, device)
+   SELECT latest_visit.ip_address, visit_times.first_seen, visit_times.last_seen,
+     latest_visit.country_code, latest_visit.country, latest_visit.region, latest_visit.city,
+     latest_visit.asn, latest_visit.network_organization, latest_visit.isp,
+     latest_visit.connection_type, latest_visit.mobile_country_code,
+     latest_visit.mobile_network_code, latest_visit.browser, latest_visit.platform,
+     latest_visit.device
+   FROM latest_visit
+   JOIN visit_times USING (ip_address)
+   ON CONFLICT (ip_address) DO NOTHING`,
+  "CREATE INDEX IF NOT EXISTS request_audit_visitors_last_seen_idx ON request_audit_visitors (last_seen DESC)"
+];
 var REQUEST_AUDIT_INDEX_SQL = [
   "CREATE INDEX IF NOT EXISTS request_audit_events_created_at_idx ON request_audit_events (created_at DESC)",
   "CREATE INDEX IF NOT EXISTS request_audit_events_ip_created_at_idx ON request_audit_events (ip_address, created_at DESC)"
@@ -65258,6 +65342,9 @@ var cleanupTimer;
 async function initializeRequestAuditStore() {
   requestAuditStoreReady = false;
   await pool.query(REQUEST_AUDIT_SCHEMA_SQL);
+  for (const statement of REQUEST_AUDIT_SCHEMA_UPGRADE_SQL) {
+    await pool.query(statement);
+  }
   for (const statement of REQUEST_AUDIT_INDEX_SQL) {
     await pool.query(statement);
   }
@@ -65270,10 +65357,18 @@ async function initializeRequestAuditStore() {
     cleanupTimer.unref();
   }
 }
+function isRequestAuditStoreReady() {
+  return requestAuditStoreReady;
+}
 async function deleteExpiredRequestAudit() {
   try {
     await pool.query(
-      "DELETE FROM request_audit_events WHERE created_at < now() - interval '90 days'"
+      `DELETE FROM request_audit_events
+       WHERE created_at < now() - interval '90 days'`
+    );
+    await pool.query(
+      `DELETE FROM request_audit_visitors
+       WHERE last_seen < now() - interval '90 days'`
     );
   } catch (error62) {
     logger.warn({ err: error62 }, "Expired request audit records could not be removed.");
@@ -65288,8 +65383,9 @@ async function recordNodeRequest(event) {
     await pool.query(
       `INSERT INTO request_audit_events
         (method, route, status, ip_address, country_code, country, region, city, asn,
-         network_organization, isp, connection_type, mobile_country_code, mobile_network_code)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+         network_organization, isp, connection_type, mobile_country_code, mobile_network_code,
+         browser, platform, device)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
       [
         method,
         route,
@@ -65304,11 +65400,72 @@ async function recordNodeRequest(event) {
         event.geo?.isp ?? null,
         event.geo?.connectionType ?? null,
         event.geo?.mobileCountryCode ?? null,
-        event.geo?.mobileNetworkCode ?? null
+        event.geo?.mobileNetworkCode ?? null,
+        event.clientInfo.browser,
+        event.clientInfo.platform,
+        event.clientInfo.device
       ]
     );
   } catch (error62) {
     logger.warn({ err: error62 }, "Node request audit record could not be stored.");
+  }
+}
+async function recordPageView(ipAddress, geo, clientInfo) {
+  if (!requestAuditStoreReady || !ipAddress) return false;
+  try {
+    const inserted = await pool.query(
+      `INSERT INTO request_audit_visitors
+        (ip_address, country_code, country, region, city, asn, network_organization,
+         isp, connection_type, mobile_country_code, mobile_network_code, browser, platform, device)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       ON CONFLICT (ip_address) DO NOTHING
+       RETURNING ip_address`,
+      [
+        ipAddress,
+        geo?.countryCode ?? null,
+        geo?.country ?? null,
+        geo?.region ?? null,
+        geo?.city ?? null,
+        geo?.asn ?? null,
+        geo?.networkOrganization ?? null,
+        geo?.isp ?? null,
+        geo?.connectionType ?? null,
+        geo?.mobileCountryCode ?? null,
+        geo?.mobileNetworkCode ?? null,
+        clientInfo.browser,
+        clientInfo.platform,
+        clientInfo.device
+      ]
+    );
+    if (inserted.rowCount === 1) return true;
+    await pool.query(
+      `UPDATE request_audit_visitors
+       SET last_seen = now(), country_code = $2, country = $3, region = $4, city = $5,
+           asn = $6, network_organization = $7, isp = $8, connection_type = $9,
+           mobile_country_code = $10, mobile_network_code = $11, browser = $12,
+           platform = $13, device = $14
+       WHERE ip_address = $1`,
+      [
+        ipAddress,
+        geo?.countryCode ?? null,
+        geo?.country ?? null,
+        geo?.region ?? null,
+        geo?.city ?? null,
+        geo?.asn ?? null,
+        geo?.networkOrganization ?? null,
+        geo?.isp ?? null,
+        geo?.connectionType ?? null,
+        geo?.mobileCountryCode ?? null,
+        geo?.mobileNetworkCode ?? null,
+        clientInfo.browser,
+        clientInfo.platform,
+        clientInfo.device
+      ]
+    );
+    return false;
+  } catch (error62) {
+    logger.warn({ err: error62 }, "Page view visitor details could not be stored.");
+    return false;
   }
 }
 async function listRecentVisitors(page, pageSize = 6) {
@@ -65316,26 +65473,17 @@ async function listRecentVisitors(page, pageSize = 6) {
   const safePageSize = Math.max(1, Math.min(6, Math.floor(pageSize)));
   const offset = (safePage - 1) * safePageSize;
   const countResult = await pool.query(
-    `SELECT COUNT(DISTINCT ip_address)::integer AS total
-     FROM request_audit_events
-     WHERE ip_address IS NOT NULL
-       AND created_at >= now() - interval '90 days'`
+    `SELECT COUNT(*)::integer AS total
+     FROM request_audit_visitors
+     WHERE last_seen >= now() - interval '90 days'`
   );
   const rowsResult = await pool.query(
-    `WITH latest_visits AS (
-       SELECT DISTINCT ON (ip_address)
-          ip_address, country_code, country, region, city, asn, network_organization,
-          isp, connection_type, mobile_country_code, mobile_network_code,
-         created_at AS last_seen
-       FROM request_audit_events
-       WHERE ip_address IS NOT NULL
-         AND created_at >= now() - interval '90 days'
-       ORDER BY ip_address, created_at DESC
-     )
-      SELECT ip_address, country_code, country, region, city, asn, network_organization,
-        isp, connection_type, mobile_country_code, mobile_network_code, last_seen
-     FROM latest_visits
-     ORDER BY last_seen DESC
+    `SELECT ip_address, country_code, country, region, city, asn, network_organization,
+         isp, connection_type, mobile_country_code, mobile_network_code, browser, platform,
+         device, first_seen, last_seen
+      FROM request_audit_visitors
+      WHERE last_seen >= now() - interval '90 days'
+      ORDER BY last_seen DESC
      LIMIT $1 OFFSET $2`,
     [safePageSize, offset]
   );
@@ -65355,7 +65503,7 @@ async function listRecentRequests(page, pageSize = 6) {
   );
   const rowsResult = await pool.query(
     `SELECT created_at, method, route, status, ip_address, country, city, asn, network_organization,
-        isp, connection_type, mobile_country_code, mobile_network_code
+         isp, connection_type, mobile_country_code, mobile_network_code, browser, platform, device
      FROM request_audit_events
      WHERE created_at >= now() - interval '90 days'
      ORDER BY id DESC
@@ -65378,6 +65526,7 @@ var MAX_QUEUED_EVENTS = 240;
 var MAX_BATCH_EVENTS = 10;
 var MAX_TELEGRAM_MESSAGE_LENGTH = 3500;
 var BATCH_DELAY_MS = 5e3;
+var UNAVAILABLE_CLIENT_IP = "IP indisponible \u2014 Node ne re\xE7oit pas d\u2019adresse publique fiable via Plesk";
 var queue = [];
 var recentlyReported = /* @__PURE__ */ new Map();
 var droppedEvents = 0;
@@ -65579,17 +65728,39 @@ function enqueueAuditEvent(event) {
   queue.push(event);
   scheduleFlush();
 }
-function eventLine(event) {
+function formatAuditEvent(event) {
+  const timestamp2 = event.occurredAt ? formatAuditTime(event.occurredAt) : formatAuditTime(/* @__PURE__ */ new Date());
+  const location = [event.city, event.country].filter(Boolean).join(", ");
+  const network = event.isp || event.networkOrganization || "";
+  const browser = [
+    event.browser,
+    event.platform ? `(${event.platform})` : ""
+  ].filter(Boolean).join(" ");
+  if (event.kind === "page_view" && event.isNewVisitor) {
+    return [
+      "\u{1F195} Nouvelle IP \u2014 visite vitrine",
+      `\u{1F310} Nouvelle IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
+      `\u{1F4CD} Localisation : ${location || "indisponible (IP ou base GeoIP non reconnue)"}`,
+      `\u{1F3E2} FAI : ${network || "non d\xE9termin\xE9 par la base r\xE9seau"}`,
+      `\u{1F4BB} Navigateur d\xE9clar\xE9 : ${browser || "ind\xE9termin\xE9"}`,
+      `\u{1F4F1} Appareil estim\xE9 : ${event.device || "ind\xE9termin\xE9"}`,
+      `\u{1F552} Date : ${timestamp2}`,
+      `\u26A0\uFE0F Premi\xE8re apparition connue sur la vitrine dans les ${REQUEST_AUDIT_RETENTION_DAYS} jours conserv\xE9s.`,
+      `\u{1F4C4} Page : ${event.page.slice(0, 120)}`
+    ].join("\n");
+  }
   const parts = [
     event.kind === "security" ? "Alerte s\xE9curit\xE9" : event.kind === "http_request" ? `${event.method ?? "HTTP"} ${event.page.slice(0, 70)}` : `${event.kind} ${event.page.slice(0, 70)}`,
     event.target ? `action=${event.target}` : "",
     event.status ? `HTTP ${event.status}` : "",
-    event.ip ? `IP ${event.ip}` : "IP indisponible via le proxy",
-    [event.city, event.country].filter(Boolean).join(", ").slice(0, 70),
-    event.isp ? `op\xE9rateur/FAI ${event.isp.slice(0, 50)}` : "",
+    event.ip ? `IP ${event.ip}` : UNAVAILABLE_CLIENT_IP,
+    location.slice(0, 70),
+    network ? `r\xE9seau/FAI ${network.slice(0, 50)}` : "",
     event.connectionType ? `connexion ${event.connectionType.slice(0, 30)}` : "",
+    browser ? `navigateur d\xE9clar\xE9 ${browser.slice(0, 60)}` : "",
+    event.device ? `appareil estim\xE9 ${event.device.slice(0, 30)}` : "",
+    `date ${timestamp2}`,
     event.mobileCountryCode && event.mobileNetworkCode ? `MCC/MNC ${event.mobileCountryCode}/${event.mobileNetworkCode}` : "",
-    !event.isp && event.networkOrganization ? `r\xE9seau ${event.networkOrganization.slice(0, 45)}` : "",
     !event.isp && event.asn ? `ASN ${event.asn}` : ""
   ].filter(Boolean);
   return parts.join(" \xB7 ").slice(0, 300);
@@ -65608,7 +65779,7 @@ async function flushAuditQueue() {
   const lines = [];
   let messageLength = 0;
   for (const event of batch) {
-    const line2 = eventLine(event);
+    const line2 = formatAuditEvent(event);
     if (messageLength + line2.length + 1 > MAX_TELEGRAM_MESSAGE_LENGTH) break;
     lines.push(line2);
     messageLength += line2.length + 1;
@@ -65679,7 +65850,18 @@ function parseTelegramAuditCommand(text3) {
 }
 function formatAuditTime(value) {
   const date6 = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date6.getTime()) ? "date inconnue" : `${date6.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  if (Number.isNaN(date6.getTime())) return "date inconnue";
+  const formatted = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  }).format(date6);
+  return `${formatted} UTC`;
 }
 function visitorLocation(visitor) {
   const location = [visitor.city, visitor.region, visitor.country].filter((part) => Boolean(part)).join(", ").slice(0, 160);
@@ -65690,11 +65872,16 @@ function visitorLocation(visitor) {
     !visitor.isp && visitor.asn ? `ASN ${visitor.asn}` : "",
     !visitor.isp && visitor.network_organization ? visitor.network_organization : ""
   ].filter(Boolean).join(" ").slice(0, 140);
-  return [location || "localisation indisponible", network].filter(Boolean).join(" \xB7 ");
+  const client = [
+    visitor.browser,
+    visitor.platform ? `(${visitor.platform})` : "",
+    visitor.device ? `\xB7 ${visitor.device}` : ""
+  ].filter(Boolean).join(" ");
+  return [location || "localisation indisponible", network, client].filter(Boolean).join(" \xB7 ");
 }
 function formatVisitorReport(rows, total, page, pageSize = 6) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const entries = rows.map((visitor) => `\u2022 ${visitor.ip_address} \xB7 ${visitorLocation(visitor)} \xB7 vu ${formatAuditTime(visitor.last_seen)}`);
+  const entries = rows.map((visitor) => `\u2022 ${visitor.ip_address} \xB7 ${visitorLocation(visitor)} \xB7 premi\xE8re visite ${formatAuditTime(visitor.first_seen)} \xB7 vu ${formatAuditTime(visitor.last_seen)}`);
   return [
     `Visiteurs uniques (${REQUEST_AUDIT_RETENTION_DAYS} jours) \xB7 page ${page}/${totalPages} \xB7 total ${total}`,
     ...entries.length ? entries : ["Aucun visiteur connu pour cette page."],
@@ -65712,11 +65899,17 @@ function formatRequestReport(rows, total, page, pageSize = 6) {
       !request.isp && request.asn ? `ASN ${request.asn}` : "",
       !request.isp && request.network_organization ? request.network_organization : ""
     ].filter(Boolean).join(" ").slice(0, 140);
+    const client = [
+      request.browser,
+      request.platform ? `(${request.platform})` : "",
+      request.device ? `\xB7 ${request.device}` : ""
+    ].filter(Boolean).join(" ");
     return [
       `\u2022 ${formatAuditTime(request.created_at)} \xB7 ${request.method} ${request.route.slice(0, 120)} \xB7 ${request.status}`,
-      request.ip_address ? `IP ${request.ip_address}` : "IP indisponible via le proxy",
+      request.ip_address ? `IP ${request.ip_address}` : UNAVAILABLE_CLIENT_IP,
       location,
-      network
+      network,
+      client
     ].filter(Boolean).join(" \xB7 ");
   });
   return [
@@ -65826,6 +66019,138 @@ async function configureTelegramWebhook(request = fetch) {
   return registered;
 }
 
+// src/lib/geoIp.ts
+var import_node_path4 = __toESM(require("node:path"), 1);
+var import_maxmind = __toESM(require_lib7(), 1);
+var cityReader = null;
+var asnReader = null;
+var ispReader = null;
+var connectionTypeReader = null;
+var initialized = false;
+function safeLabel(value, maxLength) {
+  if (typeof value !== "string") return null;
+  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
+  return cleaned || null;
+}
+async function initializeGeoIpDatabases() {
+  if (initialized) return;
+  initialized = true;
+  const mediaDirectory = getPleskMediaDirectory();
+  if (!mediaDirectory) {
+    logger.warn("Local GeoIP lookup is unavailable because PLESK_MEDIA_DIR is not configured.");
+    return;
+  }
+  const geoIpDirectory = import_node_path4.default.join(mediaDirectory, "geoip");
+  const cityPath = import_node_path4.default.join(geoIpDirectory, "GeoLite2-City.mmdb");
+  const asnPath = import_node_path4.default.join(geoIpDirectory, "GeoLite2-ASN.mmdb");
+  const ispPath = import_node_path4.default.join(geoIpDirectory, "GeoIP2-ISP.mmdb");
+  const connectionTypePath = import_node_path4.default.join(geoIpDirectory, "GeoIP2-Connection-Type.mmdb");
+  try {
+    cityReader = await import_maxmind.default.open(cityPath);
+  } catch {
+    logger.warn(
+      { database: "GeoLite2-City.mmdb" },
+      "Local GeoIP city database is unavailable; city and country details will be omitted."
+    );
+  }
+  try {
+    asnReader = await import_maxmind.default.open(asnPath);
+  } catch {
+    logger.warn(
+      { database: "GeoLite2-ASN.mmdb" },
+      "Local GeoIP ASN database is unavailable; network organization details will be omitted."
+    );
+  }
+  try {
+    ispReader = await import_maxmind.default.open(ispPath);
+  } catch {
+    logger.warn(
+      { database: "GeoIP2-ISP.mmdb" },
+      "Local GeoIP ISP database is unavailable; ISP and mobile-network details will be omitted."
+    );
+  }
+  try {
+    connectionTypeReader = await import_maxmind.default.open(connectionTypePath);
+  } catch {
+    logger.warn(
+      { database: "GeoIP2-Connection-Type.mmdb" },
+      "Local GeoIP connection-type database is unavailable; connection type will be omitted."
+    );
+  }
+}
+function lookupLocalGeoIp(ipAddress) {
+  if (!ipAddress) return null;
+  const city = cityReader?.get(ipAddress) ?? null;
+  const asnRecord = asnReader?.get(ipAddress) ?? null;
+  const ispRecord = ispReader?.get(ipAddress) ?? null;
+  const connectionTypeRecord = connectionTypeReader?.get(ipAddress) ?? null;
+  if (!city && !asnRecord && !ispRecord && !connectionTypeRecord) return null;
+  const country = city?.country;
+  const subdivision = city?.subdivisions?.[0];
+  const cityRecord = city?.city;
+  return {
+    countryCode: safeLabel(country?.iso_code, 2),
+    country: safeLabel(country?.names?.fr ?? country?.names?.en, 100),
+    region: safeLabel(subdivision?.names?.fr ?? subdivision?.names?.en, 100),
+    city: safeLabel(cityRecord?.names?.fr ?? cityRecord?.names?.en, 100),
+    asn: typeof asnRecord?.autonomous_system_number === "number" ? asnRecord.autonomous_system_number : typeof city?.traits?.autonomous_system_number === "number" ? city.traits.autonomous_system_number : null,
+    networkOrganization: safeLabel(
+      asnRecord?.autonomous_system_organization ?? ispRecord?.organization ?? ispRecord?.isp ?? city?.traits?.autonomous_system_organization ?? city?.traits?.organization ?? city?.traits?.isp,
+      180
+    ),
+    isp: safeLabel(ispRecord?.isp ?? null, 180),
+    connectionType: safeLabel(
+      connectionTypeRecord?.connection_type ?? city?.traits?.connection_type ?? null,
+      80
+    ),
+    mobileCountryCode: safeLabel(ispRecord?.mobile_country_code ?? null, 8),
+    mobileNetworkCode: safeLabel(ispRecord?.mobile_network_code ?? null, 8)
+  };
+}
+
+// src/lib/clientInfo.ts
+var EMPTY_CLIENT_INFO = {
+  browser: null,
+  platform: null,
+  device: null
+};
+function parseClientInfo(userAgent) {
+  if (typeof userAgent !== "string" || userAgent.length === 0) {
+    return { ...EMPTY_CLIENT_INFO };
+  }
+  const value = userAgent.slice(0, 512);
+  const bot = /\b(Googlebot|Bingbot|DuckDuckBot|Applebot|YandexBot|facebookexternalhit|Twitterbot)\b/i.exec(value);
+  if (bot) {
+    return { browser: `Bot (${bot[1]})`, platform: null, device: "Bot" };
+  }
+  let browser = null;
+  if (/\bEdgA?\//i.test(value) || /\bEdgiOS\//i.test(value)) browser = "Edge";
+  else if (/\bSamsungBrowser\//i.test(value)) browser = "Samsung Internet";
+  else if (/\bOPR\//i.test(value) || /\bOpera\b/i.test(value)) browser = "Opera";
+  else if (/\bFirefox\//i.test(value) || /\bFxiOS\//i.test(value)) browser = "Firefox";
+  else if (/\bChrome\//i.test(value) || /\bCriOS\//i.test(value)) browser = "Chrome";
+  else if (/\bSafari\//i.test(value)) browser = "Safari";
+  let platform = null;
+  if (/\bAndroid\b/i.test(value)) platform = "Android";
+  else if (/\b(iPhone|iPad|iPod)\b/i.test(value)) platform = "iOS";
+  else if (/\bWindows NT\b/i.test(value)) platform = "Windows";
+  else if (/\bMac OS X\b/i.test(value)) platform = "macOS";
+  else if (/\bCrOS\b/i.test(value)) platform = "ChromeOS";
+  else if (/\bLinux\b/i.test(value)) platform = "Linux";
+  let device = null;
+  if (/\b(iPad|Tablet|Kindle|Silk)\b/i.test(value)) device = "Tablette";
+  else if (/\b(iPhone|iPod)\b/i.test(value) || /\bAndroid\b/i.test(value) && /\bMobile\b/i.test(value)) {
+    device = "Mobile";
+  } else if (platform) {
+    device = "Ordinateur";
+  }
+  return {
+    browser,
+    platform,
+    device
+  };
+}
+
 // src/routes/security.ts
 var router5 = (0, import_express5.Router)();
 var eventLimiter = createRateLimiter({
@@ -65841,7 +66166,7 @@ router5.get("/security/telemetry/config", (_req, res) => {
     res.json({ enabled: false });
   }
 });
-router5.post("/security/telemetry/events", eventLimiter, (req, res) => {
+router5.post("/security/telemetry/events", eventLimiter, async (req, res) => {
   let config2;
   try {
     config2 = readTelegramConfig();
@@ -65865,10 +66190,30 @@ router5.post("/security/telemetry/events", eventLimiter, (req, res) => {
     return;
   }
   const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
+  const geo = lookupLocalGeoIp(ipAddress);
+  const clientInfo = parseClientInfo(req.get("user-agent"));
+  const occurredAt = /* @__PURE__ */ new Date();
+  let isNewVisitor = false;
+  if (parsed.data.kind === "page_view" && ipAddress && isRequestAuditStoreReady()) {
+    isNewVisitor = await recordPageView(ipAddress, geo, clientInfo);
+  }
   enqueueAuditEvent({
     kind: parsed.data.kind,
     page,
     ip: ipAddress,
+    country: geo?.country,
+    city: geo?.city,
+    asn: geo?.asn,
+    networkOrganization: geo?.networkOrganization,
+    isp: geo?.isp,
+    connectionType: geo?.connectionType,
+    mobileCountryCode: geo?.mobileCountryCode,
+    mobileNetworkCode: geo?.mobileNetworkCode,
+    browser: clientInfo.browser,
+    platform: clientInfo.platform,
+    device: clientInfo.device,
+    occurredAt,
+    isNewVisitor,
     ...safeActivityTarget(parsed.data.target) ? { target: safeActivityTarget(parsed.data.target) } : {}
   });
   res.sendStatus(202);
@@ -65964,95 +66309,6 @@ function createIpBlockMiddleware(checkBlocked = isIpBlocked, isReady = isIpBlock
 }
 var ipBlockMiddleware = createIpBlockMiddleware();
 
-// src/lib/geoIp.ts
-var import_node_path4 = __toESM(require("node:path"), 1);
-var import_maxmind = __toESM(require_lib7(), 1);
-var cityReader = null;
-var asnReader = null;
-var ispReader = null;
-var connectionTypeReader = null;
-var initialized = false;
-function safeLabel(value, maxLength) {
-  if (typeof value !== "string") return null;
-  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
-  return cleaned || null;
-}
-async function initializeGeoIpDatabases() {
-  if (initialized) return;
-  initialized = true;
-  const mediaDirectory = getPleskMediaDirectory();
-  if (!mediaDirectory) {
-    logger.warn("Local GeoIP lookup is unavailable because PLESK_MEDIA_DIR is not configured.");
-    return;
-  }
-  const geoIpDirectory = import_node_path4.default.join(mediaDirectory, "geoip");
-  const cityPath = import_node_path4.default.join(geoIpDirectory, "GeoLite2-City.mmdb");
-  const asnPath = import_node_path4.default.join(geoIpDirectory, "GeoLite2-ASN.mmdb");
-  const ispPath = import_node_path4.default.join(geoIpDirectory, "GeoIP2-ISP.mmdb");
-  const connectionTypePath = import_node_path4.default.join(geoIpDirectory, "GeoIP2-Connection-Type.mmdb");
-  try {
-    cityReader = await import_maxmind.default.open(cityPath);
-  } catch {
-    logger.warn(
-      { database: "GeoLite2-City.mmdb" },
-      "Local GeoIP city database is unavailable; city and country details will be omitted."
-    );
-  }
-  try {
-    asnReader = await import_maxmind.default.open(asnPath);
-  } catch {
-    logger.warn(
-      { database: "GeoLite2-ASN.mmdb" },
-      "Local GeoIP ASN database is unavailable; network organization details will be omitted."
-    );
-  }
-  try {
-    ispReader = await import_maxmind.default.open(ispPath);
-  } catch {
-    logger.warn(
-      { database: "GeoIP2-ISP.mmdb" },
-      "Local GeoIP ISP database is unavailable; ISP and mobile-network details will be omitted."
-    );
-  }
-  try {
-    connectionTypeReader = await import_maxmind.default.open(connectionTypePath);
-  } catch {
-    logger.warn(
-      { database: "GeoIP2-Connection-Type.mmdb" },
-      "Local GeoIP connection-type database is unavailable; connection type will be omitted."
-    );
-  }
-}
-function lookupLocalGeoIp(ipAddress) {
-  if (!ipAddress) return null;
-  const city = cityReader?.get(ipAddress) ?? null;
-  const asnRecord = asnReader?.get(ipAddress) ?? null;
-  const ispRecord = ispReader?.get(ipAddress) ?? null;
-  const connectionTypeRecord = connectionTypeReader?.get(ipAddress) ?? null;
-  if (!city && !asnRecord && !ispRecord && !connectionTypeRecord) return null;
-  const country = city?.country;
-  const subdivision = city?.subdivisions?.[0];
-  const cityRecord = city?.city;
-  return {
-    countryCode: safeLabel(country?.iso_code, 2),
-    country: safeLabel(country?.names?.fr ?? country?.names?.en, 100),
-    region: safeLabel(subdivision?.names?.fr ?? subdivision?.names?.en, 100),
-    city: safeLabel(cityRecord?.names?.fr ?? cityRecord?.names?.en, 100),
-    asn: typeof asnRecord?.autonomous_system_number === "number" ? asnRecord.autonomous_system_number : typeof city?.traits?.autonomous_system_number === "number" ? city.traits.autonomous_system_number : null,
-    networkOrganization: safeLabel(
-      asnRecord?.autonomous_system_organization ?? ispRecord?.organization ?? ispRecord?.isp ?? city?.traits?.autonomous_system_organization ?? city?.traits?.organization ?? city?.traits?.isp,
-      180
-    ),
-    isp: safeLabel(ispRecord?.isp ?? null, 180),
-    connectionType: safeLabel(
-      connectionTypeRecord?.connection_type ?? city?.traits?.connection_type ?? null,
-      80
-    ),
-    mobileCountryCode: safeLabel(ispRecord?.mobile_country_code ?? null, 8),
-    mobileNetworkCode: safeLabel(ispRecord?.mobile_network_code ?? null, 8)
-  };
-}
-
 // src/app.ts
 var app = (0, import_express7.default)();
 var trustedProxyAddresses = new Set(
@@ -66140,13 +66396,15 @@ app.use((req, res, next) => {
       const safePath = safeSecurityRequestPath(sanitizeRequestUrl(req.url)) ?? "/[redacted]";
       const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
       const geo = lookupLocalGeoIp(ipAddress);
+      const clientInfo = parseClientInfo(req.get("user-agent"));
       const method = /^[A-Z]{1,12}$/.test(req.method) ? req.method : "OTHER";
       void recordNodeRequest({
         method,
         route: safePath,
         status,
         ipAddress,
-        geo
+        geo,
+        clientInfo
       });
       enqueueAuditEvent({
         kind: "http_request",
@@ -66161,7 +66419,11 @@ app.use((req, res, next) => {
         isp: geo?.isp,
         connectionType: geo?.connectionType,
         mobileCountryCode: geo?.mobileCountryCode,
-        mobileNetworkCode: geo?.mobileNetworkCode
+        mobileNetworkCode: geo?.mobileNetworkCode,
+        browser: clientInfo.browser,
+        platform: clientInfo.platform,
+        device: clientInfo.device,
+        occurredAt: /* @__PURE__ */ new Date()
       });
       if (status === 401 || status === 403 || status === 404 || status === 429 || status >= 500) {
         notifySecurityEvent({ page: safePath, ip: ipAddress, status });

@@ -28,6 +28,11 @@ export type AuditEvent = {
   connectionType?: string | null;
   mobileCountryCode?: string | null;
   mobileNetworkCode?: string | null;
+  browser?: string | null;
+  platform?: string | null;
+  device?: string | null;
+  occurredAt?: Date | string;
+  isNewVisitor?: boolean;
 };
 
 export type TelegramConfig = {
@@ -45,6 +50,8 @@ const MAX_QUEUED_EVENTS = 240;
 const MAX_BATCH_EVENTS = 10;
 const MAX_TELEGRAM_MESSAGE_LENGTH = 3_500;
 const BATCH_DELAY_MS = 5_000;
+const UNAVAILABLE_CLIENT_IP =
+  "IP indisponible — Node ne reçoit pas d’adresse publique fiable via Plesk";
 const queue: AuditEvent[] = [];
 const recentlyReported = new Map<string, number>();
 let droppedEvents = 0;
@@ -339,7 +346,30 @@ export function enqueueAuditEvent(event: AuditEvent): void {
   scheduleFlush();
 }
 
-function eventLine(event: AuditEvent): string {
+export function formatAuditEvent(event: AuditEvent): string {
+  const timestamp = event.occurredAt
+    ? formatAuditTime(event.occurredAt)
+    : formatAuditTime(new Date());
+  const location = [event.city, event.country].filter(Boolean).join(", ");
+  const network = event.isp || event.networkOrganization || "";
+  const browser = [
+    event.browser,
+    event.platform ? `(${event.platform})` : "",
+  ].filter(Boolean).join(" ");
+  if (event.kind === "page_view" && event.isNewVisitor) {
+    return [
+      "🆕 Nouvelle IP — visite vitrine",
+      `🌐 Nouvelle IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
+      `📍 Localisation : ${location || "indisponible (IP ou base GeoIP non reconnue)"}`,
+      `🏢 FAI : ${network || "non déterminé par la base réseau"}`,
+      `💻 Navigateur déclaré : ${browser || "indéterminé"}`,
+      `📱 Appareil estimé : ${event.device || "indéterminé"}`,
+      `🕒 Date : ${timestamp}`,
+      `⚠️ Première apparition connue sur la vitrine dans les ${REQUEST_AUDIT_RETENTION_DAYS} jours conservés.`,
+      `📄 Page : ${event.page.slice(0, 120)}`,
+    ].join("\n");
+  }
+
   const parts = [
     event.kind === "security"
       ? "Alerte sécurité"
@@ -348,15 +378,15 @@ function eventLine(event: AuditEvent): string {
         : `${event.kind} ${event.page.slice(0, 70)}`,
     event.target ? `action=${event.target}` : "",
     event.status ? `HTTP ${event.status}` : "",
-    event.ip ? `IP ${event.ip}` : "IP indisponible via le proxy",
-    [event.city, event.country].filter(Boolean).join(", ").slice(0, 70),
-    event.isp ? `opérateur/FAI ${event.isp.slice(0, 50)}` : "",
+    event.ip ? `IP ${event.ip}` : UNAVAILABLE_CLIENT_IP,
+    location.slice(0, 70),
+    network ? `réseau/FAI ${network.slice(0, 50)}` : "",
     event.connectionType ? `connexion ${event.connectionType.slice(0, 30)}` : "",
+    browser ? `navigateur déclaré ${browser.slice(0, 60)}` : "",
+    event.device ? `appareil estimé ${event.device.slice(0, 30)}` : "",
+    `date ${timestamp}`,
     event.mobileCountryCode && event.mobileNetworkCode
       ? `MCC/MNC ${event.mobileCountryCode}/${event.mobileNetworkCode}`
-      : "",
-    !event.isp && event.networkOrganization
-      ? `réseau ${event.networkOrganization.slice(0, 45)}`
       : "",
     !event.isp && event.asn ? `ASN ${event.asn}` : "",
   ].filter(Boolean);
@@ -378,7 +408,7 @@ async function flushAuditQueue(): Promise<void> {
   const lines: string[] = [];
   let messageLength = 0;
   for (const event of batch) {
-    const line = eventLine(event);
+    const line = formatAuditEvent(event);
     if (messageLength + line.length + 1 > MAX_TELEGRAM_MESSAGE_LENGTH) break;
     lines.push(line);
     messageLength += line.length + 1;
@@ -458,9 +488,18 @@ export function parseTelegramAuditCommand(
 
 function formatAuditTime(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "date inconnue"
-    : `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  if (Number.isNaN(date.getTime())) return "date inconnue";
+  const formatted = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+  return `${formatted} UTC`;
 }
 
 function visitorLocation(visitor: RecentVisitor): string {
@@ -477,7 +516,12 @@ function visitorLocation(visitor: RecentVisitor): string {
     !visitor.isp && visitor.asn ? `ASN ${visitor.asn}` : "",
     !visitor.isp && visitor.network_organization ? visitor.network_organization : "",
   ].filter(Boolean).join(" ").slice(0, 140);
-  return [location || "localisation indisponible", network].filter(Boolean).join(" · ");
+  const client = [
+    visitor.browser,
+    visitor.platform ? `(${visitor.platform})` : "",
+    visitor.device ? `· ${visitor.device}` : "",
+  ].filter(Boolean).join(" ");
+  return [location || "localisation indisponible", network, client].filter(Boolean).join(" · ");
 }
 
 export function formatVisitorReport(
@@ -488,7 +532,7 @@ export function formatVisitorReport(
 ): string {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const entries = rows.map((visitor) =>
-    `• ${visitor.ip_address} · ${visitorLocation(visitor)} · vu ${formatAuditTime(visitor.last_seen)}`);
+    `• ${visitor.ip_address} · ${visitorLocation(visitor)} · première visite ${formatAuditTime(visitor.first_seen)} · vu ${formatAuditTime(visitor.last_seen)}`);
   return [
     `Visiteurs uniques (${REQUEST_AUDIT_RETENTION_DAYS} jours) · page ${page}/${totalPages} · total ${total}`,
     ...(entries.length ? entries : ["Aucun visiteur connu pour cette page."]),
@@ -514,11 +558,17 @@ export function formatRequestReport(
       !request.isp && request.asn ? `ASN ${request.asn}` : "",
       !request.isp && request.network_organization ? request.network_organization : "",
     ].filter(Boolean).join(" ").slice(0, 140);
+    const client = [
+      request.browser,
+      request.platform ? `(${request.platform})` : "",
+      request.device ? `· ${request.device}` : "",
+    ].filter(Boolean).join(" ");
     return [
       `• ${formatAuditTime(request.created_at)} · ${request.method} ${request.route.slice(0, 120)} · ${request.status}`,
-      request.ip_address ? `IP ${request.ip_address}` : "IP indisponible via le proxy",
+      request.ip_address ? `IP ${request.ip_address}` : UNAVAILABLE_CLIENT_IP,
       location,
       network,
+      client,
     ].filter(Boolean).join(" · ");
   });
   return [
