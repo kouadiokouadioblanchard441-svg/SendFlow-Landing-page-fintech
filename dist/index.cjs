@@ -65301,6 +65301,31 @@ var REQUEST_AUDIT_SCHEMA_UPGRADE_SQL = [
     platform varchar(40),
     device varchar(40)
   )`,
+  `CREATE TABLE IF NOT EXISTS request_audit_page_views (
+    id bigserial PRIMARY KEY,
+    visited_at timestamptz NOT NULL DEFAULT now(),
+    page varchar(200) NOT NULL,
+    ip_address varchar(45),
+    country_code varchar(2),
+    country varchar(100),
+    region varchar(100),
+    city varchar(100),
+    asn integer,
+    network_organization varchar(180),
+    isp varchar(180),
+    connection_type varchar(80),
+    mobile_country_code varchar(8),
+    mobile_network_code varchar(8),
+    browser varchar(80),
+    platform varchar(40),
+    device varchar(40)
+  )`,
+  `CREATE TABLE IF NOT EXISTS request_audit_daily_report_deliveries (
+    report_date date PRIMARY KEY,
+    claim_token uuid NOT NULL,
+    claimed_at timestamptz NOT NULL DEFAULT now(),
+    sent_at timestamptz
+  )`,
   `WITH visit_times AS (
      SELECT ip_address, MIN(created_at) AS first_seen, MAX(created_at) AS last_seen
      FROM request_audit_events
@@ -65334,7 +65359,9 @@ var REQUEST_AUDIT_SCHEMA_UPGRADE_SQL = [
 ];
 var REQUEST_AUDIT_INDEX_SQL = [
   "CREATE INDEX IF NOT EXISTS request_audit_events_created_at_idx ON request_audit_events (created_at DESC)",
-  "CREATE INDEX IF NOT EXISTS request_audit_events_ip_created_at_idx ON request_audit_events (ip_address, created_at DESC)"
+  "CREATE INDEX IF NOT EXISTS request_audit_events_ip_created_at_idx ON request_audit_events (ip_address, created_at DESC)",
+  "CREATE INDEX IF NOT EXISTS request_audit_page_views_visited_at_idx ON request_audit_page_views (visited_at DESC)",
+  "CREATE INDEX IF NOT EXISTS request_audit_page_views_ip_visited_at_idx ON request_audit_page_views (ip_address, visited_at DESC)"
 ];
 var requestAuditStoreReady = false;
 var cleanupTimer;
@@ -65368,6 +65395,14 @@ async function deleteExpiredRequestAudit() {
     await pool.query(
       `DELETE FROM request_audit_visitors
        WHERE last_seen < now() - interval '90 days'`
+    );
+    await pool.query(
+      `DELETE FROM request_audit_page_views
+       WHERE visited_at < now() - interval '90 days'`
+    );
+    await pool.query(
+      `DELETE FROM request_audit_daily_report_deliveries
+       WHERE report_date < (now() AT TIME ZONE 'UTC')::date - 90`
     );
   } catch (error62) {
     logger.warn({ err: error62 }, "Expired request audit records could not be removed.");
@@ -65466,6 +65501,65 @@ async function recordPageView(ipAddress, geo, clientInfo) {
     logger.warn({ err: error62 }, "Page view visitor details could not be stored.");
     return false;
   }
+}
+async function recordPageViewEvent(page, ipAddress, geo, clientInfo, visitedAt) {
+  if (!requestAuditStoreReady) return;
+  const safePage = page.startsWith("/") && page.length <= 200 ? page : "/";
+  try {
+    await pool.query(
+      `INSERT INTO request_audit_page_views
+        (visited_at, page, ip_address, country_code, country, region, city, asn,
+         network_organization, isp, connection_type, mobile_country_code,
+         mobile_network_code, browser, platform, device)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+      [
+        visitedAt,
+        safePage,
+        ipAddress,
+        geo?.countryCode ?? null,
+        geo?.country ?? null,
+        geo?.region ?? null,
+        geo?.city ?? null,
+        geo?.asn ?? null,
+        geo?.networkOrganization ?? null,
+        geo?.isp ?? null,
+        geo?.connectionType ?? null,
+        geo?.mobileCountryCode ?? null,
+        geo?.mobileNetworkCode ?? null,
+        clientInfo.browser,
+        clientInfo.platform,
+        clientInfo.device
+      ]
+    );
+  } catch (error62) {
+    logger.warn({ err: error62 }, "Page view event could not be stored.");
+  }
+}
+async function getDailyPageViewSummary(start, end) {
+  const counts = await pool.query(
+    `SELECT COUNT(*)::integer AS total_views,
+            COUNT(DISTINCT ip_address)::integer AS unique_ip_count,
+            COUNT(*) FILTER (WHERE ip_address IS NULL)::integer AS unknown_ip_views
+     FROM request_audit_page_views
+     WHERE visited_at >= $1 AND visited_at < $2`,
+    [start, end]
+  );
+  const visitors = await pool.query(
+    `SELECT DISTINCT ON (ip_address)
+        ip_address, country, city, network_organization, isp,
+        browser, platform, device, page
+     FROM request_audit_page_views
+     WHERE visited_at >= $1 AND visited_at < $2 AND ip_address IS NOT NULL
+     ORDER BY ip_address, visited_at DESC`,
+    [start, end]
+  );
+  const count = counts.rows[0];
+  return {
+    totalViews: Number(count?.total_views ?? 0),
+    uniqueIpCount: Number(count?.unique_ip_count ?? 0),
+    unknownIpViews: Number(count?.unknown_ip_views ?? 0),
+    visitors: visitors.rows
+  };
 }
 async function listRecentVisitors(page, pageSize = 6) {
   const safePage = Math.max(1, Math.min(1e4, Math.floor(page)));
@@ -65676,6 +65770,21 @@ async function callTelegramApi(method, payload, config2, request = fetch) {
     return false;
   }
 }
+async function sendTelegramGroupMessage(text3) {
+  let config2;
+  try {
+    config2 = readTelegramConfig();
+  } catch (error62) {
+    logger.error({ err: error62 }, "Telegram audit configuration is invalid");
+    return false;
+  }
+  if (!config2) return false;
+  return callTelegramApi("sendMessage", {
+    chat_id: config2.chatId,
+    text: text3.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
+    disable_web_page_preview: true
+  }, config2);
+}
 async function getTelegramChatMemberStatus(userId, config2, request = fetch) {
   try {
     const response = await request(
@@ -65735,21 +65844,37 @@ function formatAuditEvent(event) {
     event.browser,
     event.platform ? `(${event.platform})` : ""
   ].filter(Boolean).join(" ");
-  if (event.kind === "page_view" && event.isNewVisitor) {
+  if (event.kind === "page_view") {
     return [
-      "\u{1F195} Nouvelle IP \u2014 visite vitrine",
-      `\u{1F310} Nouvelle IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
+      `\u{1F44B} Nouvelle visite SendFlow \u2014 ${event.page.slice(0, 70)}`,
+      `\u{1F310} IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
       `\u{1F4CD} Localisation : ${location || "indisponible (IP ou base GeoIP non reconnue)"}`,
+      `\u{1F3E2} R\xE9seau/FAI : ${network || "non d\xE9termin\xE9"}`,
+      `\u{1F4BB} ${browser || "Navigateur ind\xE9termin\xE9"} \xB7 ${event.device || "appareil ind\xE9termin\xE9"}`,
+      `\u{1F552} ${timestamp2}`,
+      event.isNewVisitor ? `\u2728 Premi\xE8re IP connue sur ${REQUEST_AUDIT_RETENTION_DAYS} jours` : ""
+    ].filter(Boolean).join("\n").slice(0, 650);
+  }
+  if (event.kind === "http_request" || event.kind === "security") {
+    const title = event.kind === "security" ? "\u26A0\uFE0F Requ\xEAte \xE0 surveiller" : "\u{1F4E1} Requ\xEAte HTTP";
+    const method = event.method ?? "HTTP";
+    const status = typeof event.status === "number" ? `HTTP ${event.status}` : "statut indisponible";
+    return [
+      `${title} \u2014 ${method} ${event.page.slice(0, 90)}`,
+      `\u{1F4CA} R\xE9sultat : ${status}`,
+      `\u{1F310} Adresse IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
+      `\u{1F4CD} Localisation : ${location || "indisponible via la base GeoIP locale"}`,
       `\u{1F3E2} FAI : ${network || "non d\xE9termin\xE9 par la base r\xE9seau"}`,
+      event.connectionType ? `\u{1F4F6} Type de r\xE9seau : ${event.connectionType.slice(0, 50)}` : "",
       `\u{1F4BB} Navigateur d\xE9clar\xE9 : ${browser || "ind\xE9termin\xE9"}`,
       `\u{1F4F1} Appareil estim\xE9 : ${event.device || "ind\xE9termin\xE9"}`,
       `\u{1F552} Date : ${timestamp2}`,
-      `\u26A0\uFE0F Premi\xE8re apparition connue sur la vitrine dans les ${REQUEST_AUDIT_RETENTION_DAYS} jours conserv\xE9s.`,
-      `\u{1F4C4} Page : ${event.page.slice(0, 120)}`
-    ].join("\n");
+      event.mobileCountryCode && event.mobileNetworkCode ? `\u{1F4E1} R\xE9seau mobile : ${event.mobileCountryCode}/${event.mobileNetworkCode}` : "",
+      !event.isp && event.asn ? `ASN : ${event.asn}` : ""
+    ].filter(Boolean).join("\n").slice(0, 900);
   }
   const parts = [
-    event.kind === "security" ? "Alerte s\xE9curit\xE9" : event.kind === "http_request" ? `${event.method ?? "HTTP"} ${event.page.slice(0, 70)}` : `${event.kind} ${event.page.slice(0, 70)}`,
+    `${event.kind} ${event.page.slice(0, 70)}`,
     event.target ? `action=${event.target}` : "",
     event.status ? `HTTP ${event.status}` : "",
     event.ip ? `IP ${event.ip}` : UNAVAILABLE_CLIENT_IP,
@@ -65776,16 +65901,25 @@ async function flushAuditQueue() {
   const batch = queue.splice(0, MAX_BATCH_EVENTS);
   const droppedAtFlush = droppedEvents;
   const lines = [];
+  const selectedEvents = [];
+  const omissionNotice = droppedAtFlush > 0 ? `\xC9v\xE9nements perdus car la file \xE9tait pleine : ${droppedAtFlush}` : "";
+  const messageHeader = "SendFlow \xB7 activit\xE9 r\xE9cente\n";
+  const contentLimit = MAX_TELEGRAM_MESSAGE_LENGTH - messageHeader.length - (omissionNotice ? omissionNotice.length + 1 : 0);
   let messageLength = 0;
-  for (const event of batch) {
-    const line2 = formatAuditEvent(event);
-    if (messageLength + line2.length + 1 > MAX_TELEGRAM_MESSAGE_LENGTH) break;
+  for (const [index2, event] of batch.entries()) {
+    const line2 = formatAuditEvent(event).slice(0, MAX_TELEGRAM_MESSAGE_LENGTH - messageHeader.length - 1);
+    if (messageLength + line2.length + (lines.length > 0 ? 1 : 0) > contentLimit) {
+      for (const deferredEvent of batch.slice(index2).reverse()) {
+        queue.unshift(deferredEvent);
+      }
+      break;
+    }
     lines.push(line2);
-    messageLength += line2.length + 1;
+    selectedEvents.push(event);
+    messageLength += line2.length + (lines.length > 1 ? 1 : 0);
   }
-  const omitted = batch.length - lines.length + droppedAtFlush;
-  if (omitted > 0) lines.push(`\xC9v\xE9nements non affich\xE9s dans ce lot : ${omitted}`);
-  const ips = isIpBlockStoreReady() && isTelegramWebhookReady() ? [...new Set(batch.map((event) => event.ip).filter((ip) => Boolean(ip)))].slice(0, 12) : [];
+  if (omissionNotice) lines.push(omissionNotice);
+  const ips = isIpBlockStoreReady() && isTelegramWebhookReady() ? [...new Set(selectedEvents.map((event) => event.ip).filter((ip) => Boolean(ip)))].slice(0, 12) : [];
   const replyMarkup = {
     inline_keyboard: ips.map((ip) => [
       { text: `Bloquer ${ip}`.slice(0, 64), callback_data: `block:${ip}` }
@@ -65795,8 +65929,7 @@ async function flushAuditQueue() {
     "sendMessage",
     {
       chat_id: config2.chatId,
-      text: `SendFlow \xB7 activit\xE9 r\xE9cente
-${lines.join("\n")}`.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
+      text: `${messageHeader}${lines.join("\n")}`.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
       ...ips.length > 0 ? { reply_markup: replyMarkup } : {},
       disable_web_page_preview: true
     },
@@ -65805,7 +65938,7 @@ ${lines.join("\n")}`.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
   if (sent) {
     droppedEvents = Math.max(0, droppedEvents - droppedAtFlush);
   } else {
-    for (const event of batch.reverse()) {
+    for (const event of selectedEvents.reverse()) {
       if (queue.length < MAX_QUEUED_EVENTS) queue.unshift(event);
       else droppedEvents += 1;
     }
@@ -66248,8 +66381,11 @@ router5.post("/security/telemetry/events", eventLimiter, async (req, res) => {
   const clientInfo = parseClientInfo(req.get("user-agent"));
   const occurredAt = /* @__PURE__ */ new Date();
   let isNewVisitor = false;
-  if (parsed.data.kind === "page_view" && ipAddress && isRequestAuditStoreReady()) {
-    isNewVisitor = await recordPageView(ipAddress, geo, clientInfo);
+  if (parsed.data.kind === "page_view" && isRequestAuditStoreReady()) {
+    await recordPageViewEvent(page, ipAddress, geo, clientInfo, occurredAt);
+    if (ipAddress) {
+      isNewVisitor = await recordPageView(ipAddress, geo, clientInfo);
+    }
   }
   enqueueAuditEvent({
     kind: parsed.data.kind,
@@ -66492,7 +66628,24 @@ app.use((req, res, next) => {
         occurredAt: /* @__PURE__ */ new Date()
       });
       if (status === 401 || status === 403 || status === 404 || status === 429 || status >= 500) {
-        notifySecurityEvent({ page: safePath, ip: ipAddress, status });
+        notifySecurityEvent({
+          page: safePath,
+          method,
+          status,
+          ip: ipAddress,
+          country: geo?.country,
+          city: geo?.city,
+          asn: geo?.asn,
+          networkOrganization: geo?.networkOrganization,
+          isp: geo?.isp,
+          connectionType: geo?.connectionType,
+          mobileCountryCode: geo?.mobileCountryCode,
+          mobileNetworkCode: geo?.mobileNetworkCode,
+          browser: clientInfo.browser,
+          platform: clientInfo.platform,
+          device: clientInfo.device,
+          occurredAt: /* @__PURE__ */ new Date()
+        });
       }
     } catch {
     }
@@ -66600,6 +66753,166 @@ function listenForRequests(server2, rawPort, passenger2, onListening) {
   server2.listen(port, "0.0.0.0", onListening);
 }
 
+// src/lib/dailyVisitorReport.ts
+var import_node_crypto7 = require("node:crypto");
+var DAY_MS = 24 * 60 * 60 * 1e3;
+var RETRY_INTERVAL_MS = 5 * 60 * 1e3;
+var MAX_REPORT_MESSAGE_LENGTH = 3500;
+var schedulerStarted = false;
+var midnightTimer;
+var retryTimer;
+function previousUtcDate(now) {
+  return new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() - 1
+  )).toISOString().slice(0, 10);
+}
+function utcDateRange(date6) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date6)) {
+    throw new Error("Daily report date must use YYYY-MM-DD.");
+  }
+  const start = /* @__PURE__ */ new Date(`${date6}T00:00:00.000Z`);
+  if (Number.isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== date6) {
+    throw new Error("Daily report date is invalid.");
+  }
+  return { start, end: new Date(start.getTime() + DAY_MS) };
+}
+function cleanText(value, maxLength) {
+  return (value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+function formatDate(date6) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  }).format(utcDateRange(date6).start);
+}
+function formatVisitorLine(visitor) {
+  const location = [visitor.city, visitor.country].map((value) => cleanText(value, 50)).filter(Boolean).join(", ") || "lieu inconnu";
+  const network = cleanText(visitor.isp || visitor.network_organization, 70) || "r\xE9seau inconnu";
+  const browser = [visitor.browser, visitor.platform].map((value) => cleanText(value, 35)).filter(Boolean).join("/");
+  const device = cleanText(visitor.device, 20);
+  const page = cleanText(visitor.page, 60);
+  return [
+    `\u2022 ${visitor.ip_address}`,
+    location,
+    network,
+    browser || "navigateur inconnu",
+    device || "appareil inconnu",
+    page || "/"
+  ].join(" \xB7 ").slice(0, 300);
+}
+function formatDailyVisitorReport(date6, summary) {
+  const dateLabel = formatDate(date6);
+  const summaryMessage = [
+    `\u{1F4CA} Bilan SendFlow \u2014 ${dateLabel} (UTC)`,
+    `\u{1F440} Visites de pages : ${summary.totalViews}`,
+    `\u{1F310} IP distinctes : ${summary.uniqueIpCount}`,
+    `\u2754 Visites sans IP fiable : ${summary.unknownIpViews}`,
+    summary.uniqueIpCount > 0 ? "Les d\xE9tails ci-dessous regroupent les visites par IP, pas par personne." : ""
+  ].filter(Boolean).join("\n");
+  const messages = [summaryMessage];
+  if (summary.visitors.length === 0) {
+    if (summary.totalViews === 0) {
+      messages[0] += "\nAucune visite enregistr\xE9e ce jour-l\xE0.";
+    }
+    return messages;
+  }
+  let chunk = [];
+  let chunkLength = 0;
+  const appendChunk = () => {
+    if (chunk.length === 0) return;
+    messages.push(`\u{1F465} Visiteurs par IP \u2014 ${dateLabel}
+${chunk.join("\n")}`);
+    chunk = [];
+    chunkLength = 0;
+  };
+  for (const visitor of summary.visitors) {
+    const line2 = formatVisitorLine(visitor);
+    if (chunk.length > 0 && chunkLength + line2.length + 1 > MAX_REPORT_MESSAGE_LENGTH - 80) {
+      appendChunk();
+    }
+    chunk.push(line2);
+    chunkLength += line2.length + 1;
+  }
+  appendChunk();
+  return messages;
+}
+async function claimReport(date6, claimToken) {
+  const result = await pool.query(
+    `INSERT INTO request_audit_daily_report_deliveries
+       (report_date, claim_token, claimed_at)
+     VALUES ($1, $2, now())
+     ON CONFLICT (report_date) DO UPDATE
+       SET claim_token = EXCLUDED.claim_token, claimed_at = now()
+       WHERE request_audit_daily_report_deliveries.sent_at IS NULL
+         AND request_audit_daily_report_deliveries.claimed_at < now() - interval '5 minutes'
+     RETURNING report_date`,
+    [date6, claimToken]
+  );
+  return result.rowCount === 1;
+}
+async function sendDailyVisitorReport(date6) {
+  const { start, end } = utcDateRange(date6);
+  const claimToken = (0, import_node_crypto7.randomUUID)();
+  try {
+    if (!await claimReport(date6, claimToken)) return false;
+    const summary = await getDailyPageViewSummary(start, end);
+    const messages = formatDailyVisitorReport(date6, summary);
+    for (const message of messages) {
+      if (!await sendTelegramGroupMessage(message)) {
+        throw new Error("Telegram did not accept the daily visitor report.");
+      }
+    }
+    const marked = await pool.query(
+      `UPDATE request_audit_daily_report_deliveries
+       SET sent_at = now()
+       WHERE report_date = $1 AND claim_token = $2 AND sent_at IS NULL`,
+      [date6, claimToken]
+    );
+    return marked.rowCount === 1;
+  } catch (error62) {
+    try {
+      await pool.query(
+        `DELETE FROM request_audit_daily_report_deliveries
+         WHERE report_date = $1 AND claim_token = $2 AND sent_at IS NULL`,
+        [date6, claimToken]
+      );
+    } catch (releaseError) {
+      logger.warn({ err: releaseError, reportDate: date6 }, "Daily visitor report claim could not be released.");
+    }
+    logger.warn({ err: error62, reportDate: date6 }, "Daily visitor report could not be sent.");
+    return false;
+  }
+}
+function scheduleNextUtcMidnight() {
+  const now = /* @__PURE__ */ new Date();
+  const nextMidnight = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + 1
+  );
+  midnightTimer = setTimeout(() => {
+    midnightTimer = void 0;
+    void sendDailyVisitorReport(previousUtcDate(/* @__PURE__ */ new Date()));
+    scheduleNextUtcMidnight();
+  }, Math.max(1e3, nextMidnight - now.getTime()));
+  midnightTimer.unref();
+}
+function startDailyVisitorReportScheduler() {
+  if (schedulerStarted) return;
+  schedulerStarted = true;
+  const sendYesterday = () => {
+    void sendDailyVisitorReport(previousUtcDate(/* @__PURE__ */ new Date()));
+  };
+  sendYesterday();
+  retryTimer = setInterval(sendYesterday, RETRY_INTERVAL_MS);
+  retryTimer.unref();
+  scheduleNextUtcMidnight();
+}
+
 // src/index.ts
 var passenger = globalThis.PhusionPassenger;
 var server = (0, import_node_http.createServer)(app_default);
@@ -66619,6 +66932,7 @@ async function startServer() {
       await initializeGeoIpDatabases();
       try {
         await initializeRequestAuditStore();
+        startDailyVisitorReportScheduler();
       } catch (error62) {
         logger.error(
           { err: error62 },
