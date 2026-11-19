@@ -16,6 +16,7 @@ const {
   formatRequestReport,
   formatVisitorReport,
   parseTelegramAuditCommand,
+  selectAuditQueueFlush,
 } = await import("../src/lib/telegramAudit.ts");
 const { parseClientInfo } = await import("../src/lib/clientInfo.ts");
 const {
@@ -281,4 +282,26 @@ test("repeat public page visits stay short and state when IP resolution is unava
   assert.match(message, /Chrome \(Android\)/);
   assert.ok(message.split("\n").length <= 6);
   assert.ok(message.length < 600);
+});
+
+test("each page view is selected for its own Telegram message", () => {
+  const firstVisit = { kind: "page_view" as const, page: "/", ip: "41.138.89.238" };
+  const secondVisit = { kind: "page_view" as const, page: "/tarifs", ip: "41.138.89.239" };
+  const request = { kind: "http_request" as const, page: "/api/landing", ip: null };
+
+  assert.deepEqual(
+    selectAuditQueueFlush([firstVisit, secondVisit, request]),
+    { events: [firstVisit], individualPageView: true },
+  );
+});
+
+test("other audit events are grouped without absorbing a page view", () => {
+  const firstRequest = { kind: "http_request" as const, page: "/api/landing", ip: null };
+  const secondRequest = { kind: "http_request" as const, page: "/api/healthz", ip: null };
+  const visit = { kind: "page_view" as const, page: "/", ip: "41.138.89.238" };
+
+  assert.deepEqual(
+    selectAuditQueueFlush([firstRequest, secondRequest, visit]),
+    { events: [firstRequest, secondRequest], individualPageView: false },
+  );
 });
