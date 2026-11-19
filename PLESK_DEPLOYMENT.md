@@ -267,19 +267,44 @@ Toute variable `VITE_*` peut être intégrée au JavaScript livré au navigateur
 
 ### Supervision Telegram et blocage d’IP au niveau Node
 
-La fonctionnalité est désactivée par défaut. Une fois activée, elle envoie au
-groupe configuré les vues de pages publiques, clics, soumissions de formulaires
-(sans leurs champs), et alertes HTTP 401/403/429/5xx. Elle transmet une IP
-uniquement si l’application peut l’identifier comme une adresse publique.
-Elle ne collecte ni numéro de téléphone, ni GPS, ni opérateur réseau ou
-géolocalisation ; aucune base GeoIP tierce n’est appelée. Les contenus de
-formulaires, textes des boutons et valeurs saisies ne sont jamais envoyés.
-Les événements sont regroupés en mémoire avant envoi, sans archive analytique
-dans PostgreSQL. En cas de redémarrage, les événements encore en attente sont
-perdus ; une panne Telegram déclenche des tentatives ultérieures, mais la file
-est limitée et signale les excès. Ce canal n’est donc pas un journal d’audit
-garanti. Les adresses bloquées sont, elles, conservées dans la table
-`security_ip_blocks` jusqu’au déblocage.
+La supervision est inactive tant que le jeton et l’ID du groupe ne sont pas tous
+deux configurés. Ensuite, toutes les requêtes qui atteignent Express/Node sont
+enregistrées dans PostgreSQL : méthode, chemin nettoyé, statut, IP publique
+identifiable et résultat GeoIP local. Les corps de requête, paramètres d’URL,
+cookies et en-têtes d’autorisation ne sont pas conservés. Les données sont
+supprimées après 90 jours. Les notifications Telegram sont regroupées en lots;
+la file est bornée, donc un trafic exceptionnel peut dépasser la capacité
+d’envoi du bot. L’historique paginé reste consultable par commande tant que la
+base de données fonctionne.
+
+Pour effectuer le GeoIP **localement sur le serveur** sans transmettre chaque IP
+à un service tiers, place les bases MMDB autorisées dans :
+
+```text
+$PLESK_MEDIA_DIR/geoip/GeoLite2-City.mmdb
+$PLESK_MEDIA_DIR/geoip/GeoLite2-ASN.mmdb
+$PLESK_MEDIA_DIR/geoip/GeoIP2-ISP.mmdb
+$PLESK_MEDIA_DIR/geoip/GeoIP2-Connection-Type.mmdb
+```
+
+Ces fichiers ne sont pas inclus dans Git ni dans le build. Fournis-les depuis
+une source dont la licence autorise ton usage et actualise-les régulièrement
+dans ce dossier. Les bases City et ASN fournissent le pays, la ville et une
+organisation réseau approximative. Les bases ISP et Connection-Type apportent
+les champs de fournisseur/réseau mobile et le type de connexion quand la base
+les connaît; elles peuvent nécessiter une licence distincte. Une classification
+« Cellular » ne précise pas forcément 3G/4G/5G et l’ISP n’est pas toujours le
+nom exact de l’opérateur mobile. Si une base manque, SendFlow continue à
+journaliser les requêtes et laisse vides les champs non disponibles. Aucun GPS
+n’est collecté.
+
+Dans le groupe privé, les administrateurs autorisés peuvent utiliser
+`/visiteurs` pour consulter les IP uniques des 90 derniers jours et
+`/requetes` pour parcourir les requêtes Node/Express enregistrées. Ajoute le bot
+comme administrateur du groupe pour que Telegram permette la vérification de
+rôle et l’envoi des messages. Les commandes et boutons reçus en conversation
+privée sont ignorés sans réponse; le bot ne fonctionne que dans le groupe
+configuré.
 
 Renseigne uniquement `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID` dans
 **Plesk → Node.js → Environment variables**, puis redémarre l’application.
@@ -297,31 +322,34 @@ l’action. Cette vérification exige que Telegram puisse retourner l’apparten
 au groupe ; si l’API Telegram est indisponible ou ne confirme pas le rôle,
 l’action est refusée.
 
-Au premier démarrage, l’application crée de façon idempotente la table
-`security_ip_blocks`; le compte PostgreSQL doit donc avoir le droit `CREATE`.
-Les boutons IP n’apparaissent qu’après la création de cette table et
-l’enregistrement du webhook. Si les anciennes variables
+Au premier démarrage, l’application crée de façon idempotente les tables
+`security_ip_blocks` et `request_audit_events`; le compte PostgreSQL doit donc
+avoir le droit `CREATE`. Les boutons IP n’apparaissent qu’après la création de
+la table de blocage et l’enregistrement du webhook. Si les anciennes variables
 `TELEGRAM_AUDIT_ENABLED`, `TELEGRAM_WEBHOOK_SECRET`,
 `TELEGRAM_ADMIN_USER_IDS` ou `TELEGRAM_AUTO_CONFIGURE_WEBHOOK` sont encore
 présentes dans Plesk, elles ne sont plus utilisées et peuvent être retirées.
 
 Avant l’activation, mets à jour la politique de confidentialité publiée depuis
-le panel pour signaler les événements/IP transmis au groupe Telegram, le rôle
-de ce prestataire, les destinataires et la durée de conservation des blocages.
-La page de confidentialité étant éditable en base par le panel, le dépôt ne peut
-pas confirmer que le texte actuellement publié en production a été mis à jour.
+le panel pour signaler les IP, données de localisation approximatives, types de
+requêtes observés, destinataires Telegram et conservation de 90 jours. Les
+requêtes enregistrées ne sont pas envoyées au fournisseur GeoIP : seules les
+bases de correspondance sont téléchargées puis interrogées localement. La page
+de confidentialité étant éditable en base par le panel, le dépôt ne peut pas
+confirmer que le texte actuellement publié en production a été mis à jour.
 
-Le blocage s’applique aux requêtes qui arrivent à Express/Node, avant les routes
-API et les fichiers statiques servis par Node. Il ne bloque pas les fichiers
-que Plesk/Apache/CDN sert directement. Plesk peut masquer l’adresse visiteur
+La journalisation et le blocage s’appliquent uniquement aux requêtes qui arrivent
+à Express/Node. Ils ne couvrent pas les fichiers que Plesk/Apache/CDN sert
+directement; leurs journaux ne sont pas accessibles à cette application.
+Plesk peut masquer l’adresse visiteur
 derrière Passenger : tant que les IP exactes des proxys ne sont pas vérifiées
 dans les journaux serveur, ne configure pas `TRUSTED_PROXY_IPS`. Ne fais jamais
 confiance à un `X-Forwarded-For` fourni directement par le navigateur. Si Node
 voit une adresse privée de proxy, aucun IP n’est montrée et aucun bouton de
 blocage n’est proposé, afin d’éviter de bannir tous les visiteurs via le proxy.
-Le pays, le type de réseau et l’opérateur ne sont pas déterminés par cette
-fonctionnalité. Les alertes de même IP, route et statut sont regroupées pendant
-une minute pour éviter les répétitions d’un même scan.
+Si Node voit une IP publique mais que les bases MMDB sont absentes, les champs de
+géolocalisation restent vides. Les alertes de même IP, route et statut sont
+regroupées pendant une minute pour éviter les répétitions d’un même scan.
 
 Les variables `PLESK_DIST_DIR`, `PLESK_DEPLOYMENT_ROOT` et `PLESK_REQUIRE_DEPLOYMENT_ROOT` servent à la génération du paquet et au choix/à la validation de sa destination ; `PLESK_KEEP_PREVIOUS_DIST` contrôle la conservation d’une sauvegarde. Elles ne sont pas nécessaires dans l’environnement du processus Node.js lorsque le build est livré par CI.
 

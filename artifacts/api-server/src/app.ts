@@ -12,6 +12,7 @@ import { isAllowedOrigin } from "./middlewares/security";
 import { requestErrorHandler } from "./middlewares/requestErrorHandler";
 import { ipBlockMiddleware } from "./middlewares/ipBlock";
 import {
+  enqueueAuditEvent,
   isPublicClientIp,
   normalizePublicIp,
   normalizeIpAddress,
@@ -19,6 +20,8 @@ import {
   readTelegramConfig,
   safeSecurityRequestPath,
 } from "./lib/telegramAudit";
+import { lookupLocalGeoIp } from "./lib/geoIp";
+import { recordNodeRequest } from "./lib/requestAudit";
 
 const app: Express = express();
 const trustedProxyAddresses = new Set(
@@ -89,18 +92,6 @@ const safeBasePath = /^\/(?:[A-Za-z0-9._~-]+\/?)*$/.test(configuredBasePath) &&
   ? configuredBasePath.replace(/\/+$/, "")
   : "";
 const canonicalPanelPath = `${safeBasePath}/panel`;
-app.use((req, res, next) => {
-  const isLegacyPanelPath = /^\/(?:[^/]+\/)*panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
-  if (!isLegacyPanelPath || !["GET", "HEAD"].includes(req.method)) {
-    next();
-    return;
-  }
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("Referrer-Policy", "no-referrer");
-  res.setHeader("X-Robots-Tag", "noindex, nofollow");
-  res.redirect(302, canonicalPanelPath);
-});
-
 app.use(
   pinoHttp({
     logger,
@@ -122,23 +113,61 @@ app.use(
   }),
 );
 app.use((req, res, next) => {
-  res.once("finish", () => {
-    const status = res.statusCode;
-    if (status !== 401 && status !== 403 && status !== 404 && status !== 429 && status < 500) return;
+  let recorded = false;
+  const recordRequest = (status: number) => {
+    if (recorded) return;
+    recorded = true;
     try {
       if (!readTelegramConfig()) return;
-      const safePath = safeSecurityRequestPath(sanitizeRequestUrl(req.url));
-      if (!safePath) return;
-      notifySecurityEvent({
-        page: safePath,
-        ip: isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null,
+      const safePath = safeSecurityRequestPath(sanitizeRequestUrl(req.url)) ?? "/[redacted]";
+      const ipAddress = isPublicClientIp(req.ip) ? normalizePublicIp(req.ip) : null;
+      const geo = lookupLocalGeoIp(ipAddress);
+      const method = /^[A-Z]{1,12}$/.test(req.method) ? req.method : "OTHER";
+      void recordNodeRequest({
+        method,
+        route: safePath,
         status,
+        ipAddress,
+        geo,
       });
+      enqueueAuditEvent({
+        kind: "http_request",
+        method,
+        page: safePath,
+        status,
+        ip: ipAddress,
+        country: geo?.country,
+        city: geo?.city,
+        asn: geo?.asn,
+        networkOrganization: geo?.networkOrganization,
+        isp: geo?.isp,
+        connectionType: geo?.connectionType,
+        mobileCountryCode: geo?.mobileCountryCode,
+        mobileNetworkCode: geo?.mobileNetworkCode,
+      });
+      if (status === 401 || status === 403 || status === 404 || status === 429 || status >= 500) {
+        notifySecurityEvent({ page: safePath, ip: ipAddress, status });
+      }
     } catch {
       // Monitoring configuration must never cause an otherwise valid request to fail.
     }
+  };
+  res.once("finish", () => recordRequest(res.statusCode));
+  res.once("close", () => {
+    if (!res.writableFinished) recordRequest(499);
   });
   next();
+});
+app.use((req, res, next) => {
+  const isLegacyPanelPath = /^\/(?:[^/]+\/)*panel\/[^/]+\/[^/]+\/?$/i.test(req.path);
+  if (!isLegacyPanelPath || !["GET", "HEAD"].includes(req.method)) {
+    next();
+    return;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.redirect(302, canonicalPanelPath);
 });
 app.use(ipBlockMiddleware);
 app.use(cors({

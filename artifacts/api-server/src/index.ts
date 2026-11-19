@@ -7,6 +7,8 @@ import {
   type PassengerRuntime,
 } from "./lib/serverListener";
 import { getPleskMediaDirectory } from "./lib/publicObjectStorage";
+import { initializeGeoIpDatabases } from "./lib/geoIp";
+import { initializeRequestAuditStore } from "./lib/requestAudit";
 import {
   configureTelegramWebhook,
   initializeIpBlockStore,
@@ -34,6 +36,15 @@ async function startServer(): Promise<void> {
     if (passenger) getPleskMediaDirectory();
 
     if (readTelegramConfig()) {
+      await initializeGeoIpDatabases();
+      try {
+        await initializeRequestAuditStore();
+      } catch (error) {
+        logger.error(
+          { err: error },
+          "Telegram request history is unavailable; request records will not be stored.",
+        );
+      }
       try {
         await initializeIpBlockStore();
       } catch (error) {

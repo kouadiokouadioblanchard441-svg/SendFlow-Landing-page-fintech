@@ -3,8 +3,15 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
 import { getPublicSiteUrl } from "./publicSiteUrl";
+import {
+  REQUEST_AUDIT_RETENTION_DAYS,
+  listRecentRequests,
+  listRecentVisitors,
+  type RecentRequest,
+  type RecentVisitor,
+} from "./requestAudit";
 
-export type PublicActivityKind = "page_view" | "click" | "form_submit";
+export type PublicActivityKind = "page_view" | "click" | "form_submit" | "http_request";
 
 export type AuditEvent = {
   kind: PublicActivityKind | "security";
@@ -12,6 +19,15 @@ export type AuditEvent = {
   ip: string | null;
   target?: string;
   status?: number;
+  method?: string;
+  country?: string | null;
+  city?: string | null;
+  asn?: number | null;
+  networkOrganization?: string | null;
+  isp?: string | null;
+  connectionType?: string | null;
+  mobileCountryCode?: string | null;
+  mobileNetworkCode?: string | null;
 };
 
 export type TelegramConfig = {
@@ -26,7 +42,7 @@ const IP_BLOCKS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS security_ip_blocks (
   blocked_at timestamptz NOT NULL DEFAULT now()
 )`;
 const MAX_QUEUED_EVENTS = 240;
-const MAX_BATCH_EVENTS = 12;
+const MAX_BATCH_EVENTS = 10;
 const MAX_TELEGRAM_MESSAGE_LENGTH = 3_500;
 const BATCH_DELAY_MS = 5_000;
 const queue: AuditEvent[] = [];
@@ -325,13 +341,26 @@ export function enqueueAuditEvent(event: AuditEvent): void {
 
 function eventLine(event: AuditEvent): string {
   const parts = [
-    event.kind === "security" ? "Alerte sécurité" : event.kind,
-    event.page,
+    event.kind === "security"
+      ? "Alerte sécurité"
+      : event.kind === "http_request"
+        ? `${event.method ?? "HTTP"} ${event.page.slice(0, 70)}`
+        : `${event.kind} ${event.page.slice(0, 70)}`,
     event.target ? `action=${event.target}` : "",
     event.status ? `HTTP ${event.status}` : "",
     event.ip ? `IP ${event.ip}` : "IP indisponible via le proxy",
+    [event.city, event.country].filter(Boolean).join(", ").slice(0, 70),
+    event.isp ? `opérateur/FAI ${event.isp.slice(0, 50)}` : "",
+    event.connectionType ? `connexion ${event.connectionType.slice(0, 30)}` : "",
+    event.mobileCountryCode && event.mobileNetworkCode
+      ? `MCC/MNC ${event.mobileCountryCode}/${event.mobileNetworkCode}`
+      : "",
+    !event.isp && event.networkOrganization
+      ? `réseau ${event.networkOrganization.slice(0, 45)}`
+      : "",
+    !event.isp && event.asn ? `ASN ${event.asn}` : "",
   ].filter(Boolean);
-  return parts.join(" · ").slice(0, 220);
+  return parts.join(" · ").slice(0, 300);
 }
 
 async function flushAuditQueue(): Promise<void> {
@@ -415,17 +444,154 @@ function parseCallback(data: unknown): { blocked: boolean; ipAddress: string } |
   return { blocked: match[1] === "block", ipAddress };
 }
 
-export async function handleTelegramUpdate(update: unknown): Promise<"ignored" | "handled"> {
+export function parseTelegramAuditCommand(
+  text: unknown,
+): { command: "visiteurs" | "requetes"; page: number } | null {
+  if (typeof text !== "string") return null;
+  const match = /^\/(visiteurs|requetes)(?:@[A-Za-z0-9_]+)?(?:\s+([1-9]\d{0,7}))?\s*$/i.exec(text.trim());
+  if (!match) return null;
+  return {
+    command: match[1].toLowerCase() as "visiteurs" | "requetes",
+    page: Math.min(10_000, Number(match[2] ?? "1")),
+  };
+}
+
+function formatAuditTime(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "date inconnue"
+    : `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
+function visitorLocation(visitor: RecentVisitor): string {
+  const location = [visitor.city, visitor.region, visitor.country]
+    .filter((part): part is string => Boolean(part))
+    .join(", ")
+    .slice(0, 160);
+  const network = [
+    visitor.isp ? `opérateur/FAI ${visitor.isp}` : "",
+    visitor.connection_type ? `connexion ${visitor.connection_type}` : "",
+    visitor.mobile_country_code && visitor.mobile_network_code
+      ? `MCC/MNC ${visitor.mobile_country_code}/${visitor.mobile_network_code}`
+      : "",
+    !visitor.isp && visitor.asn ? `ASN ${visitor.asn}` : "",
+    !visitor.isp && visitor.network_organization ? visitor.network_organization : "",
+  ].filter(Boolean).join(" ").slice(0, 140);
+  return [location || "localisation indisponible", network].filter(Boolean).join(" · ");
+}
+
+export function formatVisitorReport(
+  rows: RecentVisitor[],
+  total: number,
+  page: number,
+  pageSize = 6,
+): string {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const entries = rows.map((visitor) =>
+    `• ${visitor.ip_address} · ${visitorLocation(visitor)} · vu ${formatAuditTime(visitor.last_seen)}`);
+  return [
+    `Visiteurs uniques (${REQUEST_AUDIT_RETENTION_DAYS} jours) · page ${page}/${totalPages} · total ${total}`,
+    ...(entries.length ? entries : ["Aucun visiteur connu pour cette page."]),
+    "Commande : /visiteurs 2 pour la page suivante.",
+  ].join("\n").slice(0, MAX_TELEGRAM_MESSAGE_LENGTH);
+}
+
+export function formatRequestReport(
+  rows: RecentRequest[],
+  total: number,
+  page: number,
+  pageSize = 6,
+): string {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const entries = rows.map((request) => {
+    const location = [request.city, request.country].filter(Boolean).join(", ");
+    const network = [
+      request.isp ? `opérateur/FAI ${request.isp}` : "",
+      request.connection_type ? `connexion ${request.connection_type}` : "",
+      request.mobile_country_code && request.mobile_network_code
+        ? `MCC/MNC ${request.mobile_country_code}/${request.mobile_network_code}`
+        : "",
+      !request.isp && request.asn ? `ASN ${request.asn}` : "",
+      !request.isp && request.network_organization ? request.network_organization : "",
+    ].filter(Boolean).join(" ").slice(0, 140);
+    return [
+      `• ${formatAuditTime(request.created_at)} · ${request.method} ${request.route.slice(0, 120)} · ${request.status}`,
+      request.ip_address ? `IP ${request.ip_address}` : "IP indisponible via le proxy",
+      location,
+      network,
+    ].filter(Boolean).join(" · ");
+  });
+  return [
+    `Requêtes Node/Express (${REQUEST_AUDIT_RETENTION_DAYS} jours) · page ${page}/${totalPages} · total ${total}`,
+    ...(entries.length ? entries : ["Aucune requête connue pour cette page."]),
+    "Commande : /requetes 2 pour la page suivante.",
+  ].join("\n").slice(0, MAX_TELEGRAM_MESSAGE_LENGTH);
+}
+
+type TelegramUpdateDependencies = {
+  request?: typeof fetch;
+  listVisitors?: typeof listRecentVisitors;
+  listRequests?: typeof listRecentRequests;
+};
+
+async function handleAuditCommand(
+  message: unknown,
+  config: TelegramConfig,
+  dependencies: TelegramUpdateDependencies,
+): Promise<"ignored" | "handled"> {
+  if (typeof message !== "object" || message === null) return "ignored";
+  const data = message as {
+    text?: unknown;
+    from?: { id?: unknown } | null;
+    chat?: { id?: unknown; type?: unknown } | null;
+  };
+  const command = parseTelegramAuditCommand(data.text);
+  const userId = typeof data.from?.id === "number" ? String(data.from.id) : "";
+  const chatId =
+    typeof data.chat?.id === "number" || typeof data.chat?.id === "string"
+      ? String(data.chat.id)
+      : "";
+  if (
+    !command ||
+    !["group", "supergroup"].includes(String(data.chat?.type)) ||
+    chatId !== config.chatId ||
+    !/^\d{1,20}$/.test(userId)
+  ) return "ignored";
+  const status = await getTelegramChatMemberStatus(userId, config, dependencies.request);
+  if (!isAuthorizedTelegramGroupAdmin(chatId, config.chatId, status)) return "ignored";
+
+  const pageSize = 6;
+  const report = command.command === "visiteurs"
+    ? await (dependencies.listVisitors ?? listRecentVisitors)(command.page, pageSize).then(({ rows, total }) =>
+      formatVisitorReport(rows, total, command.page, pageSize))
+    : await (dependencies.listRequests ?? listRecentRequests)(command.page, pageSize).then(({ rows, total }) =>
+      formatRequestReport(rows, total, command.page, pageSize));
+  await callTelegramApi("sendMessage", {
+    chat_id: config.chatId,
+    text: report,
+    disable_web_page_preview: true,
+  }, config, dependencies.request);
+  return "handled";
+}
+
+export async function handleTelegramUpdate(
+  update: unknown,
+  dependencies: TelegramUpdateDependencies = {},
+): Promise<"ignored" | "handled"> {
   const config = readTelegramConfig();
   if (!config || typeof update !== "object" || update === null) return "ignored";
-  const callback = (update as { callback_query?: unknown }).callback_query;
+  const updateData = update as { callback_query?: unknown; message?: unknown };
+  if (updateData.message !== undefined) {
+    return handleAuditCommand(updateData.message, config, dependencies);
+  }
+  const callback = updateData.callback_query;
   if (typeof callback !== "object" || callback === null) return "ignored";
 
   const query = callback as {
     id?: unknown;
     data?: unknown;
     from?: { id?: unknown } | null;
-    message?: { chat?: { id?: unknown } | null } | null;
+    message?: { chat?: { id?: unknown; type?: unknown } | null } | null;
   };
   const callbackId = typeof query.id === "string" ? query.id : "";
   const userId = typeof query.from?.id === "number" ? String(query.from.id) : "";
@@ -433,12 +599,16 @@ export async function handleTelegramUpdate(update: unknown): Promise<"ignored" |
     typeof query.message?.chat?.id === "number" || typeof query.message?.chat?.id === "string"
       ? String(query.message.chat.id)
       : "";
+  const callbackChatType = String(query.message?.chat?.type ?? "");
+  if (
+    !["group", "supergroup"].includes(callbackChatType) ||
+    callbackChatId !== config.chatId
+  ) return "ignored";
   const action = parseCallback(query.data);
   const memberStatus = callbackId &&
       action &&
-      callbackChatId === config.chatId &&
       /^\d{1,20}$/.test(userId)
-    ? await getTelegramChatMemberStatus(userId, config)
+    ? await getTelegramChatMemberStatus(userId, config, dependencies.request)
     : null;
   if (
     !callbackId ||
@@ -450,7 +620,7 @@ export async function handleTelegramUpdate(update: unknown): Promise<"ignored" |
         callback_query_id: callbackId,
         text: "Action non autorisée.",
         show_alert: true,
-      }, config);
+      }, config, dependencies.request);
     }
     return "ignored";
   }
@@ -460,7 +630,7 @@ export async function handleTelegramUpdate(update: unknown): Promise<"ignored" |
   await callTelegramApi("answerCallbackQuery", {
     callback_query_id: callbackId,
     text: `Adresse IP ${actionLabel}.`,
-  }, config);
+  }, config, dependencies.request);
   await callTelegramApi("sendMessage", {
     chat_id: config.chatId,
     text: `SendFlow · IP ${action.ipAddress} ${actionLabel} par un administrateur autorisé. Le blocage s’applique aux requêtes reçues par Node.`,
@@ -470,7 +640,7 @@ export async function handleTelegramUpdate(update: unknown): Promise<"ignored" |
         callback_data: `${action.blocked ? "unblock" : "block"}:${action.ipAddress}`,
       }]],
     },
-  }, config);
+  }, config, dependencies.request);
   return "handled";
 }
 
@@ -500,8 +670,17 @@ export async function configureTelegramWebhook(
   const registered = await callTelegramApi("setWebhook", {
     url: webhookUrl,
     secret_token: config.webhookSecret,
-    allowed_updates: ["callback_query"],
+    allowed_updates: ["callback_query", "message"],
   }, config, request);
+  if (registered) {
+    await callTelegramApi("setMyCommands", {
+      commands: [
+        { command: "visiteurs", description: "Voir les visiteurs des 90 derniers jours" },
+        { command: "requetes", description: "Parcourir les requêtes Node/Express" },
+      ],
+      scope: { type: "chat_administrators", chat_id: config.chatId },
+    }, config, request);
+  }
   telegramWebhookReady = registered;
   return registered;
 }

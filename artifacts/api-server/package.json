@@ -19,7 +19,7 @@
     "test:landing-visibility": "tsx --test scripts/landing-visibility.test.ts",
     "test:public-storage": "tsx --test scripts/public-object-storage.test.ts",
     "test:origin-security": "tsx --test scripts/origin-security.test.ts",
-    "test:telegram-audit": "tsx --test scripts/telegram-audit.test.ts scripts/ip-block.test.ts scripts/security-router.test.ts"
+    "test:telegram-audit": "tsx --test scripts/telegram-audit.test.ts scripts/request-audit.test.ts scripts/ip-block.test.ts scripts/security-router.test.ts"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",
@@ -28,6 +28,7 @@
     "cors": "^2.8.6",
     "drizzle-orm": "catalog:",
     "express": "^5.2.1",
+    "maxmind": "^5.1.0",
     "pino": "^9.14.0",
     "pino-http": "^10.5.0",
     "zod": "catalog:"
