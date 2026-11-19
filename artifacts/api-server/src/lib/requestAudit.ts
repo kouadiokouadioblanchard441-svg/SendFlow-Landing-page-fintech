@@ -50,6 +50,31 @@ const REQUEST_AUDIT_SCHEMA_UPGRADE_SQL = [
     platform varchar(40),
     device varchar(40)
   )`,
+  `CREATE TABLE IF NOT EXISTS request_audit_page_views (
+    id bigserial PRIMARY KEY,
+    visited_at timestamptz NOT NULL DEFAULT now(),
+    page varchar(200) NOT NULL,
+    ip_address varchar(45),
+    country_code varchar(2),
+    country varchar(100),
+    region varchar(100),
+    city varchar(100),
+    asn integer,
+    network_organization varchar(180),
+    isp varchar(180),
+    connection_type varchar(80),
+    mobile_country_code varchar(8),
+    mobile_network_code varchar(8),
+    browser varchar(80),
+    platform varchar(40),
+    device varchar(40)
+  )`,
+  `CREATE TABLE IF NOT EXISTS request_audit_daily_report_deliveries (
+    report_date date PRIMARY KEY,
+    claim_token uuid NOT NULL,
+    claimed_at timestamptz NOT NULL DEFAULT now(),
+    sent_at timestamptz
+  )`,
   `WITH visit_times AS (
      SELECT ip_address, MIN(created_at) AS first_seen, MAX(created_at) AS last_seen
      FROM request_audit_events
@@ -84,6 +109,8 @@ const REQUEST_AUDIT_SCHEMA_UPGRADE_SQL = [
 const REQUEST_AUDIT_INDEX_SQL = [
   "CREATE INDEX IF NOT EXISTS request_audit_events_created_at_idx ON request_audit_events (created_at DESC)",
   "CREATE INDEX IF NOT EXISTS request_audit_events_ip_created_at_idx ON request_audit_events (ip_address, created_at DESC)",
+  "CREATE INDEX IF NOT EXISTS request_audit_page_views_visited_at_idx ON request_audit_page_views (visited_at DESC)",
+  "CREATE INDEX IF NOT EXISTS request_audit_page_views_ip_visited_at_idx ON request_audit_page_views (ip_address, visited_at DESC)",
 ];
 
 export type NodeRequestAuditEvent = {
@@ -133,6 +160,25 @@ export type RecentRequest = {
   device: string | null;
 };
 
+export type DailyPageViewVisitor = {
+  ip_address: string;
+  country: string | null;
+  city: string | null;
+  network_organization: string | null;
+  isp: string | null;
+  browser: string | null;
+  platform: string | null;
+  device: string | null;
+  page: string;
+};
+
+export type DailyPageViewSummary = {
+  totalViews: number;
+  uniqueIpCount: number;
+  unknownIpViews: number;
+  visitors: DailyPageViewVisitor[];
+};
+
 let requestAuditStoreReady = false;
 let cleanupTimer: NodeJS.Timeout | undefined;
 
@@ -168,6 +214,14 @@ async function deleteExpiredRequestAudit(): Promise<void> {
     await pool.query(
       `DELETE FROM request_audit_visitors
        WHERE last_seen < now() - interval '90 days'`,
+    );
+    await pool.query(
+      `DELETE FROM request_audit_page_views
+       WHERE visited_at < now() - interval '90 days'`,
+    );
+    await pool.query(
+      `DELETE FROM request_audit_daily_report_deliveries
+       WHERE report_date < (now() AT TIME ZONE 'UTC')::date - 90`,
     );
   } catch (error) {
     logger.warn({ err: error }, "Expired request audit records could not be removed.");
@@ -279,6 +333,80 @@ export async function recordPageView(
     logger.warn({ err: error }, "Page view visitor details could not be stored.");
     return false;
   }
+}
+
+export async function recordPageViewEvent(
+  page: string,
+  ipAddress: string | null,
+  geo: GeoIpDetails | null,
+  clientInfo: ClientInfo,
+  visitedAt: Date,
+): Promise<void> {
+  if (!requestAuditStoreReady) return;
+  const safePage = page.startsWith("/") && page.length <= 200 ? page : "/";
+  try {
+    await pool.query(
+      `INSERT INTO request_audit_page_views
+        (visited_at, page, ip_address, country_code, country, region, city, asn,
+         network_organization, isp, connection_type, mobile_country_code,
+         mobile_network_code, browser, platform, device)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+      [
+        visitedAt,
+        safePage,
+        ipAddress,
+        geo?.countryCode ?? null,
+        geo?.country ?? null,
+        geo?.region ?? null,
+        geo?.city ?? null,
+        geo?.asn ?? null,
+        geo?.networkOrganization ?? null,
+        geo?.isp ?? null,
+        geo?.connectionType ?? null,
+        geo?.mobileCountryCode ?? null,
+        geo?.mobileNetworkCode ?? null,
+        clientInfo.browser,
+        clientInfo.platform,
+        clientInfo.device,
+      ],
+    );
+  } catch (error) {
+    logger.warn({ err: error }, "Page view event could not be stored.");
+  }
+}
+
+export async function getDailyPageViewSummary(
+  start: Date,
+  end: Date,
+): Promise<DailyPageViewSummary> {
+  const counts = await pool.query<{
+    total_views: number | string;
+    unique_ip_count: number | string;
+    unknown_ip_views: number | string;
+  }>(
+    `SELECT COUNT(*)::integer AS total_views,
+            COUNT(DISTINCT ip_address)::integer AS unique_ip_count,
+            COUNT(*) FILTER (WHERE ip_address IS NULL)::integer AS unknown_ip_views
+     FROM request_audit_page_views
+     WHERE visited_at >= $1 AND visited_at < $2`,
+    [start, end],
+  );
+  const visitors = await pool.query<DailyPageViewVisitor>(
+    `SELECT DISTINCT ON (ip_address)
+        ip_address, country, city, network_organization, isp,
+        browser, platform, device, page
+     FROM request_audit_page_views
+     WHERE visited_at >= $1 AND visited_at < $2 AND ip_address IS NOT NULL
+     ORDER BY ip_address, visited_at DESC`,
+    [start, end],
+  );
+  const count = counts.rows[0];
+  return {
+    totalViews: Number(count?.total_views ?? 0),
+    uniqueIpCount: Number(count?.unique_ip_count ?? 0),
+    unknownIpViews: Number(count?.unknown_ip_views ?? 0),
+    visitors: visitors.rows,
+  };
 }
 
 export async function listRecentVisitors(

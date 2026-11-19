@@ -9,6 +9,7 @@ import {
 import { getPleskMediaDirectory } from "./lib/publicObjectStorage";
 import { initializeGeoIpDatabases } from "./lib/geoIp";
 import { initializeRequestAuditStore } from "./lib/requestAudit";
+import { startDailyVisitorReportScheduler } from "./lib/dailyVisitorReport";
 import {
   configureTelegramWebhook,
   initializeIpBlockStore,
@@ -39,6 +40,7 @@ async function startServer(): Promise<void> {
       await initializeGeoIpDatabases();
       try {
         await initializeRequestAuditStore();
+        startDailyVisitorReportScheduler();
       } catch (error) {
         logger.error(
           { err: error },

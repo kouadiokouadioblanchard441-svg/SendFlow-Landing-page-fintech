@@ -348,6 +348,14 @@ bases de correspondance sont téléchargées puis interrogées localement. La pa
 de confidentialité étant éditable en base par le panel, le dépôt ne peut pas
 confirmer que le texte actuellement publié en production a été mis à jour.
 
+Chaque page vue publique produit une notification Telegram courte avec l’IP
+résolue côté serveur, la localisation GeoIP approximative, le réseau/FAI, le
+navigateur, l’appareil estimé et l’heure UTC. Le backend envoie aussi à 00:00
+UTC un bilan des pages vues de la journée UTC précédente, avec le nombre de
+visites, les IP distinctes et les détails disponibles par IP. Une IP distincte
+ne correspond pas nécessairement à une personne distincte. Les pages vues sont
+conservées 90 jours; aucun réglage supplémentaire n’est requis pour l’horaire.
+
 La journalisation et le blocage s’appliquent uniquement aux requêtes qui arrivent
 à Express/Node. Ils ne couvrent pas les fichiers que Plesk/Apache/CDN sert
 directement; leurs journaux ne sont pas accessibles à cette application.

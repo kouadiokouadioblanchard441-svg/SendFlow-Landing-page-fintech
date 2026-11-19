@@ -14,7 +14,11 @@ import {
 } from "../lib/telegramAudit";
 import { lookupLocalGeoIp } from "../lib/geoIp";
 import { parseClientInfo } from "../lib/clientInfo";
-import { isRequestAuditStoreReady, recordPageView } from "../lib/requestAudit";
+import {
+  isRequestAuditStoreReady,
+  recordPageView,
+  recordPageViewEvent,
+} from "../lib/requestAudit";
 import { createProxyDiagnosticSnapshot } from "../lib/proxyDiagnostics";
 import { getTrustedProxyAddressCount } from "../lib/trustedProxies";
 
@@ -87,10 +91,12 @@ router.post("/security/telemetry/events", eventLimiter, async (req, res): Promis
   let isNewVisitor = false;
   if (
     parsed.data.kind === "page_view" &&
-    ipAddress &&
     isRequestAuditStoreReady()
   ) {
-    isNewVisitor = await recordPageView(ipAddress, geo, clientInfo);
+    await recordPageViewEvent(page, ipAddress, geo, clientInfo, occurredAt);
+    if (ipAddress) {
+      isNewVisitor = await recordPageView(ipAddress, geo, clientInfo);
+    }
   }
   enqueueAuditEvent({
     kind: parsed.data.kind,

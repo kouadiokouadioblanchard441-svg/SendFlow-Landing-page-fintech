@@ -284,6 +284,22 @@ export async function callTelegramApi(
   }
 }
 
+export async function sendTelegramGroupMessage(text: string): Promise<boolean> {
+  let config: TelegramConfig | null;
+  try {
+    config = readTelegramConfig();
+  } catch (error) {
+    logger.error({ err: error }, "Telegram audit configuration is invalid");
+    return false;
+  }
+  if (!config) return false;
+  return callTelegramApi("sendMessage", {
+    chat_id: config.chatId,
+    text: text.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
+    disable_web_page_preview: true,
+  }, config);
+}
+
 export async function getTelegramChatMemberStatus(
   userId: string,
   config: TelegramConfig,
@@ -356,18 +372,18 @@ export function formatAuditEvent(event: AuditEvent): string {
     event.browser,
     event.platform ? `(${event.platform})` : "",
   ].filter(Boolean).join(" ");
-  if (event.kind === "page_view" && event.isNewVisitor) {
+  if (event.kind === "page_view") {
     return [
-      "🆕 Nouvelle IP — visite vitrine",
-      `🌐 Nouvelle IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
+      `👋 Nouvelle visite SendFlow — ${event.page.slice(0, 70)}`,
+      `🌐 IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
       `📍 Localisation : ${location || "indisponible (IP ou base GeoIP non reconnue)"}`,
-      `🏢 FAI : ${network || "non déterminé par la base réseau"}`,
-      `💻 Navigateur déclaré : ${browser || "indéterminé"}`,
-      `📱 Appareil estimé : ${event.device || "indéterminé"}`,
-      `🕒 Date : ${timestamp}`,
-      `⚠️ Première apparition connue sur la vitrine dans les ${REQUEST_AUDIT_RETENTION_DAYS} jours conservés.`,
-      `📄 Page : ${event.page.slice(0, 120)}`,
-    ].join("\n");
+      `🏢 Réseau/FAI : ${network || "non déterminé"}`,
+      `💻 ${browser || "Navigateur indéterminé"} · ${event.device || "appareil indéterminé"}`,
+      `🕒 ${timestamp}`,
+      event.isNewVisitor
+        ? `✨ Première IP connue sur ${REQUEST_AUDIT_RETENTION_DAYS} jours`
+        : "",
+    ].filter(Boolean).join("\n").slice(0, 650);
   }
 
   if (event.kind === "http_request" || event.kind === "security") {
@@ -427,18 +443,31 @@ async function flushAuditQueue(): Promise<void> {
   const batch = queue.splice(0, MAX_BATCH_EVENTS);
   const droppedAtFlush = droppedEvents;
   const lines: string[] = [];
+  const selectedEvents: AuditEvent[] = [];
+  const omissionNotice = droppedAtFlush > 0
+    ? `Événements perdus car la file était pleine : ${droppedAtFlush}`
+    : "";
+  const messageHeader = "SendFlow · activité récente\n";
+  const contentLimit = MAX_TELEGRAM_MESSAGE_LENGTH -
+    messageHeader.length -
+    (omissionNotice ? omissionNotice.length + 1 : 0);
   let messageLength = 0;
-  for (const event of batch) {
-    const line = formatAuditEvent(event);
-    if (messageLength + line.length + 1 > MAX_TELEGRAM_MESSAGE_LENGTH) break;
+  for (const [index, event] of batch.entries()) {
+    const line = formatAuditEvent(event).slice(0, MAX_TELEGRAM_MESSAGE_LENGTH - messageHeader.length - 1);
+    if (messageLength + line.length + (lines.length > 0 ? 1 : 0) > contentLimit) {
+      for (const deferredEvent of batch.slice(index).reverse()) {
+        queue.unshift(deferredEvent);
+      }
+      break;
+    }
     lines.push(line);
-    messageLength += line.length + 1;
+    selectedEvents.push(event);
+    messageLength += line.length + (lines.length > 1 ? 1 : 0);
   }
-  const omitted = batch.length - lines.length + droppedAtFlush;
-  if (omitted > 0) lines.push(`Événements non affichés dans ce lot : ${omitted}`);
+  if (omissionNotice) lines.push(omissionNotice);
 
   const ips = isIpBlockStoreReady() && isTelegramWebhookReady()
-    ? [...new Set(batch.map((event) => event.ip).filter((ip): ip is string => Boolean(ip)))].slice(0, 12)
+    ? [...new Set(selectedEvents.map((event) => event.ip).filter((ip): ip is string => Boolean(ip)))].slice(0, 12)
     : [];
   const replyMarkup: TelegramReplyMarkup = {
     inline_keyboard: ips.map((ip) => [
@@ -450,7 +479,7 @@ async function flushAuditQueue(): Promise<void> {
     "sendMessage",
     {
       chat_id: config.chatId,
-      text: `SendFlow · activité récente\n${lines.join("\n")}`.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
+      text: `${messageHeader}${lines.join("\n")}`.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
       ...(ips.length > 0 ? { reply_markup: replyMarkup } : {}),
       disable_web_page_preview: true,
     },
@@ -459,7 +488,7 @@ async function flushAuditQueue(): Promise<void> {
   if (sent) {
     droppedEvents = Math.max(0, droppedEvents - droppedAtFlush);
   } else {
-    for (const event of batch.reverse()) {
+    for (const event of selectedEvents.reverse()) {
       if (queue.length < MAX_QUEUED_EVENTS) queue.unshift(event);
       else droppedEvents += 1;
     }

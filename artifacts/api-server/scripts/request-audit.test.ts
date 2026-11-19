@@ -188,6 +188,8 @@ test("Telegram request reports are bounded and do not include request payloads",
   assert.match(schema, /browser varchar\(80\)/);
   assert.match(schema, /CREATE TABLE IF NOT EXISTS request_audit_visitors/);
   assert.match(schema, /first_seen timestamptz/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS request_audit_page_views/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS request_audit_daily_report_deliveries/);
   assert.doesNotMatch(schema, /user_agent varchar/i);
   assert.doesNotMatch(schema, /request_body|cookie|authorization/i);
 });
@@ -206,15 +208,16 @@ test("new public page visits format a first-seen notice with server-derived deta
     occurredAt: "2026-11-08T13:19:29.000Z",
     isNewVisitor: true,
   });
-  assert.match(message, /🆕 Nouvelle IP/);
+  assert.match(message, /👋 Nouvelle visite SendFlow/);
   assert.match(message, /41\.138\.89\.238/);
   assert.match(message, /Cotonou, Benin/);
   assert.match(message, /Example ISP/);
   assert.match(message, /Chrome \(Android\)/);
   assert.match(message, /Mobile/);
   assert.match(message, /08 novembre 2026 à 13:19:29 UTC/);
-  assert.match(message, /90 jours/);
+  assert.match(message, /Première IP connue sur 90 jours/);
   assert.doesNotMatch(message, /compte/i);
+  assert.ok(message.split("\n").length <= 7);
 });
 
 test("every HTTP request message shows the IP and visitor details in the requested format", () => {
@@ -257,4 +260,25 @@ test("security request alerts include metadata and never invent an IP", () => {
   assert.match(message, /HTTP 404/);
   assert.match(message, /IP indisponible — Node ne reçoit pas d’adresse publique fiable via Plesk/);
   assert.doesNotMatch(message, /203\.0\.113\.|198\.51\.100\./);
+});
+
+test("repeat public page visits stay short and state when IP resolution is unavailable", () => {
+  const message = formatAuditEvent({
+    kind: "page_view",
+    page: "/fonctionnalites",
+    ip: null,
+    city: null,
+    country: null,
+    isp: null,
+    browser: "Chrome",
+    platform: "Android",
+    device: "Mobile",
+    occurredAt: "2026-11-08T13:19:29.000Z",
+    isNewVisitor: false,
+  });
+  assert.match(message, /👋 Nouvelle visite SendFlow — \/fonctionnalites/);
+  assert.match(message, /IP indisponible/);
+  assert.match(message, /Chrome \(Android\)/);
+  assert.ok(message.split("\n").length <= 6);
+  assert.ok(message.length < 600);
 });
