@@ -28539,7 +28539,7 @@ var require_pino = __commonJS({
     function pinoBundlerAbsolutePath(p) {
       try {
         const path6 = require("path");
-        const outputDir = "/home/runner/work/SendFlow-Landing-page-fintech/SendFlow-Landing-page-fintech/artifacts/api-server/dist";
+        const outputDir = "/home/runner/workspace/artifacts/api-server/dist";
         return path6.resolve(outputDir, p.replace(/^\.\//, ""));
       } catch (e) {
         const f = new Function("p", "return new URL(p, import.meta.url).pathname");
@@ -35527,7 +35527,6 @@ var import_node_http = require("node:http");
 var import_node_path5 = __toESM(require("node:path"), 1);
 var import_node_fs2 = require("node:fs");
 var import_promises3 = require("node:fs/promises");
-var import_node_crypto6 = require("node:crypto");
 var import_express7 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
@@ -66311,6 +66310,67 @@ router6.use(storage_default);
 router6.use(security_default);
 var routes_default = router6;
 
+// src/middlewares/securityHeaders.ts
+var import_node_crypto6 = require("node:crypto");
+var SECURITY_HEADERS = {
+  contentTypeOptions: "nosniff",
+  frameOptions: "DENY",
+  hsts: "max-age=31536000",
+  permissionsPolicy: "camera=(), microphone=(), geolocation=()",
+  referrerPolicy: "strict-origin-when-cross-origin"
+};
+var securityHeaders = (req, res, next) => {
+  const nonce = (0, import_node_crypto6.randomBytes)(18).toString("base64");
+  const recaptchaIsEnabled = readRecaptchaSettings().status === "enabled";
+  const recaptchaScriptSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "";
+  const recaptchaFrameSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/" : "";
+  const recaptchaStyleSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "";
+  res.locals.cspNonce = nonce;
+  res.setHeader(
+    "X-Content-Type-Options",
+    SECURITY_HEADERS.contentTypeOptions
+  );
+  const isPrivatePanelUrl = /(^|\/)panel(?:\/|$)/i.test(req.path);
+  res.setHeader(
+    "Referrer-Policy",
+    isPrivatePanelUrl ? "no-referrer" : SECURITY_HEADERS.referrerPolicy
+  );
+  if (isPrivatePanelUrl) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  }
+  res.setHeader("X-Frame-Options", SECURITY_HEADERS.frameOptions);
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      `frame-src 'self'${recaptchaFrameSources}`,
+      "object-src 'none'",
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
+      `script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
+      "script-src-attr 'none'",
+      // Inline styles are limited to style directives because the UI uses dynamic CMS colors/positions and two inline style blocks; script directives remain nonce-only.
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      `style-src-elem 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://fonts.cdnfonts.com${recaptchaStyleSources}`,
+      "style-src-attr 'unsafe-inline'",
+      "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
+      "img-src 'self' data: blob: https:",
+      "media-src 'self' data: blob: https:",
+      `connect-src 'self'${recaptchaScriptSources}`,
+      "manifest-src 'self'",
+      "worker-src 'self' blob:"
+    ].join("; ")
+  );
+  res.setHeader("Permissions-Policy", SECURITY_HEADERS.permissionsPolicy);
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", SECURITY_HEADERS.hsts);
+  }
+  next();
+};
+
 // src/middlewares/requestErrorHandler.ts
 var requestErrorHandler = (error62, req, res, next) => {
   req.log.error({ err: error62 }, "Unhandled request error");
@@ -66368,50 +66428,7 @@ var ipBlockMiddleware = createIpBlockMiddleware();
 var app = (0, import_express7.default)();
 app.set("trust proxy", isTrustedProxyAddress);
 app.disable("x-powered-by");
-app.use((req, res, next) => {
-  const nonce = (0, import_node_crypto6.randomBytes)(18).toString("base64");
-  const recaptchaIsEnabled = readRecaptchaSettings().status === "enabled";
-  const recaptchaScriptSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "";
-  const recaptchaFrameSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/" : "";
-  const recaptchaStyleSources = recaptchaIsEnabled ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "";
-  res.locals.cspNonce = nonce;
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  const isPrivatePanelUrl = /(^|\/)panel(?:\/|$)/i.test(req.path);
-  res.setHeader("Referrer-Policy", isPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
-  if (isPrivatePanelUrl) {
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("X-Robots-Tag", "noindex, nofollow");
-  }
-  res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader(
-    "Content-Security-Policy",
-    [
-      "default-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      `frame-src 'self'${recaptchaFrameSources}`,
-      "object-src 'none'",
-      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
-      `script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
-      "script-src-attr 'none'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      `style-src-elem 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://fonts.cdnfonts.com${recaptchaStyleSources}`,
-      "style-src-attr 'unsafe-inline'",
-      "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
-      "img-src 'self' data: blob: https:",
-      "media-src 'self' data: blob: https:",
-      `connect-src 'self'${recaptchaScriptSources}`,
-      "manifest-src 'self'",
-      "worker-src 'self' blob:"
-    ].join("; ")
-  );
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  if (process.env.NODE_ENV === "production") {
-    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  }
-  next();
-});
+app.use(securityHeaders);
 var configuredBasePath = process.env.BASE_PATH?.trim() ?? "";
 var safeBasePath = /^\/(?:[A-Za-z0-9._~-]+\/?)*$/.test(configuredBasePath) && !configuredBasePath.split("/").includes("..") ? configuredBasePath.replace(/\/+$/, "") : "";
 var canonicalPanelPath = `${safeBasePath}/panel`;

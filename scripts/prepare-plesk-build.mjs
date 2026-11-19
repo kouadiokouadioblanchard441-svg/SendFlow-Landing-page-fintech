@@ -124,7 +124,7 @@ await writeFile(
     "Header onsuccess unset X-Powered-By",
     "Header always unset X-Powered-By",
     'Header always set X-Content-Type-Options "nosniff"',
-    'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"',
+    'Header always set Strict-Transport-Security "max-age=31536000"',
     'Header always set Referrer-Policy "strict-origin-when-cross-origin"',
     'Header always set X-Frame-Options "DENY"',
     `Header always set Content-Security-Policy "${apacheStaticContentSecurityPolicy}" env=!sendflow_api`,

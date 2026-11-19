@@ -1,14 +1,13 @@
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { randomBytes } from "node:crypto";
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger, sanitizeRequestUrl, serializeSafeError } from "./lib/logger";
-import { readRecaptchaSettings } from "./lib/recaptcha";
 import { isAllowedOrigin } from "./middlewares/security";
+import { securityHeaders } from "./middlewares/securityHeaders";
 import { requestErrorHandler } from "./middlewares/requestErrorHandler";
 import { ipBlockMiddleware } from "./middlewares/ipBlock";
 import {
@@ -28,56 +27,7 @@ import { isTrustedProxyAddress } from "./lib/trustedProxies";
 const app: Express = express();
 app.set("trust proxy", isTrustedProxyAddress);
 app.disable("x-powered-by");
-app.use((req, res, next) => {
-  const nonce = randomBytes(18).toString("base64");
-  const recaptchaIsEnabled = readRecaptchaSettings().status === "enabled";
-  const recaptchaScriptSources = recaptchaIsEnabled
-    ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
-    : "";
-  const recaptchaFrameSources = recaptchaIsEnabled
-    ? " https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/"
-    : "";
-  const recaptchaStyleSources = recaptchaIsEnabled
-    ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
-    : "";
-  res.locals.cspNonce = nonce;
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  const isPrivatePanelUrl = /(^|\/)panel(?:\/|$)/i.test(req.path);
-  res.setHeader("Referrer-Policy", isPrivatePanelUrl ? "no-referrer" : "strict-origin-when-cross-origin");
-  if (isPrivatePanelUrl) {
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("X-Robots-Tag", "noindex, nofollow");
-  }
-  res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader(
-    "Content-Security-Policy",
-    [
-      "default-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      `frame-src 'self'${recaptchaFrameSources}`,
-      "object-src 'none'",
-      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
-      `script-src-elem 'self' 'nonce-${nonce}' 'strict-dynamic'${recaptchaScriptSources}`,
-      "script-src-attr 'none'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      `style-src-elem 'self' 'nonce-${nonce}' https://fonts.googleapis.com https://fonts.cdnfonts.com${recaptchaStyleSources}`,
-      "style-src-attr 'unsafe-inline'",
-      "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
-      "img-src 'self' data: blob: https:",
-      "media-src 'self' data: blob: https:",
-      `connect-src 'self'${recaptchaScriptSources}`,
-      "manifest-src 'self'",
-      "worker-src 'self' blob:",
-    ].join("; "),
-  );
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  if (process.env.NODE_ENV === "production") {
-    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  }
-  next();
-});
+app.use(securityHeaders);
 
 const configuredBasePath = process.env.BASE_PATH?.trim() ?? "";
 const safeBasePath = /^\/(?:[A-Za-z0-9._~-]+\/?)*$/.test(configuredBasePath) &&

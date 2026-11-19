@@ -9,6 +9,7 @@
     "start": "node --enable-source-maps ./dist/index.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:health": "tsx --test scripts/health.test.ts",
+    "test:security-headers": "tsx --test scripts/security-headers.test.ts",
     "test:app-fallback": "tsx --test scripts/app-fallback.test.ts",
     "test:error-handling": "tsx --test scripts/error-handling.test.ts",
     "test:server-listener": "tsx --test scripts/server-listener.test.ts",
