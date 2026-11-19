@@ -74,7 +74,10 @@ export function createSharedRateLimiter(
   let requestsSinceCleanup = 0;
 
   return async (req, res, next) => {
-    const remoteAddress = req.socket?.remoteAddress;
+    // Express resolves req.ip using only the proxy addresses explicitly trusted
+    // by app.ts. This keeps limits per client behind Plesk without trusting a
+    // browser-supplied X-Forwarded-For header when no proxy is configured.
+    const remoteAddress = req.ip || req.socket?.remoteAddress;
     const secret = process.env.SESSION_SECRET;
     if (!remoteAddress || !secret) {
       res.status(503).json({

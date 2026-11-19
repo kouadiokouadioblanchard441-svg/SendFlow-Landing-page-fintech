@@ -372,6 +372,67 @@ test("independent admin limiters share counts and ignore forwarded IP headers", 
   }
 });
 
+test("shared admin limiter uses client IP resolved through an explicitly trusted proxy", async () => {
+  const databasePool = pool as unknown as {
+    query: (...args: unknown[]) => Promise<unknown>;
+  };
+  const originalQuery = Object.getOwnPropertyDescriptor(databasePool, "query");
+  const buckets = new Map<string, number>();
+  const seenKeys: string[] = [];
+  databasePool.query = async (...args: unknown[]) => {
+    const [statement, parameters] = args as [string, [string, number]];
+    assert.match(statement, /INSERT INTO rate_limit_buckets/);
+    const [key] = parameters;
+    seenKeys.push(key);
+    const count = (buckets.get(key) ?? 0) + 1;
+    buckets.set(key, count);
+    return { rows: [{ count, reset_at: new Date(Date.now() + 60_000) }] };
+  };
+
+  const app = express().set("trust proxy", 1);
+  app.get(
+    "/login",
+    createSharedRateLimiter({ scope: "trusted-proxy-test", windowMs: 60_000, max: 1 }),
+    (_req, res) => res.sendStatus(204),
+  );
+  const server = createServer(app);
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const origin = `http://127.0.0.1:${address.port}`;
+
+    const first = await fetch(`${origin}/login`, {
+      headers: { "X-Forwarded-For": "203.0.113.10" },
+    });
+    const second = await fetch(`${origin}/login`, {
+      headers: { "X-Forwarded-For": "203.0.113.11" },
+    });
+
+    assert.equal(first.status, 204);
+    assert.equal(second.status, 204);
+    assert.equal(seenKeys.length, 2);
+    assert.notEqual(seenKeys[0], seenKeys[1]);
+    assert.match(seenKeys[0], /^[a-f0-9]{64}$/);
+    assert.match(seenKeys[1], /^[a-f0-9]{64}$/);
+  } finally {
+    if (server.listening) {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+    if (originalQuery) {
+      Object.defineProperty(databasePool, "query", originalQuery);
+    } else {
+      delete (databasePool as { query?: unknown }).query;
+    }
+  }
+});
+
 test("shared admin limiter fails closed when PostgreSQL is unavailable", async () => {
   const databasePool = pool as unknown as {
     query: (...args: unknown[]) => Promise<unknown>;
