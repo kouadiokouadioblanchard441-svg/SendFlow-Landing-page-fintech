@@ -216,3 +216,45 @@ test("new public page visits format a first-seen notice with server-derived deta
   assert.match(message, /90 jours/);
   assert.doesNotMatch(message, /compte/i);
 });
+
+test("every HTTP request message shows the IP and visitor details in the requested format", () => {
+  const message = formatAuditEvent({
+    kind: "http_request",
+    method: "POST",
+    page: "/newsletter/subscribe",
+    status: 503,
+    ip: "41.138.89.238",
+    city: "Cotonou",
+    country: "Benin",
+    isp: "Example Mobile Network",
+    connectionType: "Cellular",
+    browser: "Chrome",
+    platform: "Android",
+    device: "Mobile",
+    occurredAt: "2026-11-08T13:19:29.000Z",
+  });
+  assert.match(message, /📡 Requête HTTP — POST \/newsletter\/subscribe/);
+  assert.match(message, /HTTP 503/);
+  assert.match(message, /🌐 Adresse IP : 41\.138\.89\.238/);
+  assert.match(message, /📍 Localisation : Cotonou, Benin/);
+  assert.match(message, /🏢 FAI : Example Mobile Network/);
+  assert.match(message, /📶 Type de réseau : Cellular/);
+  assert.match(message, /💻 Navigateur déclaré : Chrome \(Android\)/);
+  assert.match(message, /📱 Appareil estimé : Mobile/);
+  assert.match(message, /🕒 Date : 08 novembre 2026 à 13:19:29 UTC/);
+});
+
+test("security request alerts include metadata and never invent an IP", () => {
+  const message = formatAuditEvent({
+    kind: "security",
+    method: "GET",
+    page: "/.env",
+    status: 404,
+    ip: null,
+    occurredAt: "2026-11-08T13:19:29.000Z",
+  });
+  assert.match(message, /⚠️ Requête à surveiller — GET \/.env/);
+  assert.match(message, /HTTP 404/);
+  assert.match(message, /IP indisponible — Node ne reçoit pas d’adresse publique fiable via Plesk/);
+  assert.doesNotMatch(message, /203\.0\.113\.|198\.51\.100\./);
+});

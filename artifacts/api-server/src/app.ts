@@ -95,7 +95,24 @@ app.use((req, res, next) => {
         occurredAt: new Date(),
       });
       if (status === 401 || status === 403 || status === 404 || status === 429 || status >= 500) {
-        notifySecurityEvent({ page: safePath, ip: ipAddress, status });
+        notifySecurityEvent({
+          page: safePath,
+          method,
+          status,
+          ip: ipAddress,
+          country: geo?.country,
+          city: geo?.city,
+          asn: geo?.asn,
+          networkOrganization: geo?.networkOrganization,
+          isp: geo?.isp,
+          connectionType: geo?.connectionType,
+          mobileCountryCode: geo?.mobileCountryCode,
+          mobileNetworkCode: geo?.mobileNetworkCode,
+          browser: clientInfo.browser,
+          platform: clientInfo.platform,
+          device: clientInfo.device,
+          occurredAt: new Date(),
+        });
       }
     } catch {
       // Monitoring configuration must never cause an otherwise valid request to fail.

@@ -370,12 +370,33 @@ export function formatAuditEvent(event: AuditEvent): string {
     ].join("\n");
   }
 
+  if (event.kind === "http_request" || event.kind === "security") {
+    const title = event.kind === "security"
+      ? "⚠️ Requête à surveiller"
+      : "📡 Requête HTTP";
+    const method = event.method ?? "HTTP";
+    const status = typeof event.status === "number"
+      ? `HTTP ${event.status}`
+      : "statut indisponible";
+    return [
+      `${title} — ${method} ${event.page.slice(0, 90)}`,
+      `📊 Résultat : ${status}`,
+      `🌐 Adresse IP : ${event.ip ?? UNAVAILABLE_CLIENT_IP}`,
+      `📍 Localisation : ${location || "indisponible via la base GeoIP locale"}`,
+      `🏢 FAI : ${network || "non déterminé par la base réseau"}`,
+      event.connectionType ? `📶 Type de réseau : ${event.connectionType.slice(0, 50)}` : "",
+      `💻 Navigateur déclaré : ${browser || "indéterminé"}`,
+      `📱 Appareil estimé : ${event.device || "indéterminé"}`,
+      `🕒 Date : ${timestamp}`,
+      event.mobileCountryCode && event.mobileNetworkCode
+        ? `📡 Réseau mobile : ${event.mobileCountryCode}/${event.mobileNetworkCode}`
+        : "",
+      !event.isp && event.asn ? `ASN : ${event.asn}` : "",
+    ].filter(Boolean).join("\n").slice(0, 900);
+  }
+
   const parts = [
-    event.kind === "security"
-      ? "Alerte sécurité"
-      : event.kind === "http_request"
-        ? `${event.method ?? "HTTP"} ${event.page.slice(0, 70)}`
-        : `${event.kind} ${event.page.slice(0, 70)}`,
+    `${event.kind} ${event.page.slice(0, 70)}`,
     event.target ? `action=${event.target}` : "",
     event.status ? `HTTP ${event.status}` : "",
     event.ip ? `IP ${event.ip}` : UNAVAILABLE_CLIENT_IP,
