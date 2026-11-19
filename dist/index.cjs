@@ -65626,6 +65626,25 @@ var droppedEvents = 0;
 var flushTimer;
 var ipBlockStoreReady = false;
 var telegramWebhookReady = false;
+function selectAuditQueueFlush(pendingEvents, maxBatchEvents = MAX_BATCH_EVENTS) {
+  if (pendingEvents.length === 0) {
+    return { events: [], individualPageView: false };
+  }
+  if (pendingEvents[0]?.kind === "page_view") {
+    return { events: [pendingEvents[0]], individualPageView: true };
+  }
+  const nextPageViewIndex = pendingEvents.findIndex(
+    (event) => event.kind === "page_view"
+  );
+  const batchEnd = Math.min(
+    nextPageViewIndex < 0 ? pendingEvents.length : nextPageViewIndex,
+    Math.max(1, maxBatchEvents)
+  );
+  return {
+    events: pendingEvents.slice(0, batchEnd),
+    individualPageView: false
+  };
+}
 function normalizeIpAddress(value) {
   const trimmed = value.trim().replace(/^\[|\]$/g, "");
   const mappedIpv4 = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(trimmed)?.[1];
@@ -65898,8 +65917,9 @@ async function flushAuditQueue() {
     return;
   }
   if (!config2 || queue.length === 0) return;
-  const batch = queue.splice(0, MAX_BATCH_EVENTS);
-  const droppedAtFlush = droppedEvents;
+  const selection = selectAuditQueueFlush(queue);
+  const batch = queue.splice(0, selection.events.length);
+  const droppedAtFlush = selection.individualPageView ? 0 : droppedEvents;
   const lines = [];
   const selectedEvents = [];
   const omissionNotice = droppedAtFlush > 0 ? `\xC9v\xE9nements perdus car la file \xE9tait pleine : ${droppedAtFlush}` : "";
@@ -65925,11 +65945,12 @@ async function flushAuditQueue() {
       { text: `Bloquer ${ip}`.slice(0, 64), callback_data: `block:${ip}` }
     ])
   };
+  const messageText = selection.individualPageView ? formatAuditEvent(batch[0]) : `${messageHeader}${lines.join("\n")}`;
   const sent = await callTelegramApi(
     "sendMessage",
     {
       chat_id: config2.chatId,
-      text: `${messageHeader}${lines.join("\n")}`.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
+      text: messageText.slice(0, MAX_TELEGRAM_MESSAGE_LENGTH),
       ...ips.length > 0 ? { reply_markup: replyMarkup } : {},
       disable_web_page_preview: true
     },
