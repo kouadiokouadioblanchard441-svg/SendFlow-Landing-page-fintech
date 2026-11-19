@@ -9,6 +9,29 @@ process.env.APP_URL = "https://sendflow.example";
 
 const { default: securityRouter } = await import("../src/routes/security.ts");
 const { deriveTelegramWebhookSecret } = await import("../src/lib/telegramAudit.ts");
+const { createProxyDiagnosticSnapshot } = await import("../src/lib/proxyDiagnostics.ts");
+
+test("proxy diagnostics normalize and label forwarded addresses as unverified", () => {
+  const snapshot = createProxyDiagnosticSnapshot({
+    socketPeerAddress: "::ffff:127.0.0.1",
+    expressClientAddress: "::ffff:127.0.0.1",
+    trustedProxyAddressCount: 0,
+    xForwardedFor: "203.0.113.27, 10.12.0.3, not-an-ip",
+    xRealIp: "198.51.100.8",
+    cloudflareConnectingIp: "198.51.100.9",
+  });
+
+  assert.equal(snapshot.socketPeerAddress, "127.0.0.1");
+  assert.equal(snapshot.expressClientAddress, "127.0.0.1");
+  assert.equal(snapshot.expressClientAddressIsPublic, false);
+  assert.equal(snapshot.trustedProxyAddressCount, 0);
+  assert.deepEqual(snapshot.unverifiedHeaderCandidates, {
+    xForwardedFor: ["203.0.113.27", "10.12.0.3"],
+    xRealIp: ["198.51.100.8"],
+    cloudflareConnectingIp: ["198.51.100.9"],
+  });
+  assert.match(snapshot.note, /unverified/i);
+});
 
 test("public telemetry and Telegram webhook enforce configuration and origin checks", async () => {
   const previous = {
@@ -28,6 +51,16 @@ test("public telemetry and Telegram webhook enforce configuration and origin che
     const address = server.address();
     assert.ok(address && typeof address !== "string");
     const origin = `http://127.0.0.1:${address.port}`;
+
+    const unauthorizedDiagnostics = await fetch(`${origin}/api/admin/security/proxy-diagnostics`, {
+      headers: {
+        "X-Forwarded-For": "203.0.113.44",
+        "CF-Connecting-IP": "198.51.100.44",
+      },
+    });
+    assert.equal(unauthorizedDiagnostics.status, 401);
+    assert.equal(unauthorizedDiagnostics.headers.get("cache-control"), "no-store");
+    assert.doesNotMatch(await unauthorizedDiagnostics.text(), /203\.0\.113\.44|198\.51\.100\.44/);
 
     const disabledConfig = await fetch(`${origin}/api/security/telemetry/config`);
     assert.deepEqual(await disabledConfig.json(), { enabled: false });

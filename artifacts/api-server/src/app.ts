@@ -23,18 +23,10 @@ import {
 import { lookupLocalGeoIp } from "./lib/geoIp";
 import { recordNodeRequest } from "./lib/requestAudit";
 import { parseClientInfo } from "./lib/clientInfo";
+import { isTrustedProxyAddress } from "./lib/trustedProxies";
 
 const app: Express = express();
-const trustedProxyAddresses = new Set(
-  (process.env.TRUSTED_PROXY_IPS ?? "")
-    .split(",")
-    .map((value) => normalizeIpAddress(value))
-    .filter((value): value is string => Boolean(value)),
-);
-app.set("trust proxy", (address: string) => {
-  const normalized = normalizeIpAddress(address);
-  return normalized !== null && trustedProxyAddresses.has(normalized);
-});
+app.set("trust proxy", isTrustedProxyAddress);
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   const nonce = randomBytes(18).toString("base64");

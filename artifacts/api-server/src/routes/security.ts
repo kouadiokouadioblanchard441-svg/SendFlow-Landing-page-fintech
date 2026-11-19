@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { RecordSecurityTelemetryEventBody } from "@workspace/api-zod";
 import { isAllowedMutationOrigin, createRateLimiter } from "../middlewares/security";
+import { requireAdmin } from "../middlewares/adminAuth";
 import {
   enqueueAuditEvent,
   handleTelegramUpdate,
@@ -14,6 +15,8 @@ import {
 import { lookupLocalGeoIp } from "../lib/geoIp";
 import { parseClientInfo } from "../lib/clientInfo";
 import { isRequestAuditStoreReady, recordPageView } from "../lib/requestAudit";
+import { createProxyDiagnosticSnapshot } from "../lib/proxyDiagnostics";
+import { getTrustedProxyAddressCount } from "../lib/trustedProxies";
 
 const router: IRouter = Router();
 const eventLimiter = createRateLimiter({
@@ -22,6 +25,26 @@ const eventLimiter = createRateLimiter({
   message: "Trop d’événements envoyés. Réessaie plus tard.",
 });
 const activitySchema = RecordSecurityTelemetryEventBody.strict();
+
+router.get(
+  "/admin/security/proxy-diagnostics",
+  (req, res, next): void => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    next();
+  },
+  requireAdmin,
+  (req, res): void => {
+    res.json(createProxyDiagnosticSnapshot({
+      socketPeerAddress: req.socket.remoteAddress,
+      expressClientAddress: req.ip,
+      trustedProxyAddressCount: getTrustedProxyAddressCount(),
+      xForwardedFor: req.get("x-forwarded-for"),
+      xRealIp: req.get("x-real-ip"),
+      cloudflareConnectingIp: req.get("cf-connecting-ip"),
+    }));
+  },
+);
 
 router.get("/security/telemetry/config", (_req, res): void => {
   try {

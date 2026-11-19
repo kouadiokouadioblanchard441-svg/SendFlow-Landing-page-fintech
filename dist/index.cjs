@@ -66151,6 +66151,42 @@ function parseClientInfo(userAgent) {
   };
 }
 
+// src/lib/proxyDiagnostics.ts
+var MAX_PROXY_CHAIN_CANDIDATES = 8;
+function parseIpCandidates(value) {
+  if (!value) return [];
+  const candidates = value.split(",").slice(0, MAX_PROXY_CHAIN_CANDIDATES).map((candidate) => normalizeIpAddress(candidate)).filter((candidate) => candidate !== null);
+  return [...new Set(candidates)];
+}
+function createProxyDiagnosticSnapshot(input2) {
+  const socketPeerAddress = input2.socketPeerAddress ? normalizeIpAddress(input2.socketPeerAddress) : null;
+  const expressClientAddress = input2.expressClientAddress ? normalizeIpAddress(input2.expressClientAddress) : null;
+  return {
+    trustedProxyAddressCount: input2.trustedProxyAddressCount,
+    socketPeerAddress,
+    expressClientAddress,
+    expressClientAddressIsPublic: isPublicClientIp(expressClientAddress),
+    unverifiedHeaderCandidates: {
+      xForwardedFor: parseIpCandidates(input2.xForwardedFor),
+      xRealIp: parseIpCandidates(input2.xRealIp),
+      cloudflareConnectingIp: parseIpCandidates(input2.cloudflareConnectingIp)
+    },
+    note: "Forwarded-header candidates are unverified and must not be trusted until the proxy chain is confirmed."
+  };
+}
+
+// src/lib/trustedProxies.ts
+var trustedProxyAddresses = new Set(
+  (process.env.TRUSTED_PROXY_IPS ?? "").split(",").map((value) => normalizeIpAddress(value)).filter((value) => Boolean(value))
+);
+function isTrustedProxyAddress(address) {
+  const normalized = normalizeIpAddress(address);
+  return normalized !== null && trustedProxyAddresses.has(normalized);
+}
+function getTrustedProxyAddressCount() {
+  return trustedProxyAddresses.size;
+}
+
 // src/routes/security.ts
 var router5 = (0, import_express5.Router)();
 var eventLimiter = createRateLimiter({
@@ -66159,6 +66195,25 @@ var eventLimiter = createRateLimiter({
   message: "Trop d\u2019\xE9v\xE9nements envoy\xE9s. R\xE9essaie plus tard."
 });
 var activitySchema = RecordSecurityTelemetryEventBody.strict();
+router5.get(
+  "/admin/security/proxy-diagnostics",
+  (req, res, next) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    next();
+  },
+  requireAdmin,
+  (req, res) => {
+    res.json(createProxyDiagnosticSnapshot({
+      socketPeerAddress: req.socket.remoteAddress,
+      expressClientAddress: req.ip,
+      trustedProxyAddressCount: getTrustedProxyAddressCount(),
+      xForwardedFor: req.get("x-forwarded-for"),
+      xRealIp: req.get("x-real-ip"),
+      cloudflareConnectingIp: req.get("cf-connecting-ip")
+    }));
+  }
+);
 router5.get("/security/telemetry/config", (_req, res) => {
   try {
     res.json({ enabled: readTelegramConfig() !== null });
@@ -66311,13 +66366,7 @@ var ipBlockMiddleware = createIpBlockMiddleware();
 
 // src/app.ts
 var app = (0, import_express7.default)();
-var trustedProxyAddresses = new Set(
-  (process.env.TRUSTED_PROXY_IPS ?? "").split(",").map((value) => normalizeIpAddress(value)).filter((value) => Boolean(value))
-);
-app.set("trust proxy", (address) => {
-  const normalized = normalizeIpAddress(address);
-  return normalized !== null && trustedProxyAddresses.has(normalized);
-});
+app.set("trust proxy", isTrustedProxyAddress);
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   const nonce = (0, import_node_crypto6.randomBytes)(18).toString("base64");
