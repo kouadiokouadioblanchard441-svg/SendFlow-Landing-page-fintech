@@ -281,14 +281,31 @@ async function verifyApacheFallback() {
       `${distLabel}/public/.htaccess must identify API requests so static CSP does not replace the backend nonce policy.`,
     );
   }
-  if (!rules.has("Header always unset X-Powered-By")) {
+  if (
+    !rules.has("Header onsuccess unset X-Powered-By") ||
+    !rules.has("Header always unset X-Powered-By")
+  ) {
     errors.push(
       `${distLabel}/public/.htaccess must remove the server technology response header when Apache supports mod_headers.`,
     );
   }
+  for (const headerRule of [
+    'Header always set X-Content-Type-Options "nosniff"',
+    'Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"',
+    'Header always set Referrer-Policy "strict-origin-when-cross-origin"',
+    'Header always set X-Frame-Options "DENY"',
+    'Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"',
+  ]) {
+    if (!rules.has(headerRule)) {
+      errors.push(
+        `${distLabel}/public/.htaccess is missing required security header rule: ${headerRule}`,
+      );
+    }
+  }
   const staticCsp = [...rules].find((line) =>
     line.startsWith('Header always set Content-Security-Policy "'),
   );
+  const scriptSrc = staticCsp?.match(/(?:^|; )script-src ([^;]+)/)?.[1] ?? "";
   if (
     !staticCsp ||
     !staticCsp.endsWith("env=!sendflow_api") ||
@@ -301,6 +318,7 @@ async function verifyApacheFallback() {
       "style-src 'self'",
       "connect-src 'self'",
     ].every((directive) => staticCsp.includes(directive))
+    || /'unsafe-inline'/.test(scriptSrc)
   ) {
     errors.push(
       `${distLabel}/public/.htaccess must apply a restrictive static-page CSP while leaving API responses to Express.`,
